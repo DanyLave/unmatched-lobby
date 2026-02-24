@@ -258,6 +258,7 @@ function publishReveal(cards) {
     playerId: G.playerId,
     playerName: G.playerName,
     cards: cards.map(c => ({ image: c.image })),
+    action: 'played',
     timestamp: Date.now()
   });
   
@@ -267,6 +268,95 @@ function publishReveal(cards) {
   }
   
   setRoomData(roomData);
+}
+
+// Publish a play or discard action for a single card
+function publishAction(card, action) {
+  if (!G.isMultiplayer || !G.roomCode) return;
+  
+  const roomData = getRoomData();
+  if (!roomData) return;
+  
+  if (!roomData.reveals) roomData.reveals = [];
+  
+  roomData.reveals.push({
+    playerId: G.playerId,
+    playerName: G.playerName,
+    cards: [{ image: card.image }],
+    action: action, // 'played' or 'discarded'
+    timestamp: Date.now()
+  });
+  
+  if (roomData.reveals.length > 20) {
+    roomData.reveals = roomData.reveals.slice(-20);
+  }
+  
+  setRoomData(roomData);
+}
+
+// Play a card: discard it (or intermediate) + notify others
+function playCard(card) {
+  const dk = DECKS[G.deckKey];
+  G.hand = G.hand.filter(c => c.uid !== card.uid);
+  G.staged = G.staged.filter(c => c.uid !== card.uid);
+
+  if (dk.intermediateZone && dk.intermediateZone.enabled) {
+    G.intermediate.push(card);
+  } else {
+    G.discard.push(card);
+    if (G.isMultiplayer) {
+      const roomData = getRoomData();
+      if (roomData && roomData.players[G.playerId]) {
+        if (!roomData.players[G.playerId].discardCards) roomData.players[G.playerId].discardCards = [];
+        roomData.players[G.playerId].discardCards.push({ image: card.image, uid: card.uid });
+        setRoomData(roomData);
+      }
+    }
+  }
+
+  if (G.isMultiplayer) publishAction(card, 'played');
+  syncTS();
+  updateAll();
+  closeCardOverlay();
+  toast('Played');
+}
+
+// Play selected cards (from select mode)
+function playSelected() {
+  if (!G.selected.length) { toast('Select at least one card'); return; }
+  const dk = DECKS[G.deckKey];
+  const cards = G.hand.filter(c => G.selected.includes(c.uid));
+  cards.forEach(c => {
+    G.hand = G.hand.filter(x => x.uid !== c.uid);
+    G.staged = G.staged.filter(x => x.uid !== c.uid);
+    if (dk.intermediateZone && dk.intermediateZone.enabled) {
+      G.intermediate.push(c);
+    } else {
+      G.discard.push(c);
+      if (G.isMultiplayer) {
+        const roomData = getRoomData();
+        if (roomData && roomData.players[G.playerId]) {
+          if (!roomData.players[G.playerId].discardCards) roomData.players[G.playerId].discardCards = [];
+          roomData.players[G.playerId].discardCards.push({ image: c.image, uid: c.uid });
+          setRoomData(roomData);
+        }
+      }
+    }
+  });
+  if (G.isMultiplayer && cards.length > 0) publishReveal(cards);
+  exitSel();
+  updateAll();
+  toast(cards.length + ' card' + (cards.length > 1 ? 's' : '') + ' played');
+}
+
+// Update host name in room data
+function updateHostName(name) {
+  G.playerName = name.trim() || 'Host';
+  const roomData = getRoomData();
+  if (roomData && roomData.players[G.playerId]) {
+    roomData.players[G.playerId].name = G.playerName;
+    setRoomData(roomData);
+  }
 }
 
 // BroadcastChannel for real-time sync
@@ -351,7 +441,11 @@ function checkNewReveals(roomData) {
 
 function showRevealNotification(reveal) {
   const notif = document.getElementById('reveal-notification');
-  document.getElementById('reveal-notif-player').textContent = reveal.playerName + ' revealed cards!';
+  const action = reveal.action || 'played';
+  const verb = action === 'discarded' ? 'discarded' : 'played';
+  const count = reveal.cards ? reveal.cards.length : 0;
+  const cardWord = count === 1 ? 'a card' : count + ' cards';
+  document.getElementById('reveal-notif-player').textContent = reveal.playerName + ' ' + verb + ' ' + cardWord + '!';
   
   const timeAgo = Math.floor((Date.now() - reveal.timestamp) / 1000);
   document.getElementById('reveal-notif-time').textContent = timeAgo < 5 ? 'Just now' : timeAgo + 's ago';
@@ -422,7 +516,7 @@ function hostRoom() {
   G.roomCode = generateRoomCode();
   console.log('🔐 Generated room code:', G.roomCode);
   G.playerId = generatePlayerId();
-  G.playerName = 'Host';
+  G.playerName = document.getElementById('host-name-input') ? document.getElementById('host-name-input').value.trim() || 'Host' : 'Host';
   G.isHost = true;
   G.isMultiplayer = true;
   
@@ -688,7 +782,7 @@ function renderPlayerStatusArea() {
     
     // Get deck data for hero image
     const deck = player.deckKey ? DECKS[player.deckKey] : null;
-    const heroImagePath = deck ? deck.image : 'hero:back.png';
+    const heroImagePath = deck ? deck.image : '';
     
     // Check if player has special ability card
     const specialCard = player.specialCurrent;
@@ -971,6 +1065,10 @@ function renderCombatArea() {
       const isMe = pid === G.playerId;
       const isRevealed = entry.revealed;
       
+      // Get card back image from player's deck
+      const playerDeck = player && player.deckKey ? DECKS[player.deckKey] : null;
+      const cardBackImg = playerDeck ? playerDeck.image : '';
+      
       html += `<div class="combat-player-section ${isRevealed ? 'revealed' : ''}">`;
       html += `<div class="combat-player-header">`;
       html += `<span class="combat-player-name">${pName}</span>`;
@@ -986,7 +1084,7 @@ function renderCombatArea() {
         if (isRevealed) {
           html += `<div class="combat-card revealed" onclick="viewPlayerSpecialCard('${card.image}')"><img src="${card.image}" alt=""></div>`;
         } else {
-          html += `<div class="combat-card face-down"></div>`;
+          html += `<div class="combat-card face-down">${cardBackImg ? `<img src="${cardBackImg}" alt="">` : '🎴'}</div>`;
         }
       });
       html += `</div>`;
@@ -1354,12 +1452,12 @@ function selectDeck(key) {
 
   initSpecialAbility(dk);
 
-  document.getElementById('bar-deck-img').src = dk.image;
+  const barDeckImg = document.getElementById('bar-deck-img');
+  if (barDeckImg) barDeckImg.src = dk.image;
   buildHealthBars(dk);
   
-  // Show multiplayer button if in multiplayer mode
+  // Show multiplayer elements if in multiplayer mode
   if (G.isMultiplayer) {
-    document.getElementById('view-players-btn').style.display = 'block';
     updateMyPlayer();
     updateMyCardCounts(); // Initialize card counts
   }
@@ -1597,19 +1695,40 @@ function discardSelected() {
     return;
   }
   const dk = DECKS[G.deckKey];
-  G.hand.filter(c => G.selected.includes(c.uid)).forEach(c => {
+  const discarded = G.hand.filter(c => G.selected.includes(c.uid));
+  discarded.forEach(c => {
     G.hand = G.hand.filter(x => x.uid !== c.uid);
     G.staged = G.staged.filter(x => x.uid !== c.uid);
     if (dk.intermediateZone && dk.intermediateZone.enabled) {
       G.intermediate.push(c);
     } else {
       G.discard.push(c);
+      // Sync discard to multiplayer
+      if (G.isMultiplayer) {
+        const roomData = getRoomData();
+        if (roomData && roomData.players[G.playerId]) {
+          if (!roomData.players[G.playerId].discardCards) roomData.players[G.playerId].discardCards = [];
+          roomData.players[G.playerId].discardCards.push({ image: c.image, uid: c.uid });
+          setRoomData(roomData);
+        }
+      }
     }
   });
+  // Notify other players
+  if (G.isMultiplayer && discarded.length > 0) {
+    publishReveal(discarded.map(c => ({ image: c.image })));
+    // Override action to 'discarded'
+    const roomData = getRoomData();
+    if (roomData && roomData.reveals && roomData.reveals.length > 0) {
+      roomData.reveals[roomData.reveals.length - 1].action = 'discarded';
+      setRoomData(roomData);
+    }
+  }
+  const count = discarded.length;
   syncTS();
   exitSel();
   updateAll();
-  toast(G.selected.length + ' discarded');
+  toast(count + ' discarded');
 }
 
 function putSelectedInDeck() {
@@ -1740,14 +1859,14 @@ function renderOverlayMenu() {
       });
     } else {
       const buttons = [
-        { label: isStaged ? 'Un-stage' : 'Stage', cls: 'btn btn-accent btn-full', fn: () => stageCard(card) },
-        { label: 'Discard', cls: 'btn btn-ghost btn-full', fn: () => { discardCard(card); closeCardOverlay(); toast('Discarded'); } },
+        { label: '▶ Play', cls: 'btn btn-accent btn-full', fn: () => playCard(card) },
+        { label: 'Discard', cls: 'btn btn-ghost btn-full', fn: () => { discardCard(card); closeCardOverlay(); toast('Discarded'); if (G.isMultiplayer) publishAction(card, 'discarded'); } },
         { label: 'Return to Deck', cls: 'btn btn-ghost btn-full', fn: () => { _overlayMenu = 'return'; renderOverlayMenu(); } },
       ];
       
       // Add combat option if in multiplayer
       if (G.isMultiplayer && G.gameStarted) {
-        buttons.unshift({
+        buttons.push({
           label: '⚔️ Add to Combat',
           cls: 'btn btn-red btn-full',
           fn: () => addCardToCombat(card)
@@ -1864,12 +1983,13 @@ function updateAll() {
   const d = G.draw.length, h = G.hand.length, s = G.staged.length, di = G.discard.length, iz = G.intermediate.length;
   document.getElementById('sc-draw').textContent = d;
   document.getElementById('sc-hand').textContent = h;
-  document.getElementById('sc-staged').textContent = s;
+  const scStaged = document.getElementById('sc-staged');
+  if (scStaged) scStaged.textContent = s;
   document.getElementById('sc-discard').textContent = di;
   document.getElementById('sc-intermediate').textContent = iz;
   document.getElementById('draw-big').textContent = d;
   document.getElementById('discard-big').textContent = di;
-  document.getElementById('bar-counts').textContent = `${d} draw · ${h} hand · ${s} staged · ${di} discard`;
+  document.getElementById('bar-counts').textContent = `Draw ${d} · Hand ${h}${iz > 0 ? ` · Zone ${iz}` : ''} · Discard ${di}`;
   buildDrawStack();
   const badge = document.getElementById('draw-badge');
   if (badge) badge.textContent = d;
@@ -1879,7 +1999,7 @@ function updateAll() {
   document.getElementById('pick-random-intermediate-btn').style.display = iz > 0 ? 'inline-flex' : 'none';
 
   renderHand();
-  renderStaged();
+  if (document.getElementById('staged-content')) renderStaged();
   renderIntermediate();
   renderDiscard();
   

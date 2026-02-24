@@ -445,11 +445,11 @@ body {
 
 .combat-cards {
   display: flex; flex-wrap: wrap; gap: 6px;
-  min-height: 60px; align-items: flex-start; justify-content: center;
+  min-height: 80px; align-items: flex-start; justify-content: center;
 }
 
 .combat-card {
-  width: 70px; aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
+  width: 100px; aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
   border: 2px solid var(--border2); background: var(--surface);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.5rem; color: var(--muted);
@@ -472,15 +472,13 @@ body {
 }
 
 .combat-card.face-down {
-  background: linear-gradient(135deg, var(--accent) 0%, rgba(228, 200, 74, 0.7) 100%);
-  color: var(--accent-text);
-  font-weight: 800;
+  background: var(--surface);
   position: relative;
 }
 
-.combat-card.face-down::after {
-  content: '🎴';
-  position: absolute;
+.combat-card.face-down img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: var(--r-hand);
+  opacity: 0.85;
 }
 
 .combat-actions {
@@ -2191,6 +2189,10 @@ shehulk: {
     <div class="qr-container">
       <div id="qr-code"></div>
     </div>
+    <div style="padding:8px 0">
+      <label style="font-size:0.75rem;color:var(--muted);font-weight:600">Your Name</label>
+      <input type="text" id="host-name-input" class="join-input" placeholder="Host" value="Host" oninput="updateHostName(this.value)" style="margin-top:4px">
+    </div>
     <div class="lobby-players" id="lobby-players-list"></div>
     <div class="lobby-controls">
       <button class="btn btn-ghost btn-sm" onclick="reorderPlayers()">Reorder Players</button>
@@ -2227,24 +2229,13 @@ shehulk: {
 </div>
 
 <div id="s-play" class="screen">
-  <!-- PLAYER STATUS AREA - VISIBLE TO ALL MULTIPLAYER PLAYERS (NOT JUST HOST)
-       Displays: All players' names, hero images, HP values, and card counts
-       Customization: Edit CSS for this element in the <style> section above
-       - To change size of hero images: Edit .hero-back-img height property
-       - To change text sizes: Edit .status-name, .status-hp, .status-counts font-size
-       - To change spacing: Edit .player-status-area padding and .player-status-row gap
-       JavaScript handling: Rendered by renderPlayerStatusArea() function in game.js
-  -->
-  <div class="player-status-area" id="player-status-area" style="display:none"></div>
-
   <div class="play-bar">
     <button class="back-btn" onclick="confirmBack()">
       <svg viewBox="0 0 24 24"><polyline points="15,18 9,12 15,6"/></svg>
     </button>
-    <div class="play-bar-deck-img"><img id="bar-deck-img" src="" alt=""></div>
     <div class="play-bar-counts" id="bar-counts"></div>
-    <button class="play-bar-info-btn" onclick="openInfo(G.deckKey)">i</button>
   </div>
+  <div class="player-status-area" id="player-status-area" style="display:none"></div>
 
   <div class="play-section" id="special-section" style="display:none">
     <div class="special-zone">
@@ -2291,9 +2282,9 @@ shehulk: {
     </div>
     <div class="hand-grid" id="hand-grid"></div>
     <div class="select-actions" id="sel-actions" style="display:none">
-      <button class="btn btn-accent btn-sm" onclick="stageSelected()">Stage Selected</button>
+      <button class="btn btn-accent btn-sm" onclick="playSelected()">▶ Play</button>
+      <button class="btn btn-ghost btn-sm" onclick="discardSelected()">Discard</button>
       <button class="btn btn-red btn-sm" onclick="addSelectedToCombat()" id="sel-combat-btn" style="display:none">⚔️ Combat</button>
-      <button class="btn btn-ghost btn-sm" onclick="discardSelected()">Discard Selected</button>
       <button class="btn btn-ghost btn-sm" onclick="putSelectedInDeck()">Put in Deck</button>
       <button class="btn btn-ghost btn-sm" onclick="exitSel()">Done</button>
     </div>
@@ -2303,14 +2294,9 @@ shehulk: {
     </div>
   </div>
 
-  <div class="play-section">
-    <div class="sec-label">Staged <span class="sec-count" id="sc-staged">0</span></div>
-    <div id="staged-content"><div class="staged-empty">Nothing staged yet</div></div>
-    <div class="staged-actions" id="staged-actions" style="display:none">
-      <button class="btn btn-accent btn-sm" onclick="goTo('s-play-screen')">Play</button>
-      <button class="btn btn-red btn-sm" onclick="unstageAll()">Un-stage All</button>
-    </div>
-  </div>
+  <!-- Staged section hidden - using play/discard flow instead -->
+  <div id="staged-content" style="display:none"></div>
+  <div id="staged-actions" style="display:none"></div>
 
   <div class="play-section" id="intermediate-section" style="display:none">
     <div class="sec-label"><span id="intermediate-label">Zone</span> <span class="sec-count" id="sc-intermediate">0</span></div>
@@ -2359,11 +2345,7 @@ shehulk: {
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       How to Play
     </button>
-    <button class="btn btn-purple btn-full" id="view-players-btn" onclick="openSheet('sh-other-players')" style="display:none;margin-top:10px">
-      👥 View Other Players
-    </button>
-    <!-- ATTACK BUTTON - Now rendered inside the combat area placeholder when no combat is active -->
-    <!-- Keeping this out of view since the button is now in the combat area -->
+    <!-- View Other Players removed - info shown in status area -->
   </div>
 
   <div class="play-bottom-pad"></div>
@@ -2548,10 +2530,10 @@ shehulk: {
           <strong>1. Draw Phase:</strong> Tap the draw pile to draw cards into your hand. Your hand shows all available cards.
         </div>
         <div class="help-text">
-          <strong>2. Play Phase:</strong> Select cards from your hand to stage them face-down. When ready, tap "Play" to reveal all staged cards at once.
+          <strong>2. Play Cards:</strong> Tap any card in your hand and choose "Play" to play it. Other players see a notification of what you played. You can also select multiple cards and play them all at once.
         </div>
         <div class="help-text">
-          <strong>3. Discard Phase:</strong> After revealing, you can discard cards or return them to your hand. Discarded cards go to the discard pile (or intermediate zone if your deck has one).
+          <strong>3. Discard Cards:</strong> Tap a card and choose "Discard" to discard it silently, or send it to the intermediate zone if your deck has one. Other players are notified.
         </div>
       </div>
 
@@ -2565,12 +2547,7 @@ shehulk: {
         
         <div class="help-subtitle">Hand</div>
         <div class="help-text">
-          Cards you've drawn. Tap any card to see options (stage, discard, return to deck). Use "Select Cards" to work with multiple cards at once.
-        </div>
-        
-        <div class="help-subtitle">Staged</div>
-        <div class="help-text">
-          Cards ready to be played. They appear face-down to other players. Tap "Play" to reveal them all at once with a flip animation.
+          Cards you've drawn. Tap any card to see options (play, discard, return to deck, add to combat). Use "Select Cards" to work with multiple cards at once.
         </div>
         
         <div class="help-subtitle">Intermediate Zone</div>
@@ -2595,7 +2572,7 @@ shehulk: {
           
           <div class="help-button-item">
             <div class="help-button-name">Select Cards</div>
-            <div class="help-button-desc">Enter multi-select mode. Tap cards to select them, then stage, discard, or put them in the deck all at once.</div>
+            <div class="help-button-desc">Enter multi-select mode. Tap cards to select them, then play, discard, or put them in the deck all at once.</div>
           </div>
           
           <div class="help-button-item">
@@ -2619,8 +2596,8 @@ shehulk: {
           </div>
           
           <div class="help-button-item">
-            <div class="help-button-name">Play</div>
-            <div class="help-button-desc">Reveal all staged cards with a flip animation. After revealing, you can discard them all or return them to hand.</div>
+            <div class="help-button-name">▶ Play</div>
+            <div class="help-button-desc">Play the selected card(s). Moves them to discard (or intermediate zone) and notifies other players what you played.</div>
           </div>
           
           <div class="help-button-item">
@@ -2634,8 +2611,8 @@ shehulk: {
           </div>
 
           <div class="help-button-item">
-            <div class="help-button-name">⚔️ Combat System</div>
-            <div class="help-button-desc">(Multiplayer only) Attack other players by placing cards face-down, then reveal simultaneously.</div>
+            <div class="help-button-name">⚔️ Combat Zone</div>
+            <div class="help-button-desc">(Multiplayer only) A shared area where any player can place cards face-down. Each player reveals their own cards when ready. Great for simultaneous combat reveals.</div>
           </div>
 
           <div class="help-button-item">
@@ -2659,7 +2636,7 @@ shehulk: {
           • All HP changes are visible to everyone in real-time
         </div>
         <div class="help-text">
-          • When you reveal staged cards, all players get a notification
+          • When you play or discard cards, all players get a notification showing what you played
         </div>
         <div class="help-text">
           • Your hand and draw pile stay private - only you can see them
@@ -2668,7 +2645,7 @@ shehulk: {
           • Player status area shows everyone's HP, deck, and card counts
         </div>
         <div class="help-text">
-          • Combat system allows attacking other players with simultaneous reveals
+          • Combat Zone: add cards face-down, then each player reveals when ready
         </div>
         <div class="help-text">
           • Browse any player's discard pile (only owner can interact)
@@ -2684,13 +2661,13 @@ shehulk: {
           • Tap any card in your hand to see all available actions for that card
         </div>
         <div class="help-text">
-          • Use the info (i) button to see deck rules and card explanations
-        </div>
-        <div class="help-text">
           • Health values can be adjusted with + and - buttons
         </div>
         <div class="help-text">
-          • The top bar shows quick counts for all zones
+          • The top bar shows quick counts for Draw, Hand, and Discard
+        </div>
+        <div class="help-text">
+          • Use "Select Cards" mode to play or discard multiple cards at once
         </div>
       </div>
 
