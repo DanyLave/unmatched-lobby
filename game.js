@@ -1166,15 +1166,15 @@ function addCardToCombat(card) {
     return;
   }
   
-  if (!G.combat) {
-    console.error('No active combat');
-    return;
-  }
-  
   const roomData = getRoomData();
   if (!roomData || !roomData.combat) {
     console.error('No combat in room data');
     return;
+  }
+  
+  // Sync G.combat from room data if missing
+  if (!G.combat) {
+    G.combat = roomData.combat;
   }
   
   const combat = roomData.combat;
@@ -1934,6 +1934,20 @@ function renderOverlayMenu() {
       // Add combat option if applicable
       const roomData = getRoomData();
       const activeCombat = (roomData && roomData.combat) || G.combat;
+      
+      console.log('🔍 OVERLAY COMBAT CHECK:');
+      console.log('  roomData exists:', !!roomData);
+      console.log('  roomData.combat:', roomData?.combat);
+      console.log('  G.combat:', G.combat);
+      console.log('  activeCombat:', activeCombat);
+      console.log('  G.playerId:', G.playerId);
+      if (activeCombat) {
+        console.log('  activeCombat.attacker:', activeCombat.attacker);
+        console.log('  activeCombat.defender:', activeCombat.defender);
+        console.log('  activeCombat.revealed:', activeCombat.revealed);
+        console.log('  isAttacker:', activeCombat.attacker === G.playerId);
+        console.log('  isDefender:', activeCombat.defender === G.playerId);
+      }
       
       if (activeCombat && !activeCombat.revealed) {
         const isAttacker = activeCombat.attacker === G.playerId;
