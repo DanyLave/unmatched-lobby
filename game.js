@@ -238,7 +238,7 @@ function updateMyPlayer() {
       intermediate: G.intermediate.length,
       discard: G.discard.length
     },
-    discardCards: G.discard.slice(), // Copy of discard pile
+    discardCards: G.discard.map(c => ({ image: c.image, uid: c.uid, deckKey: c.deckKey || G.deckKey })), // Copy of discard pile with origin deck
     specialCurrent: G.specialCurrent || null, // Current active special ability card
     lastUpdate: Date.now()
   };
@@ -862,7 +862,7 @@ function syncMyDiscard() {
   if (!G.isMultiplayer || !G.roomCode) return;
   const roomData = getRoomData();
   if (!roomData || !roomData.players || !roomData.players[G.playerId]) return;
-  roomData.players[G.playerId].discardCards = G.discard.map(c => ({ image: c.image, uid: c.uid }));
+  roomData.players[G.playerId].discardCards = G.discard.map(c => ({ image: c.image, uid: c.uid, deckKey: c.deckKey || G.deckKey }));
   setRoomData(roomData);
 }
 
@@ -989,15 +989,19 @@ function renderDiscardBrowsing() {
   container.innerHTML = html;
 }
 
+// Track which player's discard pile is open for browsing
+let _browsingDiscardPid = null;
+
 function openDiscardBrowseSheet(pid) {
   const roomData = getRoomData();
   if (!roomData || !roomData.players[pid]) return;
   
+  _browsingDiscardPid = pid;
   const player = roomData.players[pid];
   const discardCards = player.discardCards || [];
   
   const sheet = document.getElementById('sh-discard-full');
-  if (!sheet) return; // Safety check
+  if (!sheet) return;
   
   const header = document.getElementById('discard-browse-header');
   const grid = document.getElementById('discard-browse-grid');
@@ -1008,16 +1012,60 @@ function openDiscardBrowseSheet(pid) {
   if (discardCards.length === 0) {
     grid.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);grid-column:1/-1">No cards discarded yet</div>';
   } else {
-    discardCards.forEach(card => {
+    discardCards.forEach((card, idx) => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'discard-browse-item';
+      
       const cardDiv = document.createElement('div');
       cardDiv.className = 'discard-browse-card';
       cardDiv.innerHTML = `<img src="${card.image}" alt="">`;
-      cardDiv.onclick = () => openCardOverlay(card, 'discard');
-      grid.appendChild(cardDiv);
+      cardDiv.onclick = () => openCardOverlay(card, 'other-discard');
+      wrapper.appendChild(cardDiv);
+      
+      // "Take" button for any player
+      const takeBtn = document.createElement('button');
+      takeBtn.className = 'btn btn-ghost btn-xs';
+      takeBtn.textContent = '→ My Hand';
+      takeBtn.onclick = (e) => { e.stopPropagation(); takeFromPlayerDiscard(pid, card.uid); };
+      wrapper.appendChild(takeBtn);
+      
+      grid.appendChild(wrapper);
     });
   }
   
   openSheet('sh-discard-full');
+}
+
+// Take a card from any player's discard pile and add to my hand
+function takeFromPlayerDiscard(pid, cardUid) {
+  const roomData = getRoomData();
+  if (!roomData || !roomData.players[pid]) return;
+  
+  const player = roomData.players[pid];
+  if (!player.discardCards) return;
+  
+  const cardIdx = player.discardCards.findIndex(c => c.uid === cardUid);
+  if (cardIdx === -1) { toast('Card not found'); return; }
+  
+  const [card] = player.discardCards.splice(cardIdx, 1);
+  
+  // Add to my local hand (preserve deckKey for origin tracking)
+  const handCard = { image: card.image, uid: card.uid, deckKey: card.deckKey || player.deckKey };
+  G.hand.push(handCard);
+  
+  // If taking from my own pile, also remove from local G.discard
+  if (pid === G.playerId) {
+    G.discard = G.discard.filter(c => c.uid !== cardUid);
+  }
+  
+  // Save changes
+  setRoomData(roomData);
+  if (G.isMultiplayer) { syncMyDiscard(); updateMyCardCounts(); }
+  updateAll();
+  
+  // Refresh the browse sheet
+  openDiscardBrowseSheet(pid);
+  toast('Added to hand');
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1851,6 +1899,17 @@ function renderOverlayMenu() {
       note.style.cssText = 'text-align:center;color:var(--muted);font-size:0.76rem;padding:20px';
       note.textContent = 'This is your special ability card. Use the button on the play page to activate it.';
       acts.appendChild(note);
+    } else if (_overlaySource === 'other-discard') {
+      // Card from another player's discard — just view, take is via the browse sheet button
+      const note = document.createElement('div');
+      note.style.cssText = 'text-align:center;color:var(--muted);font-size:0.76rem;padding:12px';
+      note.textContent = 'Card from discard pile. Use the "→ My Hand" button in browse view to take it.';
+      acts.appendChild(note);
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'btn btn-ghost btn-full';
+      closeBtn.textContent = 'Close';
+      closeBtn.onclick = () => closeCardOverlay();
+      acts.appendChild(closeBtn);
     } else if (_overlaySource === 'intermediate') {
       [
         { label: '→ Hand', cls: 'btn btn-accent btn-full', fn: () => moveToHand(card) },

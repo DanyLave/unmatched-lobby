@@ -335,18 +335,19 @@ body {
    EDIT: max-height to control scroll area height
 */
 .discard-cards-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px;
-  margin-top: 12px; max-height: 300px; overflow-y: auto;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px;
+  margin-top: 12px; max-height: 400px; overflow-y: auto;
 }
 
-/* Individual card in discard browse grid
-   EDIT: aspect-ratio to change card preview shape
-*/
+.discard-browse-item {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+
 .discard-browse-card {
   aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
   overflow: hidden; border: 1px solid var(--border2);
   background: var(--surface2); cursor: pointer;
-  transition: transform .1s;
+  transition: transform .1s; width: 100%;
 }
 
 .discard-browse-card:active { transform: scale(0.95); }
@@ -2509,151 +2510,153 @@ shehulk: {
       <button class="sheet-close" onclick="closeSheet('sh-help')">✕</button>
     </div>
     <div class="sheet-body">
-      
-      <div class="help-section">
-        <div class="help-title">Basic Gameplay</div>
-        <div class="help-text">
-          <strong>1. Draw Phase:</strong> Tap the draw pile to draw cards into your hand. Your hand shows all available cards.
+
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn btn-accent btn-full" onclick="document.getElementById('help-rules').style.display='block';document.getElementById('help-app').style.display='none';this.classList.add('btn-accent');this.classList.remove('btn-ghost');this.nextElementSibling.classList.add('btn-ghost');this.nextElementSibling.classList.remove('btn-accent')">🎲 Game Rules</button>
+        <button class="btn btn-ghost btn-full" onclick="document.getElementById('help-app').style.display='block';document.getElementById('help-rules').style.display='none';this.classList.add('btn-accent');this.classList.remove('btn-ghost');this.previousElementSibling.classList.add('btn-ghost');this.previousElementSibling.classList.remove('btn-accent')">📱 App Help</button>
+      </div>
+
+      <!-- GAME RULES -->
+      <div id="help-rules">
+        <div class="help-section">
+          <div class="help-title">Goal</div>
+          <div class="help-text">Defeat your opponent’s <strong>hero</strong> (reduce it to 0 health). If your hero is defeated, you lose.</div>
+          <div class="help-text"><strong>Team play:</strong> defeat both enemy heroes to win.</div>
         </div>
-        <div class="help-text">
-          <strong>2. Play Cards:</strong> Tap any card in your hand and choose "Play" to play it. Other players see a notification of what you played. You can also select multiple cards and play them all at once.
+
+        <div class="help-section">
+          <div class="help-title">Setup</div>
+          <div class="help-text">• Draw <strong>5 cards</strong>.</div>
+          <div class="help-text">• Younger player places hero on <strong>1</strong>, older player on <strong>2</strong>.</div>
+          <div class="help-text">• Sidekicks start in the same zone as their hero.</div>
+          <div class="help-text">• Younger player goes first.</div>
         </div>
-        <div class="help-text">
-          <strong>3. Discard Cards:</strong> Tap a card and choose "Discard" to discard it silently, or send it to the intermediate zone if your deck has one. Other players are notified.
+
+        <div class="help-section">
+          <div class="help-title">Turn</div>
+          <div class="help-text">Take <strong>2 actions</strong> (same or different):</div>
+          <div class="help-text">• <strong>Maneuver</strong></div>
+          <div class="help-text">• <strong>Scheme</strong></div>
+          <div class="help-text">• <strong>Attack</strong></div>
+          <div class="help-text" style="margin-top:6px">Then discard down to <strong>7 cards</strong> and end your turn.</div>
+        </div>
+
+        <div class="help-section">
+          <div class="help-title">Maneuver</div>
+          <div class="help-text">• Draw <strong>1 card</strong>.</div>
+          <div class="help-text">• Move fighters up to their move value.</div>
+          <div class="help-text">• Can move through allies, not enemies.</div>
+          <div class="help-text">• Cannot end in an occupied space.</div>
+          <div class="help-text">• You may <strong>Boost</strong> by discarding a card to add its boost value.</div>
+        </div>
+
+        <div class="help-section">
+          <div class="help-title">Scheme</div>
+          <div class="help-text">• Play a scheme card with an eligible fighter.</div>
+          <div class="help-text">• Resolve the effect, then discard it.</div>
+        </div>
+
+        <div class="help-section">
+          <div class="help-title">Attack</div>
+          <div class="help-text">1. Choose your fighter and a target:</div>
+          <div class="help-text" style="padding-left:12px">• <strong>Melee:</strong> adjacent only.</div>
+          <div class="help-text" style="padding-left:12px">• <strong>Ranged:</strong> adjacent or same zone.</div>
+          <div class="help-text">2. Both players play cards face down (defense optional).</div>
+          <div class="help-text">3. Reveal together.</div>
+          <div class="help-text" style="margin-top:6px"><strong>Damage = Attack − Defense</strong></div>
+          <div class="help-text">Attacker wins if they deal damage. Defender wins if they take none.</div>
+          <div class="help-text">Discard played cards after combat.</div>
+        </div>
+
+        <div class="help-section">
+          <div class="help-title">Important Rules</div>
+          <div class="help-text">• <strong>Spaces:</strong> 1 fighter per space.</div>
+          <div class="help-text">• <strong>Adjacent:</strong> spaces connected by a line.</div>
+          <div class="help-text">• <strong>Zones:</strong> colored areas for ranged attacks/effects.</div>
+          <div class="help-text">• <strong>Deck empty:</strong> drawing causes each of your fighters to take <strong>2 damage</strong> instead.</div>
         </div>
       </div>
 
-      <div class="help-section">
-        <div class="help-title">Zones Explained</div>
-        
-        <div class="help-subtitle">Draw Pile</div>
-        <div class="help-text">
-          Your deck of cards. Tap to draw one card, or use "Browse" to see all cards and pick specific ones.
+      <!-- APP HELP -->
+      <div id="help-app" style="display:none">
+        <div class="help-section">
+          <div class="help-title">Basic Gameplay</div>
+          <div class="help-text"><strong>1. Draw Phase:</strong> Tap the draw pile to draw cards into your hand.</div>
+          <div class="help-text"><strong>2. Play Cards:</strong> Tap any card and choose “Play” to play it. Others see a notification. You can also select multiple cards and play them at once.</div>
+          <div class="help-text"><strong>3. Discard Cards:</strong> Tap a card and choose “Discard” to discard it. Other players are notified.</div>
         </div>
-        
-        <div class="help-subtitle">Hand</div>
-        <div class="help-text">
-          Cards you've drawn. Tap any card to see options (play, discard, return to deck, add to combat). Use "Select Cards" to work with multiple cards at once.
-        </div>
-        
-        <div class="help-subtitle">Intermediate Zone</div>
-        <div class="help-text">
-          (Only some decks have this) A special zone between hand and discard. When you discard cards, they go here first. Tap any card to move it to hand, discard, or deck.
-        </div>
-        
-        <div class="help-subtitle">Discard Pile</div>
-        <div class="help-text">
-          Cards that have been played and discarded. You can browse them or shuffle them back into the draw pile.
-        </div>
-      </div>
 
-      <div class="help-section">
-        <div class="help-title">Button Guide</div>
-        
-        <div class="help-button-list">
-          <div class="help-button-item">
-            <div class="help-button-name">🎲 Pick Random</div>
-            <div class="help-button-desc">Randomly selects a card from that zone and shows it to you with all available options.</div>
-          </div>
-          
-          <div class="help-button-item">
-            <div class="help-button-name">Select Cards</div>
-            <div class="help-button-desc">Enter multi-select mode. Tap cards to select them, then play, discard, or put them in the deck all at once.</div>
-          </div>
-          
-          <div class="help-button-item">
-            <div class="help-button-name">Browse</div>
-            <div class="help-button-desc">See all cards in that pile with their positions. You can reorder cards in the draw pile or recover specific cards from discard.</div>
-          </div>
-          
-          <div class="help-button-item">
-            <div class="help-button-name">Shuffle</div>
-            <div class="help-button-desc">Randomizes the order of cards in the draw pile.</div>
-          </div>
-          
-          <div class="help-button-item">
-            <div class="help-button-name">Shuffle Into Deck</div>
-            <div class="help-button-desc">Mix cards from your hand or discard pile back into the draw pile in random positions.</div>
-          </div>
-          
-          <div class="help-button-item">
-            <div class="help-button-name">Put in Deck</div>
-            <div class="help-button-desc">When you have cards selected, put them on top, bottom, or shuffled into the draw pile.</div>
-          </div>
-          
-          <div class="help-button-item">
-            <div class="help-button-name">▶ Play</div>
-            <div class="help-button-desc">Play the selected card(s). Moves them to discard (or intermediate zone) and notifies other players what you played.</div>
-          </div>
-          
-          <div class="help-button-item">
-            <div class="help-button-name">Search for Card</div>
-            <div class="help-button-desc">Browse all cards from all decks organized by edition. Tap any card to add it directly to your hand.</div>
-          </div>
+        <div class="help-section">
+          <div class="help-title">Zones Explained</div>
+          <div class="help-subtitle">Draw Pile</div>
+          <div class="help-text">Your deck. Tap to draw one card, or use “Browse” to see all cards and pick specific ones.</div>
+          <div class="help-subtitle">Hand</div>
+          <div class="help-text">Cards you’ve drawn. Tap any card for options (play, discard, return to deck, add to combat).</div>
+          <div class="help-subtitle">Intermediate Zone</div>
+          <div class="help-text">(Some decks only) Cards go here before discard. Tap to move to hand, discard, or deck.</div>
+          <div class="help-subtitle">Discard Pile</div>
+          <div class="help-text">Played/discarded cards. Browse them or shuffle back into draw pile.</div>
+        </div>
 
-          <div class="help-button-item">
-            <div class="help-button-name">👥 Player Status Area</div>
-            <div class="help-button-desc">(Multiplayer only) Shows all players with HP, deck info, and card counts. Current player's turn is highlighted.</div>
+        <div class="help-section">
+          <div class="help-title">Button Guide</div>
+          <div class="help-button-list">
+            <div class="help-button-item">
+              <div class="help-button-name">🎲 Pick Random</div>
+              <div class="help-button-desc">Randomly selects a card from that zone.</div>
+            </div>
+            <div class="help-button-item">
+              <div class="help-button-name">Select Cards</div>
+              <div class="help-button-desc">Multi-select mode. Tap cards then play, discard, or put in deck.</div>
+            </div>
+            <div class="help-button-item">
+              <div class="help-button-name">Browse</div>
+              <div class="help-button-desc">See all cards in a pile. Reorder draw pile or recover discard cards.</div>
+            </div>
+            <div class="help-button-item">
+              <div class="help-button-name">Shuffle</div>
+              <div class="help-button-desc">Randomizes order of draw pile cards.</div>
+            </div>
+            <div class="help-button-item">
+              <div class="help-button-name">▶ Play</div>
+              <div class="help-button-desc">Play selected cards. Moves to discard and notifies others.</div>
+            </div>
+            <div class="help-button-item">
+              <div class="help-button-name">Search for Card</div>
+              <div class="help-button-desc">Browse all cards from all decks. Tap to add to hand.</div>
+            </div>
           </div>
+        </div>
 
-          <div class="help-button-item">
-            <div class="help-button-name">⚔️ Combat Zone</div>
-            <div class="help-button-desc">(Multiplayer only) A shared area where any player can place cards face-down. Each player reveals their own cards when ready. Great for simultaneous combat reveals.</div>
+        <div class="help-section">
+          <div class="help-title">Multiplayer Features</div>
+          <div class="help-button-list">
+            <div class="help-button-item">
+              <div class="help-button-name">👥 Player Status</div>
+              <div class="help-button-desc">Shows all players with HP, deck, and card counts.</div>
+            </div>
+            <div class="help-button-item">
+              <div class="help-button-name">⚔️ Combat Zone</div>
+              <div class="help-button-desc">Shared area for face-down cards. Each player reveals when ready.</div>
+            </div>
+            <div class="help-button-item">
+              <div class="help-button-name">🗂️ Discard Browsing</div>
+              <div class="help-button-desc">View any player’s discard pile. Take cards from any pile to your hand.</div>
+            </div>
+            <div class="help-button-item">
+              <div class="help-button-name">🔄 Turn System</div>
+              <div class="help-button-desc">END TURN button passes to next player. Host reorders before start.</div>
+            </div>
           </div>
+        </div>
 
-          <div class="help-button-item">
-            <div class="help-button-name">🗂️ Discard Browsing</div>
-            <div class="help-button-desc">(Multiplayer only) View any player's discard pile at the bottom of the screen.</div>
-          </div>
-
-          <div class="help-button-item">
-            <div class="help-button-name">🔄 Turn System</div>
-            <div class="help-button-desc">(Multiplayer only) Use the END TURN button to pass to the next player. Host can reorder players before game starts.</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="help-section">
-        <div class="help-title">Multiplayer</div>
-        <div class="help-text">
-          • Create a room and share the code/QR with friends
-        </div>
-        <div class="help-text">
-          • All HP changes are visible to everyone in real-time
-        </div>
-        <div class="help-text">
-          • When you play or discard cards, all players get a notification showing what you played
-        </div>
-        <div class="help-text">
-          • Your hand and draw pile stay private - only you can see them
-        </div>
-        <div class="help-text">
-          • Player status area shows everyone's HP, deck, and card counts
-        </div>
-        <div class="help-text">
-          • Combat Zone: add cards face-down, then each player reveals when ready
-        </div>
-        <div class="help-text">
-          • Browse any player's discard pile (only owner can interact)
-        </div>
-        <div class="help-text">
-          • Turn-based gameplay with END TURN button
-        </div>
-      </div>
-
-      <div class="help-section">
-        <div class="help-title">Tips</div>
-        <div class="help-text">
-          • Tap any card in your hand to see all available actions for that card
-        </div>
-        <div class="help-text">
-          • Health values can be adjusted with + and - buttons
-        </div>
-        <div class="help-text">
-          • The top bar shows quick counts for Draw, Hand, and Discard
-        </div>
-        <div class="help-text">
-          • Use "Select Cards" mode to play or discard multiple cards at once
+        <div class="help-section">
+          <div class="help-title">Tips</div>
+          <div class="help-text">• Tap any card in your hand to see all available actions</div>
+          <div class="help-text">• Health values can be adjusted with + and − buttons</div>
+          <div class="help-text">• Top bar shows Draw, Hand, and Discard counts</div>
+          <div class="help-text">• Use “Select Cards” to play or discard multiple at once</div>
+          <div class="help-text">• You can take cards from any player’s discard pile</div>
         </div>
       </div>
 
