@@ -1931,17 +1931,13 @@ function renderOverlayMenu() {
         { label: 'Return to Deck', cls: 'btn btn-ghost btn-full', fn: () => { _overlayMenu = 'return'; renderOverlayMenu(); } },
       ];
       
-      // Add combat option if applicable - check room data directly for defender
+      // Add combat option if applicable
       const roomData = getRoomData();
-      let activeCombat = G.combat;
-      if (!activeCombat && roomData && roomData.combat) {
-        activeCombat = roomData.combat;
-      }
+      const activeCombat = (roomData && roomData.combat) || G.combat;
       
-      if (G.isMultiplayer && activeCombat && !activeCombat.revealed) {
+      if (activeCombat && !activeCombat.revealed) {
         const isAttacker = activeCombat.attacker === G.playerId;
         const isDefender = activeCombat.defender === G.playerId;
-        console.log('Combat check - isAttacker:', isAttacker, 'isDefender:', isDefender, 'playerId:', G.playerId, 'combat:', activeCombat);
         if (isAttacker || isDefender) {
           buttons.unshift({
             label: 'Add to Combat',
