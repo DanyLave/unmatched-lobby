@@ -421,6 +421,7 @@ function hostRoom() {
   console.log('🏠 hostRoom called');
   G.roomCode = generateRoomCode();
   console.log('🔐 Generated room code:', G.roomCode);
+  G.playerId = generatePlayerId();
   G.playerName = 'Host';
   G.isHost = true;
   G.isMultiplayer = true;
