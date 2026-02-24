@@ -60,6 +60,17 @@ let firebaseRoomCache = null;
 let firebaseListener = null;
 let firebaseReady = false;
 
+// Firebase drops empty arrays, so always normalize combat object
+function normalizeCombat(combat) {
+  if (!combat) return null;
+  combat.attackerCards = combat.attackerCards || [];
+  combat.defenderCards = combat.defenderCards || [];
+  combat.attackerReady = combat.attackerReady || false;
+  combat.defenderReady = combat.defenderReady || false;
+  combat.revealed = combat.revealed || false;
+  return combat;
+}
+
 function getRoomData() {
   // Return cached data - will be updated by real-time listener
   return firebaseRoomCache;
@@ -292,7 +303,7 @@ function syncFromRoom() {
   G.turnOrder = roomData.turnOrder || [];
   G.currentTurn = roomData.currentTurn || 0;
   G.gameStarted = roomData.gameStarted || false;
-  G.combat = roomData.combat || null;
+  G.combat = normalizeCombat(roomData.combat);
   
   // Update lobby lists
   if (cur === 's-lobby-host' || cur === 's-lobby-guest') {
@@ -922,7 +933,7 @@ function renderCombatArea() {
   const combatArea = document.getElementById('combat-area');
   const roomData = getRoomData();
   
-  if (!roomData.combat) {
+  if (!roomData || !roomData.combat) {
     combatArea.innerHTML = `
       <div class="combat-placeholder">
         <div>No active combat</div>
@@ -934,7 +945,7 @@ function renderCombatArea() {
     return;
   }
   
-  const combat = roomData.combat;
+  const combat = normalizeCombat(roomData.combat);
   const attacker = roomData.players[combat.attacker];
   const defender = roomData.players[combat.defender];
   
@@ -1159,30 +1170,31 @@ function initiateAttack(targetPid, targetName) {
 
 function addCardToCombat(card) {
   console.log('addCardToCombat called with card:', card.uid);
-  console.log('G.playerId:', G.playerId);
   
   if (!G.isMultiplayer) {
-    console.error('Not in multiplayer mode');
+    toast('Not in multiplayer mode');
     return;
   }
   
   const roomData = getRoomData();
   if (!roomData || !roomData.combat) {
-    console.error('No combat in room data');
+    toast('No active combat found');
     return;
   }
   
-  // Sync G.combat from room data if missing
-  if (!G.combat) {
-    G.combat = roomData.combat;
-  }
+  const combat = normalizeCombat(roomData.combat);
+  roomData.combat = combat; // write normalized version back
   
-  const combat = roomData.combat;
+  // Sync G.combat from room data
+  G.combat = combat;
+  
   const isAttacker = combat.attacker === G.playerId;
   const isDefender = combat.defender === G.playerId;
   
+  console.log('addCardToCombat - attacker:', combat.attacker, 'defender:', combat.defender, 'me:', G.playerId, 'isAtt:', isAttacker, 'isDef:', isDefender);
+  
   if (!isAttacker && !isDefender) {
-    console.error('Player is neither attacker nor defender');
+    toast('You are not in this combat');
     return;
   }
   
@@ -1197,29 +1209,28 @@ function addCardToCombat(card) {
     combat.defenderCards.push(cardData);
   }
   
+  console.log('Card added, attackerCards:', combat.attackerCards.length, 'defenderCards:', combat.defenderCards.length);
+  
   setRoomData(roomData);
   updateAll();
-  renderCombatArea(); // Re-render combat area to show new card
-  closeCardOverlay();
+  renderCombatArea();
   toast('Card added to combat');
 }
 
 function toggleCombatReady(side) {
   console.log('toggleCombatReady called with side:', side);
-  console.log('G.playerId:', G.playerId);
   
-  if (!G.isMultiplayer || !G.combat) {
-    console.error('Not in multiplayer or no combat');
-    return;
-  }
+  if (!G.isMultiplayer) return;
   
   const roomData = getRoomData();
   if (!roomData || !roomData.combat) {
-    console.error('No room data or combat');
+    toast('No active combat');
     return;
   }
   
-  const combat = roomData.combat;
+  const combat = normalizeCombat(roomData.combat);
+  roomData.combat = combat;
+  G.combat = combat;
   if ((side === 'attacker' && combat.attacker !== G.playerId) ||
       (side === 'defender' && combat.defender !== G.playerId)) {
     console.error('Player is not the correct side');
@@ -1933,30 +1944,17 @@ function renderOverlayMenu() {
       
       // Add combat option if applicable
       const roomData = getRoomData();
-      const activeCombat = (roomData && roomData.combat) || G.combat;
-      
-      console.log('🔍 OVERLAY COMBAT CHECK:');
-      console.log('  roomData exists:', !!roomData);
-      console.log('  roomData.combat:', roomData?.combat);
-      console.log('  G.combat:', G.combat);
-      console.log('  activeCombat:', activeCombat);
-      console.log('  G.playerId:', G.playerId);
-      if (activeCombat) {
-        console.log('  activeCombat.attacker:', activeCombat.attacker);
-        console.log('  activeCombat.defender:', activeCombat.defender);
-        console.log('  activeCombat.revealed:', activeCombat.revealed);
-        console.log('  isAttacker:', activeCombat.attacker === G.playerId);
-        console.log('  isDefender:', activeCombat.defender === G.playerId);
-      }
+      const activeCombat = normalizeCombat((roomData && roomData.combat) || G.combat);
       
       if (activeCombat && !activeCombat.revealed) {
         const isAttacker = activeCombat.attacker === G.playerId;
         const isDefender = activeCombat.defender === G.playerId;
+        console.log('⚔️ Combat overlay:', {attacker: activeCombat.attacker, defender: activeCombat.defender, me: G.playerId, isAtt: isAttacker, isDef: isDefender});
         if (isAttacker || isDefender) {
           buttons.unshift({
-            label: 'Add to Combat',
+            label: '⚔️ Add to Combat',
             cls: 'btn btn-red btn-full',
-            fn: () => { addCardToCombat(card); closeCardOverlay(); }
+            fn: () => addCardToCombat(card)
           });
         }
       }
