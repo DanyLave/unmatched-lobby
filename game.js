@@ -402,6 +402,19 @@ function syncFromRoom() {
   G.gameStarted = roomData.gameStarted || false;
   G.combat = roomData.combat ? normalizeCombat(roomData.combat) : null;
   
+  // Reconcile local discard with server truth
+  // (another player may have taken a card from our discard pile)
+  if (roomData.players && roomData.players[G.playerId]) {
+    const serverDiscard = roomData.players[G.playerId].discardCards || [];
+    const serverUids = new Set(serverDiscard.map(c => c.uid));
+    const localLen = G.discard.length;
+    G.discard = G.discard.filter(c => serverUids.has(c.uid));
+    if (G.discard.length !== localLen) {
+      // Cards were removed by another player, update UI
+      updateAll();
+    }
+  }
+  
   // Update lobby lists
   if (cur === 's-lobby-host' || cur === 's-lobby-guest') {
     renderLobbyPlayers();
@@ -1038,6 +1051,7 @@ function openDiscardBrowseSheet(pid) {
 
 // Take a card from any player's discard pile and add to my hand
 function takeFromPlayerDiscard(pid, cardUid) {
+  // Re-read fresh room data to avoid stale cache race conditions
   const roomData = getRoomData();
   if (!roomData || !roomData.players[pid]) return;
   
@@ -1045,12 +1059,15 @@ function takeFromPlayerDiscard(pid, cardUid) {
   if (!player.discardCards) return;
   
   const cardIdx = player.discardCards.findIndex(c => c.uid === cardUid);
-  if (cardIdx === -1) { toast('Card not found'); return; }
+  if (cardIdx === -1) { toast('Card already taken'); return; }
   
   const [card] = player.discardCards.splice(cardIdx, 1);
   
   // Add to my local hand (preserve deckKey for origin tracking)
   const handCard = { image: card.image, uid: card.uid, deckKey: card.deckKey || player.deckKey };
+  
+  // Prevent duplicate in hand
+  if (G.hand.find(c => c.uid === cardUid)) { toast('Already in hand'); return; }
   G.hand.push(handCard);
   
   // If taking from my own pile, also remove from local G.discard
@@ -1058,9 +1075,11 @@ function takeFromPlayerDiscard(pid, cardUid) {
     G.discard = G.discard.filter(c => c.uid !== cardUid);
   }
   
-  // Save changes
+  // Write the updated discard pile directly (don't re-read stale data)
   setRoomData(roomData);
-  if (G.isMultiplayer) { syncMyDiscard(); updateMyCardCounts(); }
+  
+  // Sync my own state
+  if (G.isMultiplayer) { updateMyCardCounts(); }
   updateAll();
   
   // Refresh the browse sheet
