@@ -320,40 +320,6 @@ function syncFromRoom() {
   checkNewReveals(roomData);
 }
 
-// Sync interval for multiplayer
-let syncInterval = null;
-
-function startSync() {
-  if (syncInterval) clearInterval(syncInterval);
-  
-  // Sync every 500ms for real-time feel
-  syncInterval = setInterval(() => {
-    if (!G.isMultiplayer || !G.roomCode) {
-      if (syncInterval) {
-        clearInterval(syncInterval);
-        syncInterval = null;
-      }
-      return;
-    }
-    
-    try {
-      syncFromRoom();
-    } catch (e) {
-      console.error('Error in sync:', e);
-    }
-  }, 500);
-  
-  console.log('✅ Sync started for room:', G.roomCode);
-}
-
-function stopSync() {
-  if (syncInterval) {
-    clearInterval(syncInterval);
-    syncInterval = null;
-    console.log('Sync stopped');
-  }
-}
-
 function checkNewReveals(roomData) {
   if (!roomData.reveals || roomData.reveals.length === 0) return;
   
@@ -393,12 +359,13 @@ function closeRevealNotif() {
   document.getElementById('reveal-notification').classList.remove('show');
 }
 
-// Polling fallback (every 2 seconds)
+// Polling fallback (every 500ms for real-time feel)
 let syncInterval = null;
 
 function startSync() {
   if (syncInterval) clearInterval(syncInterval);
-  syncInterval = setInterval(syncFromRoom, 2000);
+  syncInterval = setInterval(syncFromRoom, 500);
+  console.log('✅ Sync started for room:', G.roomCode);
 }
 
 function stopSync() {
