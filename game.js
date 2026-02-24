@@ -151,20 +151,21 @@ function setupFirebaseListener() {
           console.log('Data exists?', data !== null);
           if (data) {
             console.log('Data keys:', Object.keys(data));
+            // Always update cache with new data
+            firebaseRoomCache = data;
+            
+            // Trigger sync if on lobby or play screen
+            if (cur === 's-lobby-host' || cur === 's-lobby-guest' || cur === 's-play') {
+              syncFromRoom();
+            }
           }
           
           if (data !== null && !resolved) {
             console.log('✅ Room data found! Resolving promise');
             resolved = true;
             clearTimeout(timeoutHandle);
-            firebaseRoomCache = data;
             firebaseReady = true;
             resolve(true);
-            
-            // Trigger sync if on play screen
-            if (cur === 's-play') {
-              syncFromRoom();
-            }
           }
         }, (error) => {
           console.error('❌ Firebase listener error:', error?.code, error?.message);
