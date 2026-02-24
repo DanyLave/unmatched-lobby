@@ -2806,9 +2806,12 @@ shehulk: {
     
     // Create game script dynamically to ensure timing
     const script = document.createElement('script');
-    script.src = 'game.js';
+    // Try to detect the base path for GitHub Pages
+    const basePath = window.location.pathname.includes('/unmatched-lobby/') ? '/unmatched-lobby/' : './';
+    script.src = basePath + 'game.js';
     script.onerror = function() {
-      console.error('❌ Failed to load game.js');
+      console.error('❌ Failed to load game.js from:', basePath + 'game.js');
+      console.error('Current URL:', window.location.href);
       document.body.innerHTML += '<div style="color: red; padding: 20px; text-align: center;">Error loading game. Check browser console.</div>';
     };
     document.body.appendChild(script);
