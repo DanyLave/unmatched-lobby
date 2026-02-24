@@ -1037,6 +1037,11 @@ function initiateCombat(targetPid) {
   const roomData = getRoomData();
   if (!roomData) return;
   
+  // Ensure both players have their data in the room
+  if (!roomData.players[G.playerId]) {
+    updateMyPlayer();
+  }
+  
   roomData.combat = {
     attacker: G.playerId,
     defender: targetPid,
@@ -1048,6 +1053,9 @@ function initiateCombat(targetPid) {
   };
   
   setRoomData(roomData);
+  
+  // Trigger sync on defender's side
+  broadcastUpdate();
   
   // SIMULTANEOUS REVEAL MECHANISM:
   // Both players must click "Ready to Reveal"
@@ -1174,6 +1182,9 @@ function addCardToCombat(card) {
   
   setRoomData(roomData);
   updateAll();
+  renderCombatArea(); // Re-render combat area to show new card
+  closeCardOverlay();
+  toast('Card added to combat');
 }
 
 function toggleCombatReady(side) {
