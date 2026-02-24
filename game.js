@@ -1202,7 +1202,7 @@ function addCardToCombat(card) {
   renderCombatArea(); // Re-render combat area to show new card
   closeCardOverlay();
   toast('Card added to combat');
-
+}
 
 function toggleCombatReady(side) {
   console.log('toggleCombatReady called with side:', side);
