@@ -277,70 +277,56 @@ body {
 */
 .discard-browsing {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r); padding: 16px; margin-top: 16px;
+  border-radius: var(--r); padding: 12px; margin-top: 16px;
 }
 
-/* Main heading for discard section
-   EDIT: font-size to make "Discard Previews" text bigger or smaller
-   EDIT: margin-bottom to adjust space below heading
-*/
 .discard-browsing h3 {
-  font-size: 0.9rem; font-weight: 700; margin-bottom: 12px;
+  font-size: 0.85rem; font-weight: 700; margin-bottom: 10px;
   color: var(--text);
 }
 
-/* Grid container for all discard previews
-   EDIT: gap value to change space between each player's preview section
-*/
-.discard-previews {
-  display: grid; gap: 12px;
+/* Horizontal row of mini discard piles */
+.discard-previews-row {
+  display: flex; gap: 10px; overflow-x: auto;
+  padding-bottom: 4px;
 }
 
-/* Individual player discard preview card
-   EDIT: gap value to change space between header and preview card
-   EDIT: padding to adjust space inside each preview card
-*/
-.discard-player-preview {
-  background: var(--surface2); border: 1px solid var(--border2);
-  border-radius: var(--r-sm); padding: 12px;
-  display: flex; flex-direction: column; gap: 8px;
+/* Individual mini discard pile */
+.discard-mini-pile {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; min-width: 80px; flex-shrink: 0;
 }
 
-/* Player name + card count header above discard card
-   EDIT: font-size to make player names bigger or smaller
-   EDIT: color to change text color (currently var(--text) = white)
-*/
-.discard-preview-header {
-  font-size: 0.75rem; font-weight: 600; color: var(--text);
-  text-transform: uppercase; letter-spacing: 0.5px;
+.discard-mini-label {
+  font-size: 0.65rem; font-weight: 600; color: var(--text);
+  text-transform: uppercase; letter-spacing: 0.3px;
+  text-align: center; white-space: nowrap;
+  max-width: 80px; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* Last discarded card image preview (clickable)
-   EDIT: aspect-ratio (e.g., 1/1, 16/9) to change preview shape
-   EDIT: height added below to control preview card size
-   EDIT: border-radius to round corners more/less
-   EDIT: border color to change border appearance
-*/
-.discard-last-card {
-  aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
-  overflow: hidden; border: 1px solid var(--border);
-  background: var(--surface); cursor: pointer;
-  transition: transform .1s;
-  /* Adjust minimum height if needed: min-height: 80px; */
+.discard-mini-count {
+  font-size: 0.6rem; color: var(--muted); font-weight: 500;
 }
 
-.discard-last-card:active { transform: scale(0.95); } 
+.discard-mini-card {
+  width: var(--card-w-discard); height: var(--card-h-discard);
+  border-radius: var(--r-hand); overflow: hidden;
+  border: 1.5px solid var(--border2); background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 1.4rem;
+}
 
-.discard-last-card img { width: 20%; height: 20%; object-fit: cover; }
+.discard-mini-card img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
 
-/* Empty state text when player has no discarded cards
-   EDIT: font-size to make text bigger or smaller
-   EDIT: color to change text color
-   EDIT: padding to add more space around the text
-*/
-.discard-empty {
-  text-align: center; padding: 20px 0; color: var(--muted);
-  font-size: 0.8rem;
+.discard-mini-empty {
+  font-size: 1.2rem; opacity: 0.4;
+}
+
+.btn-xs {
+  font-size: 0.6rem; padding: 3px 8px; border-radius: 6px;
+  margin-top: 2px;
 }
 
 /* Grid of all cards in "Browse All" sheet

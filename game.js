@@ -857,6 +857,15 @@ function updateMyCardCounts() {
   setRoomData(roomData);
 }
 
+// Sync entire local discard pile to multiplayer room data
+function syncMyDiscard() {
+  if (!G.isMultiplayer || !G.roomCode) return;
+  const roomData = getRoomData();
+  if (!roomData || !roomData.players || !roomData.players[G.playerId]) return;
+  roomData.players[G.playerId].discardCards = G.discard.map(c => ({ image: c.image, uid: c.uid }));
+  setRoomData(roomData);
+}
+
 function showPlayerDeckInfo(pid) {
   const roomData = getRoomData();
   if (!roomData || !roomData.players[pid]) return;
@@ -950,11 +959,9 @@ function renderDiscardBrowsing() {
   if (!roomData || !roomData.players) return;
   
   const container = document.getElementById('discard-browsing');
-  container.innerHTML = '<h3>Discard Previews</h3><div class="discard-previews" id="discard-previews"></div>';
-  
   const turnOrder = roomData.turnOrder || Object.keys(roomData.players);
-  const previewsDiv = document.getElementById('discard-previews');
-  previewsDiv.innerHTML = '';
+  
+  let html = '<h3>Discard Piles</h3><div class="discard-previews-row">';
   
   turnOrder.forEach(pid => {
     const player = roomData.players[pid];
@@ -962,34 +969,24 @@ function renderDiscardBrowsing() {
     
     const discardCards = player.discardCards || [];
     const lastCard = discardCards.length > 0 ? discardCards[discardCards.length - 1] : null;
+    const isMe = pid === G.playerId;
     
-    const playerPreview = document.createElement('div');
-    playerPreview.className = 'discard-player-preview';
-    playerPreview.innerHTML = `
-      <div class="discard-preview-header">${player.name}${pid === G.playerId ? ' (You)' : ''} - ${discardCards.length} cards</div>
-    `;
+    html += `<div class="discard-mini-pile">`;
+    html += `<div class="discard-mini-label">${player.name}${isMe ? ' (You)' : ''}</div>`;
+    html += `<div class="discard-mini-count">${discardCards.length}</div>`;
     
     if (lastCard) {
-      const cardPreview = document.createElement('div');
-      cardPreview.className = 'discard-last-card';
-      cardPreview.innerHTML = `<img src="${lastCard.image}" alt="Last discarded">`;
-      cardPreview.onclick = () => openCardOverlay(lastCard, 'discard');
-      playerPreview.appendChild(cardPreview);
+      html += `<div class="discard-mini-card"><img src="${lastCard.image}" alt=""></div>`;
     } else {
-      const emptyMsg = document.createElement('div');
-      emptyMsg.className = 'discard-empty';
-      emptyMsg.textContent = 'No cards discarded';
-      playerPreview.appendChild(emptyMsg);
+      html += `<div class="discard-mini-card discard-mini-empty">🂠</div>`;
     }
     
-    const browseBtn = document.createElement('button');
-    browseBtn.className = 'btn btn-sm btn-accent';
-    browseBtn.textContent = 'Browse All';
-    browseBtn.onclick = () => openDiscardBrowseSheet(pid);
-    playerPreview.appendChild(browseBtn);
-    
-    previewsDiv.appendChild(playerPreview);
+    html += `<button class="btn btn-ghost btn-xs" onclick="openDiscardBrowseSheet('${pid}')">Browse</button>`;
+    html += `</div>`;
   });
+  
+  html += '</div>';
+  container.innerHTML = html;
 }
 
 function openDiscardBrowseSheet(pid) {
@@ -1210,7 +1207,7 @@ function addMoreToCombat() {
   `;
 }
 
-// Clear all combat cards — moves to discard piles
+// Clear all combat cards — moves to intermediate (if present) or discard
 function clearCombatZone() {
   if (!G.isMultiplayer) return;
   
@@ -1218,8 +1215,10 @@ function clearCombatZone() {
   if (!roomData || !roomData.combat) return;
   
   const combat = roomData.combat;
+  const dk = DECKS[G.deckKey];
+  const hasIntermediate = dk && dk.intermediateZone && dk.intermediateZone.enabled;
   
-  // Move each player's combat cards to their discard pile
+  // Move each player's combat cards to their discard pile (in room data)
   for (const pid of Object.keys(combat)) {
     if (!pid.startsWith('p_')) continue;
     const entry = combat[pid];
@@ -1231,9 +1230,13 @@ function clearCombatZone() {
       entry.cards.forEach(c => player.discardCards.push(c));
     }
     
-    // If this is me, also add to local discard
+    // If this is me, add to intermediate zone or discard locally
     if (pid === G.playerId) {
-      entry.cards.forEach(c => G.discard.push(c));
+      if (hasIntermediate) {
+        entry.cards.forEach(c => G.intermediate.push(c));
+      } else {
+        entry.cards.forEach(c => G.discard.push(c));
+      }
     }
   }
   
@@ -1242,7 +1245,7 @@ function clearCombatZone() {
   G.combat = null;
   updateAll();
   renderCombatArea();
-  toast('Combat cleared');
+  toast(hasIntermediate ? 'Combat → Intermediate Zone' : 'Combat cleared');
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1562,6 +1565,7 @@ function shuffleDiscardIn() {
   }
   G.draw = shuffle([...G.draw, ...G.discard]);
   G.discard = [];
+  if (G.isMultiplayer) syncMyDiscard();
   updateAll();
   closeSheet('sh-shuffle-options');
   toast('Discard → Draw pile');
@@ -1597,6 +1601,7 @@ function discardCard(card) {
 function moveToHand(card) {
   G.intermediate = G.intermediate.filter(c => c.uid !== card.uid);
   G.hand.push(card);
+  if (G.isMultiplayer) { syncMyDiscard(); updateMyCardCounts(); }
   updateAll();
   closeCardOverlay();
   toast('Moved to hand');
@@ -1605,6 +1610,7 @@ function moveToHand(card) {
 function moveToDiscard(card) {
   G.intermediate = G.intermediate.filter(c => c.uid !== card.uid);
   G.discard.push(card);
+  if (G.isMultiplayer) syncMyDiscard();
   updateAll();
   closeCardOverlay();
   toast('Moved to discard');
@@ -2182,6 +2188,7 @@ function buildDiscardBrowse() {
 function recoverDiscard(idx) {
   const [card] = G.discard.splice(idx, 1);
   G.hand.push(card);
+  if (G.isMultiplayer) syncMyDiscard();
   updateAll();
   buildDiscardBrowse();
   toast('Added to hand');
