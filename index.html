@@ -1,0 +1,2827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Deck</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg:            #0c0c0d;
+  --surface:       #17171a;
+  --surface2:      #222226;
+  --border:        #29292f;
+  --border2:       #3c3c46;
+  --text:          #f0f0f2;
+  --muted:         #62626e;
+  --accent:        #e4c84a;
+  --accent-text:   #111111;
+  --red:           #d95050;
+  --green:         #4cbf74;
+  --purple:        #8a5cf6;
+
+  --r:             12px;
+  --r-sm:          8px;
+  --r-img:         14px;
+  --r-card-sel:    12px;
+  --r-hand:        8px;
+
+  --card-w-hand:         78px;
+  --card-h-hand:         109px;
+  
+  --card-w-staged:       78px;
+  --card-h-staged:       109px;
+  
+  --card-w-intermediate: 78px;
+  --card-h-intermediate: 109px;
+  
+  --card-w-discard:      78px;
+  --card-h-discard:      109px;
+  
+  --card-w-draw:         78px;
+  --card-h-draw:         109px;
+
+  --special-card-w: 366px;
+  --special-card-h: 200px;
+  
+  /* SPECIAL CARD SIZE CUSTOMIZATION
+     Edit --special-card-w-size and --special-card-h-size to change the size of special ability cards
+     Leave as defaults (using the above --special-card-w/h) or set custom sizes like 150px, 200px, etc.
+  */
+  --special-card-w-size: var(--special-card-w);
+  --special-card-h-size: var(--special-card-h);
+  --special-card-h-preview: 45px; /* Height of special card preview in player status bar */
+
+  --search-editions-cols: repeat(2, 1fr);
+  --search-decks-cols:    repeat(2, 1fr);
+  --search-cards-cols:    repeat(3, 1fr);
+
+  --sel-col-edition: repeat(2, 1fr);
+  --sel-col-deck:    repeat(2, 1fr);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+.screen { display: none; min-height: 100dvh; flex-direction: column; }
+.screen.active { display: flex; }
+
+.sel-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 14px 48px; }
+.sel-scroll::-webkit-scrollbar { display: none; }
+
+.top-bar { display: flex; align-items: center; gap: 10px; padding: 52px 14px 16px; flex-shrink: 0; }
+.back-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--surface); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent; transition: background .13s;
+}
+.back-btn:active { background: var(--surface2); }
+.back-btn svg { width: 14px; height: 14px; stroke: var(--muted); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.screen-label { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); font-weight: 700; padding: 0 14px 16px; flex-shrink: 0; }
+
+/* WELCOME SCREEN */
+.welcome-container {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 40px 20px;
+}
+.welcome-title {
+  font-size: 2.5rem; font-weight: 800; color: var(--accent);
+  margin-bottom: 12px; text-align: center; letter-spacing: -0.02em;
+}
+.welcome-subtitle {
+  font-size: 0.9rem; color: var(--muted); margin-bottom: 48px; text-align: center;
+}
+.welcome-buttons {
+  display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 320px;
+}
+
+/* MULTIPLAYER LOBBY */
+.lobby-container {
+  flex: 1; padding: 20px 14px; display: flex; flex-direction: column;
+}
+.lobby-code-display {
+  background: var(--surface); border: 2px solid var(--accent);
+  border-radius: var(--r); padding: 24px; text-align: center; margin-bottom: 24px;
+}
+.lobby-code-label {
+  font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px;
+}
+.lobby-code-value {
+  font-size: 2.4rem; font-weight: 800; color: var(--accent);
+  letter-spacing: 0.15em; font-family: 'Courier New', monospace;
+}
+.qr-container {
+  display: flex; justify-content: center; margin: 20px 0;
+}
+#qr-code { 
+  background: white; 
+  padding: 16px; 
+  border-radius: var(--r);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.lobby-players {
+  flex: 1; overflow-y: auto;
+}
+.lobby-player-item {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 14px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 12px;
+}
+.lobby-player-avatar {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-text);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 1.2rem; flex-shrink: 0;
+}
+.lobby-player-info { flex: 1; }
+.lobby-player-name {
+  font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 2px;
+}
+.lobby-player-deck {
+  font-size: 0.72rem; color: var(--muted);
+}
+.lobby-you-badge {
+  background: var(--accent); color: var(--accent-text);
+  font-size: 0.62rem; font-weight: 800; padding: 3px 8px;
+  border-radius: 100px; letter-spacing: 0.05em;
+}
+
+/* PLAYER STATUS AREA - SHOWS ALL PLAYERS' HP, DECK INFO, AND CARD COUNTS
+   VISIBLE TO: All multiplayer players (not just host)
+   HOW TO CUSTOMIZE:
+   - max-height: Adjust scrollable area height (increase to show more rows without scrolling)
+   - padding: Space inside the container
+   - .player-status-row gap: Space between player name, hero image, HP, and card counts
+   - .status-name font-size: Player name text size
+   - .hero-back-img height: Hero card preview size (width auto-adjusts)
+   - .status-hp font-size: HP display text size
+   - .status-counts font-size: Card count abbreviations (D, H, S, etc) text size
+*/
+.player-status-area {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 12px; margin-bottom: 16px;
+  max-height: 220px; overflow-y: auto;
+}
+
+/* Individual player row in the status area
+   EDIT: gap value to increase/decrease horizontal spacing between elements
+   EDIT: padding value to increase/decrease vertical spacing between rows
+*/
+.player-status-row {
+  display: flex; align-items: center; gap: 8px; padding: 8px;
+  border-radius: var(--r-sm); transition: background .2s;
+}
+
+/* Player name display
+   EDIT: font-size to make player names bigger or smaller
+   EDIT: min-width to allocate more/less space for names
+   EDIT: font-weight (600-900) to make names bolder
+*/
+.status-name { 
+  flex: 0 0 auto; font-weight: 600; min-width: 70px; font-size: 0.85rem;
+}
+
+/* Hero image container
+   EDIT: gap value to change space between hero image and info button
+*/
+.status-hero { 
+  display: flex; align-items: center; gap: 4px; flex: 0 0 auto;
+}
+
+/* Hero card back preview image
+   EDIT: height value to make hero images bigger (width auto-scales to maintain aspect ratio)
+   EDIT: border-radius to round corners more/less
+*/
+.hero-back-img {
+  height: 60px; aspect-ratio: 2.5/3.5; object-fit: cover;
+  border-radius: var(--r-hand); border: 1px solid var(--border2);
+}
+
+.status-special {
+  flex: 0 0 auto;
+}
+
+/* Special ability card preview in player status
+   EDIT: height to make special card preview bigger or smaller
+   EDIT: border color (currently uses accent color for yellow border)
+   CLICK: Click on special card to zoom in for detailed view
+*/
+.special-preview {
+  height: 100px; aspect-ratio: 16/9; object-fit: cover; /*mod special ability list size*/
+  border-radius: var(--r-hand); border: 2px solid var(--accent);
+  cursor: pointer; transition: transform .12s;
+}
+
+.special-preview:hover { transform: scale(1.05); }
+.special-preview:active { transform: scale(0.95); }
+
+/* Info button (small "i" button next to hero image)
+   EDIT: width & height to make button bigger or smaller
+   EDIT: font-size to adjust text size inside button
+*/
+.info-btn-small {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-text);
+  border: none; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 0.65rem; font-weight: 700;
+  -webkit-tap-highlight-color: transparent; transition: opacity .12s;
+}
+
+.info-btn-small:active { opacity: 0.8; }
+
+/* HP display in player status (shows colored hearts with HP values for each health bar)
+   EDIT: font-size to make HP numbers and hearts bigger or smaller
+   EDIT: gap value to change space between multiple HP values
+*/
+.status-hp { 
+  flex: 0 0 auto; font-size: 0.8rem; color: var(--muted);
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+
+.status-hp-heart {
+  font-size: 1rem; font-weight: 600; display: inline-flex; align-items: center; gap: 2px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+/* Card counts display (D:draw, H:hand, S:staged, I:intermediate, Disc:discard)
+   EDIT: font-size to make these abbreviations bigger or smaller
+   EDIT: gap to adjust space between count items
+*/
+.status-counts { 
+  display: flex; gap: 3px; font-size: 0.7rem; color: var(--text);
+  flex: 1;
+}
+
+/* DISCARD BROWSING - SHOWS PREVIEW OF EACH PLAYER'S DISCARD PILE
+   VISIBLE TO: All multiplayer players (not just host)
+   HOW TO CUSTOMIZE:
+   - margin-top: Space above this section
+   - padding: Space inside the discard browsing container
+   - .discard-previews gap: Space between each player's discard preview
+   - .discard-player-preview padding: Space inside each player's preview card
+   - .discard-last-card aspect-ratio height: How tall the preview card image is
+   - .discard-preview-header font-size: Player name and card count text size
+   - .discard-empty color: Text color when no cards are discarded
+*/
+.discard-browsing {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px; margin-top: 16px;
+}
+
+/* Main heading for discard section
+   EDIT: font-size to make "Discard Previews" text bigger or smaller
+   EDIT: margin-bottom to adjust space below heading
+*/
+.discard-browsing h3 {
+  font-size: 0.9rem; font-weight: 700; margin-bottom: 12px;
+  color: var(--text);
+}
+
+/* Grid container for all discard previews
+   EDIT: gap value to change space between each player's preview section
+*/
+.discard-previews {
+  display: grid; gap: 12px;
+}
+
+/* Individual player discard preview card
+   EDIT: gap value to change space between header and preview card
+   EDIT: padding to adjust space inside each preview card
+*/
+.discard-player-preview {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--r-sm); padding: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+/* Player name + card count header above discard card
+   EDIT: font-size to make player names bigger or smaller
+   EDIT: color to change text color (currently var(--text) = white)
+*/
+.discard-preview-header {
+  font-size: 0.75rem; font-weight: 600; color: var(--text);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* Last discarded card image preview (clickable)
+   EDIT: aspect-ratio (e.g., 1/1, 16/9) to change preview shape
+   EDIT: height added below to control preview card size
+   EDIT: border-radius to round corners more/less
+   EDIT: border color to change border appearance
+*/
+.discard-last-card {
+  aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
+  overflow: hidden; border: 1px solid var(--border);
+  background: var(--surface); cursor: pointer;
+  transition: transform .1s;
+  /* Adjust minimum height if needed: min-height: 80px; */
+}
+
+.discard-last-card:active { transform: scale(0.95); } 
+
+.discard-last-card img { width: 20%; height: 20%; object-fit: cover; }
+
+/* Empty state text when player has no discarded cards
+   EDIT: font-size to make text bigger or smaller
+   EDIT: color to change text color
+   EDIT: padding to add more space around the text
+*/
+.discard-empty {
+  text-align: center; padding: 20px 0; color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* Grid of all cards in "Browse All" sheet
+   EDIT: grid-template-columns minmax(60px, 1fr) to change card width in grid
+   EDIT: gap to change space between card items
+   EDIT: max-height to control scroll area height
+*/
+.discard-cards-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px;
+  margin-top: 12px; max-height: 300px; overflow-y: auto;
+}
+
+/* Individual card in discard browse grid
+   EDIT: aspect-ratio to change card preview shape
+*/
+.discard-browse-card {
+  aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
+  overflow: hidden; border: 1px solid var(--border2);
+  background: var(--surface2); cursor: pointer;
+  transition: transform .1s;
+}
+
+.discard-browse-card:active { transform: scale(0.95); }
+
+.discard-browse-card img { width: 100%; height: 100%; object-fit: cover; }
+
+.discard-card-item {
+  aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
+  overflow: hidden; border: 1px solid var(--border2);
+  background: var(--surface2); cursor: pointer;
+  transition: transform .1s;
+}
+
+.discard-card-item:active { transform: scale(0.95); }
+.discard-card-item img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   COMBAT SYSTEM - SIMULTANEOUS COMBAT BETWEEN TWO PLAYERS
+   Features:
+   - Attacker and Defender add cards face-down
+   - Both must click "Ready to Reveal"
+   - Cards reveal SIMULTANEOUSLY when both are ready
+   - Edit CSS properties below to customize appearance:
+     - .combat-area padding: space inside combat container
+     - .combat-cards min-height: minimum height for card display area
+     - .combat-card width: individual card preview size
+   ═══════════════════════════════════════════════════════════════════════
+*/
+.combat-area {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px; margin-top: 16px;
+}
+
+.combat-placeholder {
+  text-align: center; color: var(--muted); padding: 20px;
+  font-size: 0.9rem;
+}
+
+.combat-header {
+  text-align: center; margin-bottom: 16px;
+}
+
+.combat-title {
+  font-size: 1.1rem; font-weight: 800; color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.combat-players {
+  font-size: 0.8rem; color: var(--muted);
+}
+
+.combat-main-content {
+  display: flex; gap: 16px; align-items: stretch; 
+  justify-content: center; margin-bottom: 16px;
+}
+
+.combat-side {
+  flex: 1; max-width: 180px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--r-sm); padding: 12px;
+  display: flex; flex-direction: column;
+}
+
+.combat-attacker, .combat-defender {
+  margin-bottom: 0;
+}
+
+.combat-section-title {
+  font-size: 0.85rem; font-weight: 700; margin-bottom: 4px;
+  color: var(--accent);
+}
+
+.combat-player-label {
+  font-size: 0.8rem; color: var(--text); font-weight: 600;
+  margin-bottom: 8px; border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+
+.combat-cards {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;
+  min-height: 100px; align-items: flex-start; justify-content: center;
+  flex: 1;
+}
+
+.combat-card {
+  width: 400px; aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
+  border: 2px solid var(--border2); background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; color: var(--muted);
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.combat-card:hover {
+  transform: translateY(-2px);
+}
+
+.combat-card.revealed {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(228, 200, 74, 0.3);
+}
+
+.combat-card.revealed img {
+  width: 140%; height: 140%; object-fit: contain; border-radius: var(--r-hand); /*mod combat zone card reveal size*/
+}
+
+.combat-card.face-down {
+  background: linear-gradient(135deg, var(--accent) 0%, rgba(228, 200, 74, 0.7) 100%);
+  color: var(--accent-text);
+  font-weight: 800;
+  position: relative;
+}
+
+.combat-card.face-down::after {
+  content: '🎴';
+  position: absolute;
+}
+
+.combat-ready-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.ready-status {
+  font-size: 0.75rem; font-weight: 700; text-align: center;
+  padding: 6px 10px; border-radius: var(--r-sm);
+  width: 100%;
+}
+
+.ready-status.ready {
+  background: rgba(76, 191, 116, 0.2);
+  color: var(--green);
+}
+
+.ready-status.not-ready {
+  background: rgba(217, 80, 80, 0.2);
+  color: var(--red);
+}
+
+.combat-vs-divider {
+  text-align: center; font-size: 1.8rem; font-weight: 800;
+  color: var(--accent); margin: 0 8px;
+  display: flex; align-items: center;
+  user-select: none;
+}
+
+.combat-reveal-status {
+  background: rgba(228, 200, 74, 0.1);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 12px;
+  border-radius: var(--r-sm);
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ready-indicator {
+  display: inline-block;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.combat-actions {
+  display: flex; gap: 8px; justify-content: center;
+  margin-top: 16px; flex-wrap: wrap;
+}
+
+/* Attack Target Selection Sheet */
+.attack-target-list {
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+
+/* LOBBY CONTROLS */
+.lobby-controls {
+  display: flex; gap: 12px; margin-top: auto;
+  flex-direction: column;
+}
+.lobby-controls .btn { flex: 1; }
+
+/* INFO SHEET SPECIAL ABILITY */
+#player-special-info {
+  margin-top: 16px; padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.special-ability-title {
+  font-size: 0.9rem; font-weight: 700; color: var(--accent);
+  margin-bottom: 8px;
+}
+.special-ability-desc {
+  font-size: 0.8rem; color: var(--muted); line-height: 1.4;
+}
+
+/* JOIN ROOM */
+.join-container {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 40px 20px;
+}
+.join-input-group {
+  width: 100%; max-width: 320px; margin-bottom: 24px;
+}
+.join-input-label {
+  font-size: 0.76rem; color: var(--muted); margin-bottom: 8px;
+  display: block; font-weight: 600;
+}
+.join-input {
+  width: 100%; padding: 16px; border-radius: var(--r);
+  background: var(--surface); border: 2px solid var(--border2);
+  color: var(--text); font-size: 1rem; font-weight: 600;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  text-align: center; letter-spacing: 0.15em; text-transform: uppercase;
+}
+.join-input:focus {
+  outline: none; border-color: var(--accent);
+}
+
+/* OTHER PLAYERS VIEW */
+.other-players-list {
+  padding: 14px;
+}
+.other-player-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px; margin-bottom: 14px;
+}
+.other-player-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+}
+.other-player-name {
+  font-size: 1rem; font-weight: 700; flex: 1;
+}
+.other-player-deck {
+  font-size: 0.72rem; color: var(--muted);
+}
+.other-player-hp {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+.other-hp-bar {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 10px; text-align: center;
+}
+.other-hp-label {
+  font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); font-weight: 600; margin-bottom: 4px;
+}
+.other-hp-value {
+  font-size: 1.3rem; font-weight: 800; color: var(--text);
+}
+
+/* REVEAL NOTIFICATION */
+.reveal-notification {
+  position: fixed; inset: 0; z-index: 95;
+  background: rgba(0,0,0,0.92);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px; opacity: 0; pointer-events: none;
+  transition: opacity .3s; backdrop-filter: blur(8px);
+}
+.reveal-notification.show { opacity: 1; pointer-events: all; }
+.reveal-notif-title {
+  font-size: 1.2rem; font-weight: 800; color: var(--accent);
+  margin-bottom: 8px; text-align: center;
+}
+.reveal-notif-subtitle {
+  font-size: 0.8rem; color: var(--muted); margin-bottom: 24px; text-align: center;
+}
+.reveal-cards-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+  max-width: 90vw; margin-bottom: 24px; max-height: 60vh; overflow-y: auto;
+}
+.reveal-card-item {
+  width: min(140px, 40vw); aspect-ratio: 2.5 / 3.5;
+  border-radius: var(--r-hand); overflow: hidden;
+  border: 2px solid var(--accent); background: var(--surface);
+}
+.reveal-card-item img { width: 100%; height: 100%; object-fit: cover; }
+
+.img-grid-editions { display: grid; grid-template-columns: var(--sel-col-edition); gap: 10px; }
+.edition-item {
+  position: relative; cursor: pointer; border-radius: var(--r-img); overflow: hidden;
+  border: 2px solid transparent; aspect-ratio: 1 / 1; background: var(--surface);
+  -webkit-tap-highlight-color: transparent; transition: border-color .13s, transform .13s;
+}
+.edition-item:active { transform: scale(0.96); border-color: var(--border2); }
+.edition-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.img-grid-decks { display: grid; grid-template-columns: var(--sel-col-deck); gap: 10px; }
+.deck-item {
+  position: relative; cursor: pointer; border-radius: var(--r-card-sel); overflow: hidden;
+  border: 2px solid transparent; aspect-ratio: 2.5 / 3.5; background: var(--surface);
+  -webkit-tap-highlight-color: transparent; transition: border-color .13s, transform .13s;
+}
+.deck-item:active { transform: scale(0.96); border-color: var(--border2); }
+.deck-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.info-btn {
+  position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(0,0,0,0.6); border: 1.5px solid rgba(255,255,255,0.18);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 5; font-size: 0.62rem; font-weight: 800; color: rgba(255,255,255,0.8);
+  -webkit-tap-highlight-color: transparent; transition: background .12s;
+}
+.info-btn:active { background: rgba(0,0,0,0.85); }
+
+#s-play { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#s-play::-webkit-scrollbar { display: none; }
+
+.play-bar {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(12,12,13,0.92); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+  padding: 48px 14px 10px;
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.play-bar-deck-img { width: 32px; height: 32px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border2); background: var(--surface); flex-shrink: 0; }
+.play-bar-deck-img img { width: 100%; height: 100%; object-fit: cover; }
+.play-bar-counts { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.02em; flex: 1; font-weight: 500; }
+.play-bar-info-btn {
+  width: 30px; height: 30px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 0.62rem; font-weight: 800; color: var(--muted);
+  -webkit-tap-highlight-color: transparent; transition: background .12s;
+}
+.play-bar-info-btn:active { background: var(--surface2); }
+
+.play-section { padding: 18px 14px 0; }
+.sec-label {
+  font-size: 0.56rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--muted); font-weight: 700; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.sec-count { font-size: 0.64rem; color: var(--border2); font-weight: 700; }
+
+.special-zone {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 16px;
+  margin-bottom: 10px;
+}
+.special-label {
+  font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); font-weight: 600; margin-bottom: 12px; text-align: center;
+}
+.special-content {
+  display: flex; gap: 14px; align-items: flex-start; justify-content: center;
+}
+.special-card-slot {
+  width: var(--special-card-w-size, var(--special-card-w)); height: var(--special-card-h-size, var(--special-card-h));
+  border-radius: var(--r-hand); overflow: hidden;
+  border: 2px solid var(--accent); background: var(--surface);
+  flex-shrink: 0; cursor: pointer;
+  transition: transform .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.special-card-slot:active { transform: scale(0.96); }
+.special-card-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.special-card-empty {
+  width: var(--special-card-w-size, var(--special-card-w)); height: var(--special-card-h-size, var(--special-card-h));
+  border-radius: var(--r-hand); border: 2px dashed var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 0.68rem; text-align: center;
+  flex-shrink: 0; padding: 12px;
+}
+.special-info {
+  flex: 1; display: flex; flex-direction: column; gap: 8px;
+  max-width: 180px;
+}
+.special-pile-count {
+  font-size: 0.7rem; color: var(--muted); font-weight: 600;
+  text-align: center; margin-bottom: 4px;
+}
+.special-btn {
+  width: 100%; padding: 12px; border-radius: 100px;
+  background: var(--accent); color: var(--accent-text);
+  font-size: 0.74rem; font-weight: 700; cursor: pointer;
+  border: none; transition: all .13s;
+  -webkit-tap-highlight-color: transparent;
+}
+.special-btn:active { filter: brightness(1.1); transform: scale(0.96); }
+.special-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+.hp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.hp-widget {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 10px 14px;
+  -webkit-tap-highlight-color: transparent;
+}
+.hp-heart { position: relative; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.hp-heart svg { display: block; }
+.hp-heart svg path { fill: var(--hp-color); }
+.hp-controls { display: flex; flex-direction: column; align-items: center; gap: 0; flex: 1; }
+.hp-label { font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+.hp-value { font-size: 1.4rem; font-weight: 800; line-height: 1; color: var(--text); text-align: center; }
+.hp-btn-row { display: flex; gap: 6px; margin-top: 6px; }
+.hp-btn {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 0.95rem; font-weight: 700; color: var(--text);
+  -webkit-tap-highlight-color: transparent; transition: background .12s; line-height: 1; user-select: none;
+}
+.hp-btn:active { background: var(--border2); }
+
+.draw-zone { display: flex; gap: 14px; align-items: center; }
+.draw-stack { position: relative; width: var(--card-w-draw); height: var(--card-h-draw); flex-shrink: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.draw-stack:active .stack-top { transform: translateY(-7px) rotate(3deg); }
+.stack-card {
+  position: absolute; width: var(--card-w-draw); height: var(--card-h-draw);
+  border-radius: var(--r-hand); border: 1.5px solid var(--border2); overflow: hidden; background: var(--surface);
+}
+.stack-card:nth-child(1) { bottom: 0; left: 4px; transform: rotate(-5deg); filter: brightness(0.55); }
+.stack-card:nth-child(2) { bottom: 2px; left: 2px; transform: rotate(-2deg); filter: brightness(0.75); }
+.stack-top { bottom: 5px; left: 0; border-color: var(--accent); transition: transform .16s ease; }
+.stack-top img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.stack-empty { width: var(--card-w-draw); height: var(--card-h-draw); border-radius: var(--r-hand); border: 2px dashed var(--border2); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 0.68rem; text-align: center; flex-shrink: 0; padding: 8px; }
+.draw-stack-badge { position: absolute; top: -6px; right: -6px; z-index: 2; background: var(--accent); color: var(--accent-text); font-size: 0.66rem; font-weight: 800; border-radius: 100px; padding: 2px 7px; }
+.draw-info { flex: 1; display: flex; flex-direction: column; gap: 7px; }
+.draw-big-num { font-size: 3rem; font-weight: 800; line-height: 1; color: var(--text); }
+.draw-sublabel { font-size: 0.64rem; color: var(--muted); font-weight: 500; margin-top: -4px; }
+.draw-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+
+.hand-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.select-hint { font-size: 0.68rem; color: var(--accent); font-weight: 700; }
+.hand-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 10px; }
+.hand-card {
+  position: relative; border-radius: var(--r-hand); overflow: hidden;
+  aspect-ratio: 2.5 / 3.5; cursor: pointer; border: 2px solid transparent;
+  transition: border-color .12s, transform .12s;
+  -webkit-tap-highlight-color: transparent; background: var(--surface);
+}
+.hand-card:active { transform: scale(0.93); }
+.hand-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(228,200,74,.22); }
+.hand-card.is-staged { border-color: var(--red); }
+.hand-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hand-check {
+  position: absolute; top: 4px; right: 4px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); border: 1.5px solid var(--bg);
+  display: none; align-items: center; justify-content: center;
+}
+.hand-card.selected .hand-check { display: flex; }
+.hand-check svg { width: 8px; height: 8px; stroke: var(--accent-text); fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.staged-ribbon {
+  position: absolute; top: 4px; left: 4px; background: var(--red); border-radius: 3px;
+  font-size: 0.42rem; font-weight: 800; color: #fff;
+  padding: 1px 4px; letter-spacing: 0.06em; text-transform: uppercase;
+}
+.select-actions { display: flex; gap: 7px; flex-wrap: wrap; padding: 4px 0 8px; }
+.hand-empty { grid-column: 1 / -1; text-align: center; padding: 32px 16px; color: var(--muted); font-size: 0.78rem; line-height: 1.8; font-weight: 500; }
+.hand-empty .ei { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+
+.staged-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.staged-row::-webkit-scrollbar { display: none; }
+.staged-card {
+  flex-shrink: 0; width: var(--card-w-staged); height: var(--card-h-staged); border-radius: var(--r-hand);
+  border: 1.5px solid var(--red); overflow: hidden; background: var(--surface);
+  box-shadow: 0 0 10px rgba(217,80,80,.2);
+}
+.staged-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.staged-empty { font-size: 0.76rem; color: var(--muted); padding: 14px 0; font-weight: 500; }
+.staged-actions { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 10px; }
+
+.intermediate-zone { display: flex; gap: 8px; flex-wrap: wrap; padding-bottom: 4px; }
+.intermediate-card {
+  flex-shrink: 0; width: var(--card-w-intermediate); height: var(--card-h-intermediate); border-radius: var(--r-hand);
+  border: 1.5px solid var(--purple); overflow: hidden; background: var(--surface);
+  box-shadow: 0 0 10px rgba(138,92,246,.15);
+  cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .12s;
+}
+.intermediate-card:active { transform: scale(0.95); }
+.intermediate-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.intermediate-empty { font-size: 0.76rem; color: var(--muted); padding: 14px 0; font-weight: 500; }
+
+.discard-zone { display: flex; gap: 14px; align-items: flex-start; }
+.discard-card {
+  width: var(--card-w-discard); height: var(--card-h-discard); border-radius: var(--r-hand); overflow: hidden;
+  border: 1.5px solid var(--border2); background: var(--surface);
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.4rem;
+}
+.discard-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.discard-info { flex: 1; }
+.discard-big { font-size: 3rem; font-weight: 800; line-height: 1; color: var(--text); }
+.discard-sublabel { font-size: 0.64rem; color: var(--muted); font-weight: 500; margin-top: -2px; margin-bottom: 10px; }
+.discard-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.play-bottom-pad { height: 52px; }
+
+.search-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; margin: 0 14px 20px; }
+.search-btn, .help-btn {
+  width: 100%; padding: 14px; border-radius: var(--r);
+  background: var(--surface2); border: 1.5px solid var(--border2);
+  color: var(--text); font-size: 0.8rem; font-weight: 600;
+  cursor: pointer; transition: all .13s; display: flex; align-items: center; justify-content: center; gap: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+.help-btn { margin-top: 10px; }
+.search-btn:active, .help-btn:active { background: var(--border); }
+.search-btn svg, .help-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+@keyframes dice-roll {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(90deg) scale(1.1); }
+  50% { transform: rotate(180deg) scale(1); }
+  75% { transform: rotate(270deg) scale(1.1); }
+}
+.dice-icon {
+  display: inline-block;
+  animation: dice-roll 0.6s ease-in-out;
+}
+
+.card-overlay {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(0,0,0,0.82);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px 20px; opacity: 0; pointer-events: none;
+  transition: opacity .2s; backdrop-filter: blur(6px);
+}
+.card-overlay.open { opacity: 1; pointer-events: all; }
+.card-enlarged {
+  width: min(240px, 62vw);
+  aspect-ratio: auto;
+  max-height: 70vh;
+  border-radius: 14px; overflow: hidden;
+  border: 2px solid var(--border2); background: var(--surface);
+  margin-bottom: 20px; box-shadow: 0 16px 48px rgba(0,0,0,.7); flex-shrink: 0;
+}
+.card-enlarged img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.card-overlay-actions { display: flex; flex-direction: column; gap: 9px; width: 100%; max-width: 280px; }
+.card-overlay-close {
+  position: absolute; top: 52px; right: 18px;
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--muted); font-size: 1rem;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.overlay-submenu { display: flex; flex-direction: column; gap: 7px; }
+.menu-back-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.7rem; color: var(--muted); font-weight: 600;
+  cursor: pointer; margin-bottom: 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+.menu-back-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
+#s-play-screen { background: var(--bg); z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+.play-screen-label { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 24px; }
+.play-screen-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: 90vw; margin-bottom: 32px; }
+.play-screen-card {
+  width: min(140px, 40vw); aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
+  border: 1.5px solid var(--border2); background: var(--surface);
+  position: relative; transform-style: preserve-3d; transition: transform 0.6s;
+}
+.play-screen-card.flipped { transform: rotateY(180deg); }
+.card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: var(--r-hand); overflow: hidden; }
+.card-face-back { background: var(--surface); transform: rotateY(0deg); }
+.card-face-back img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-face-front { transform: rotateY(180deg); }
+.card-face-front img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.play-screen-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; }
+
+.sheet-overlay {
+  position: fixed; inset: 0; z-index: 80;
+  background: rgba(0,0,0,0.72); display: flex; align-items: flex-end;
+  opacity: 0; pointer-events: none; transition: opacity .2s; backdrop-filter: blur(5px);
+}
+.sheet-overlay.open { opacity: 1; pointer-events: all; }
+.sheet {
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  width: 100%; max-height: 88dvh; display: flex; flex-direction: column;
+  transform: translateY(100%);
+  transition: transform .26s cubic-bezier(.32,.72,0,1);
+  border-top: 1px solid var(--border2);
+}
+.sheet-overlay.open .sheet { transform: translateY(0); }
+.sheet-handle { width: 30px; height: 3px; border-radius: 2px; background: var(--border2); margin: 10px auto 0; flex-shrink: 0; }
+.sheet-head {
+  padding: 12px 14px 12px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.sheet-title { font-size: 0.86rem; font-weight: 700; color: var(--text); }
+.sheet-close {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--surface2); border: none;
+  cursor: pointer; color: var(--muted); font-size: 0.9rem;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.sheet-body { flex: 1; overflow-y: auto; padding: 14px 14px 24px; }
+.sheet-body::-webkit-scrollbar { display: none; }
+
+.info-img-wrap { width: 100%; border-radius: var(--r); overflow: hidden; border: 1px solid var(--border2); background: var(--surface2); }
+.info-img-wrap img { width: 100%; display: block; }
+
+.browse-item {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  border-radius: var(--r); border: 1px solid var(--border);
+  background: var(--surface2); margin-bottom: 12px; padding: 16px;
+}
+.browse-card-big {
+  width: min(200px, 60vw); aspect-ratio: 2.5 / 3.5;
+  border-radius: var(--r-hand); overflow: hidden;
+  border: 1.5px solid var(--border2); background: var(--surface);
+  margin-bottom: 6px;
+}
+.browse-card-big img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.browse-info-text { font-size: 0.7rem; color: var(--muted); font-weight: 600; text-align: center; margin-bottom: 10px; }
+.browse-btns { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+
+.search-editions-grid { display: grid; grid-template-columns: var(--search-editions-cols); gap: 10px; }
+.search-decks-grid { display: grid; grid-template-columns: var(--search-decks-cols); gap: 10px; }
+.search-edition-section { margin-bottom: 28px; }
+.search-edition-title {
+  font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text); font-weight: 800; margin-bottom: 14px;
+  padding-bottom: 8px; border-bottom: 2px solid var(--border2);
+}
+.search-deck-section { margin-bottom: 18px; }
+.search-deck-title {
+  font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); font-weight: 700; margin-bottom: 10px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.search-cards-grid { display: grid; grid-template-columns: var(--search-cards-cols); gap: 8px; }
+.search-card-item {
+  aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand); overflow: hidden;
+  border: 2px solid var(--border2); background: var(--surface);
+  cursor: pointer; transition: border-color .12s, transform .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.search-card-item:active { transform: scale(0.95); border-color: var(--accent); }
+.search-card-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.help-section { margin-bottom: 24px; }
+.help-title {
+  font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent); font-weight: 800; margin-bottom: 12px;
+  padding-bottom: 8px; border-bottom: 2px solid var(--border2);
+}
+.help-subtitle {
+  font-size: 0.74rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text); font-weight: 700; margin: 16px 0 8px;
+}
+.help-text {
+  font-size: 0.76rem; color: var(--muted); line-height: 1.6; margin-bottom: 10px;
+}
+.help-button-list {
+  display: flex; flex-direction: column; gap: 12px; margin-top: 12px;
+}
+.help-button-item {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r-sm); padding: 12px;
+}
+.help-button-name {
+  font-size: 0.72rem; font-weight: 700; color: var(--accent); margin-bottom: 4px;
+}
+.help-button-desc {
+  font-size: 0.7rem; color: var(--muted); line-height: 1.5;
+}
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 0 18px; height: 42px; border-radius: 100px;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.76rem; font-weight: 700;
+  cursor: pointer; border: none; transition: all .13s;
+  -webkit-tap-highlight-color: transparent; white-space: nowrap;
+}
+.btn-accent  { background: var(--accent); color: var(--accent-text); }
+.btn-accent:active  { filter: brightness(1.1); transform: scale(0.96); }
+.btn-ghost   { background: transparent; color: var(--muted); border: 1.5px solid var(--border2); }
+.btn-ghost:active   { background: var(--surface2); color: var(--text); }
+.btn-surface { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-surface:active { background: var(--border); }
+.btn-red     { background: rgba(217,80,80,.12); color: var(--red); border: 1.5px solid rgba(217,80,80,.25); }
+.btn-red:active     { background: rgba(217,80,80,.2); }
+.btn-green   { background: rgba(76,191,116,.1); color: var(--green); border: 1.5px solid rgba(76,191,116,.25); }
+.btn-green:active   { background: rgba(76,191,116,.18); }
+.btn-purple  { background: rgba(138,92,246,.1); color: var(--purple); border: 1.5px solid rgba(138,92,246,.25); }
+.btn-purple:active  { background: rgba(138,92,246,.18); }
+.btn-sm  { height: 36px; padding: 0 14px; font-size: 0.72rem; }
+.btn-xs  { height: 28px; padding: 0 10px; font-size: 0.66rem; }
+.btn-full{ width: 100%; }
+.btn:disabled { opacity: 0.28; pointer-events: none; }
+
+#toast {
+  position: fixed; bottom: 68px; left: 50%; transform: translateX(-50%) translateY(8px);
+  background: var(--surface2); color: var(--text); border: 1px solid var(--border2);
+  font-size: 0.72rem; font-weight: 600; padding: 8px 16px;
+  border-radius: 100px; z-index: 200; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
+  box-shadow: 0 4px 24px rgba(0,0,0,.6);
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+
+<!-- Firebase Compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+
+</head>
+<body>
+
+<script>
+const EDITIONS = [
+  { id: "vol1", image: "EDITION Battle-of-Legends vol1.png", infoImage: "vol1_info.png", decks: ["kingarthur", "alice", "sinbad", "medusa"] },
+  { id: "vol2", image: "EDITION RobinHood-vs-Bigfoot.png", infoImage: "vol2_info.png", decks: ["robinhood", "bigfoot"] },
+  { id: "vol3", image: "EDITION sling&arrows.png", infoImage: "vol2_info.png", decks: ["shakespeare", "titania", "hamlet", "sisters"] },
+  { id: "vol4", image: "EDITION brains&brawn.png", infoImage: "vol2_info.png", decks: ["spiderman", "shehulk", "drstrange"] }
+];
+
+const DECKS = {  
+medusa: {
+
+            name: "MEDUSA",
+
+            image: "medusa_back.png",
+
+            infoImage: "medusa_info.png",
+
+            healthBars: [
+
+      { label: "Medusa", startValue: 16, color: "#4A7837", size: "large" },
+
+      { label: "Harpies alive", startValue: 3, color: "#68A84D", size: "small" }],
+
+      intermediateZone: null,
+
+            cards: [
+
+              { id: 1, image: "medusa_2 x A Momentary Glance.png" },
+
+              { id: 2, image: "medusa_2 x A Momentary Glance.png" },
+
+              { id: 3, image: "medusa_2 x The Hounds of Mighty Zeus.png" },
+
+              { id: 4, image: "medusa_2 x The Hounds of Mighty Zeus.png" },
+
+              { id: 5, image: "medusa_2 x Winged Frenzy.png" },
+
+              { id: 6, image: "medusa_2 x Winged Frenzy.png" },
+
+              { id: 7, image: "medusa_3 x Clutching Claws.png" },
+
+              { id: 8, image: "medusa_3 x Clutching Claws.png" },
+
+              { id: 9, image: "medusa_3 x Clutching Claws.png" },
+
+              { id: 10, image: "medusa_3 x Dash.png" },
+
+              { id: 11, image: "medusa_3 x Dash.png" },
+
+              { id: 12, image: "medusa_3 x Dash.png" },
+
+              { id: 13, image: "medusa_3 x Feint.png" },
+
+              { id: 14, image: "medusa_3 x Feint.png" },
+
+              { id: 15, image: "medusa_3 x Feint.png" },
+
+              { id: 16, image: "medusa_3 x Gaze of Stone.png" },
+
+              { id: 17, image: "medusa_3 x Gaze of Stone.png" },
+
+              { id: 18, image: "medusa_3 x Gaze of Stone.png" },
+
+              { id: 19, image: "medusa_3 x Hiss and Slither.png" },
+
+              { id: 20, image: "medusa_3 x Hiss and Slither.png" },
+
+              { id: 21, image: "medusa_3 x Hiss and Slither.png" },
+
+              { id: 22, image: "medusa_3 x Regroup.png" },
+
+              { id: 23, image: "medusa_3 x Regroup.png" },
+
+              { id: 24, image: "medusa_3 x Regroup.png" },
+
+              { id: 25, image: "medusa_3 x Second Shot.png" },
+
+              { id: 26, image: "medusa_3 x Second Shot.png" },
+
+              { id: 27, image: "medusa_3 x Second Shot.png" },
+
+              { id: 28, image: "medusa_3 x Snipe.png" },
+
+              { id: 29, image: "medusa_3 x Snipe.png" },
+
+              { id: 30, image: "medusa_3 x Snipe.png" },
+
+              ]
+
+  },
+
+kingarthur: {
+
+            name: "KING ARTHUR",
+
+            image: "king_arthur_back.png",
+
+            infoImage: "king_arthur_info.png",
+
+            healthBars: [
+
+      { label: "Arthur", startValue: 18, color: "#890606", size: "large" },
+
+      { label: "Merlin", startValue: 7, color: "#D70909", size: "medium" }],
+
+      intermediateZone: null,
+
+            cards: [
+
+  
+
+              { id: 1, image: "king_arthur_1 x Aid the Chosen One.png" },
+
+              { id: 2, image: "king_arthur_1 x Excalibur.png" },
+
+              { id: 3, image: "king_arthur_1 x Prophecy.png" },
+
+              { id: 4, image: "king_arthur_1 x Restless Spirits.png" },
+
+              { id: 5, image: "king_arthur_1 x The Aid of Morgana.png" },
+
+              { id: 6, image: "king_arthur_1 x The Holy Grail.png" },
+
+              { id: 7, image: "king_arthur_1 x The Lady of the Lake.png" },
+
+              { id: 8, image: "king_arthur_2 x Bewilderment.png" },
+
+              { id: 9, image: "king_arthur_2 x Bewilderment.png" },
+
+              { id: 10, image: "king_arthur_2 x Command the Storms.png" },
+
+              { id: 11, image: "king_arthur_2 x Command the Storms.png" },
+
+              { id: 12, image: "king_arthur_2 x Divine Intervention.png" },
+
+              { id: 13, image: "king_arthur_2 x Divine Intervention.png" },
+
+              { id: 14, image: "king_arthur_2 x Swift Strike.png" },
+
+              { id: 15, image: "king_arthur_2 x Swift Strike.png" },
+
+              { id: 16, image: "king_arthur_3 x Feint.png" },
+
+              { id: 17, image: "king_arthur_3 x Feint.png" },
+
+              { id: 18, image: "king_arthur_3 x Feint.png" },
+
+              { id: 19, image: "king_arthur_3 x Momentous Shift.png" },
+
+              { id: 20, image: "king_arthur_3 x Momentous Shift.png" },
+
+              { id: 21, image: "king_arthur_3 x Momentous Shift.png" },
+
+              { id: 22, image: "king_arthur_3 x Noble Sacrifice.png" },
+
+              { id: 23, image: "king_arthur_3 x Noble Sacrifice.png" },
+
+              { id: 24, image: "king_arthur_3 x Noble Sacrifice.png" },
+
+              { id: 25, image: "king_arthur_3 x Regroup.png" },
+
+              { id: 26, image: "king_arthur_3 x Regroup.png" },
+
+              { id: 27, image: "king_arthur_3 x Regroup.png" },
+
+              { id: 28, image: "king_arthur_3 x Skirmish.png" },
+
+              { id: 29, image: "king_arthur_3 x Skirmish.png" },
+
+              { id: 30, image: "king_arthur_3 x Skirmish.png" },
+
+              ]
+
+  },
+
+sinbad: {
+
+            name: "SINBAD",
+
+            image: "sinbad_back.png",
+
+            infoImage: "sinbad_info.png",
+
+            healthBars: [
+
+      { label: "Sinbad", startValue: 15, color: "#F8AD7E", size: "large" },
+
+      { label: "The Porter", startValue: 5, color: "#A8D5E2", size: "medium" }],
+
+      intermediateZone: null,
+
+            cards: [
+
+              { id: 1, image: "sinbad_1 x Voyage to the Island That Was a Whale.png" },
+
+              { id: 2, image: "sinbad_1 x Voyage to the City of the Man-Eating Apes.png" },
+
+              { id: 3, image: "sinbad_1 x Voyage Home.png" },
+
+              { id: 4, image: "sinbad_1 x Commanding Impact.png" },
+
+              { id: 5, image: "sinbad_1 x Voyage to the Valley of the Giant Snakes.png" },
+
+              { id: 6, image: "sinbad_1 x Voyage to the City of the King of Serendib.png" },
+
+              { id: 7, image: "sinbad_1 x Voyage to the Creature With Eyes Like Coals of Fire.png" },
+
+              { id: 8, image: "sinbad_1 x Voyage to the Cannibals With the Root of Madness.png" },
+
+              { id: 9, image: "sinbad_2 x Riches Beyond Compare.png" },
+
+              { id: 10, image: "sinbad_2 x Riches Beyond Compare.png" },
+
+              { id: 11, image: "sinbad_2 x Leap Away.png" },
+
+              { id: 12, image: "sinbad_2 x Leap Away.png" },
+
+              { id: 13, image: "sinbad_2 x Exploit.png" },
+
+              { id: 14, image: "sinbad_2 x Exploit.png" },
+
+              { id: 15, image: "sinbad_3 x By Fortune and Fate.png" },
+
+              { id: 16, image: "sinbad_3 x By Fortune and Fate.png" },
+
+              { id: 17, image: "sinbad_3 x By Fortune and Fate.png" },
+
+              { id: 18, image: "sinbad_3 x Regroup.png" },
+
+              { id: 19, image: "sinbad_3 x Regroup.png" },
+
+              { id: 20, image: "sinbad_3 x Regroup.png" },
+
+              { id: 21, image: "sinbad_3 x Momentous Shift.png" },
+
+              { id: 22, image: "sinbad_3 x Momentous Shift.png" },
+
+              { id: 23, image: "sinbad_3 x Momentous Shift.png" },
+
+              { id: 24, image: "sinbad_3 x Feint.png" },
+
+              { id: 25, image: "sinbad_3 x Feint.png" },
+
+              { id: 26, image: "sinbad_3 x Feint.png" },
+
+              { id: 27, image: "sinbad_4 x Toil and Danger.png" },
+
+              { id: 28, image: "sinbad_4 x Toil and Danger.png" },
+
+              { id: 29, image: "sinbad_4 x Toil and Danger.png" },
+
+              { id: 30, image: "sinbad_4 x Toil and Danger.png" },
+
+              ]
+
+  },
+
+alice: {
+
+            name: "ALICE",
+
+            image: "alice_back.png",
+
+            infoImage: "alice_info.png",
+
+            healthBars: [
+
+      { label: "Alice", startValue: 13, color: "#DA4A6B", size: "large" },
+
+      { label: "The Jabberwock", startValue: 8, color: "#79A2D1", size: "medium" }],
+
+      intermediateZone: null,
+    specialAbility: {
+      enabled: true,
+      label: "Size",
+      buttonText: "Change Size",
+      mode: "swap",  // swap between two images
+      deck: [
+        { id: 1, image: "Alice_AbilityBIG.png" },
+        { id: 2, image: "Alice_AbilitySMALL.png" }
+      ]
+    },
+
+            cards: [
+
+              { id: 1, image: "alice_1 x O Frabjous Day!.png" },
+
+              { id: 2, image: "alice_1 x Snicker-Snack.png" },
+
+              { id: 3, image: "alice_1 x The Other Side of the Mushroom.png" },
+
+              { id: 4, image: "alice_2 x Claws That Catch.png" },
+
+              { id: 5, image: "alice_2 x Claws That Catch.png" },
+
+              { id: 6, image: "alice_2 x Drink Me.png" },
+
+              { id: 7, image: "alice_2 x Drink Me.png" },
+
+              { id: 8, image: "alice_2 x Eat Me.png" },
+
+              { id: 9, image: "alice_2 x Eat Me.png" },
+
+              { id: 10, image: "alice_2 x Jaws That Bite.png" },
+
+              { id: 11, image: "alice_2 x Jaws That Bite.png" },
+
+              { id: 12, image: "alice_2 x Looking Glass.png" },
+
+              { id: 13, image: "alice_2 x Looking Glass.png" },
+
+              { id: 14, image: "alice_2 x Mad as a Hatter.png" },
+
+              { id: 15, image: "alice_2 x Mad as a Hatter.png" },
+
+              { id: 16, image: "alice_2 x Manxome Foe.png" },
+
+              { id: 17, image: "alice_2 x Manxome Foe.png" },
+
+              { id: 18, image: "alice_2 x Momentous Shift.png" },
+
+              { id: 19, image: "alice_2 x Momentous Shift.png" },
+
+              { id: 20, image: "alice_2 x Skirmish.png" },
+
+              { id: 21, image: "alice_2 x Skirmish.png" },
+
+              { id: 22, image: "alice_3 x Feint.png" },
+
+              { id: 23, image: "alice_3 x Feint.png" },
+
+              { id: 24, image: "alice_3 x Feint.png" },
+
+              { id: 25, image: "alice_3 x I'm Late, I'm Late.png" },
+
+              { id: 26, image: "alice_3 x I'm Late, I'm Late.png" },
+
+              { id: 27, image: "alice_3 x I'm Late, I'm Late.png" },
+
+              { id: 28, image: "alice_3 x Regroup.png" },
+
+              { id: 29, image: "alice_3 x Regroup.png" },
+
+              { id: 30, image: "alice_3 x Regroup.png" },
+
+            ]
+
+          },
+
+bigfoot: {
+
+            name: "BIGFOOT",
+
+            image: "bigfoot_back.jpg",
+
+            infoImage: "bigfoot_info.png",
+
+            healthBars: [
+
+      { label: "Bigfoot", startValue: 16, color: "#754634", size: "large" },
+
+      { label: "The Jackalope", startValue: 6, color: "#DA8164", size: "medium" }],
+
+      intermediateZone: null,
+
+            cards: [
+
+              { id: 1, image: "bigfoot_2 x It's Just Your Imagination.png" },
+
+              { id: 2, image: "bigfoot_2 x It's Just Your Imagination.png" },
+
+              { id: 3, image: "bigfoot_2 x Crash Through the Trees.png" },
+
+              { id: 4, image: "bigfoot_2 x Crash Through the Trees.png" },
+
+              { id: 5, image: "bigfoot_2 x Disengage.png" },
+
+              { id: 6, image: "bigfoot_2 x Disengage.png" },
+
+              { id: 7, image: "bigfoot_3 x Savagery.png" },
+
+              { id: 8, image: "bigfoot_3 x Savagery.png" },
+
+              { id: 9, image: "bigfoot_3 x Savagery.png" },
+
+              { id: 10, image: "bigfoot_3 x Feint.png" },
+
+              { id: 11, image: "bigfoot_3 x Feint.png" },
+
+              { id: 12, image: "bigfoot_3 x Feint.png" },
+
+              { id: 13, image: "bigfoot_3 x Momentous Shift.png" },
+
+              { id: 14, image: "bigfoot_3 x Momentous Shift.png" },
+
+              { id: 15, image: "bigfoot_3 x Momentous Shift.png" },
+
+              { id: 16, image: "bigfoot_3 x Jackalope Horns.png" },
+
+              { id: 17, image: "bigfoot_3 x Jackalope Horns.png" },
+
+              { id: 18, image: "bigfoot_3 x Jackalope Horns.png" },
+
+              { id: 19, image: "bigfoot_3 x Hoax.png" },
+
+              { id: 20, image: "bigfoot_3 x Hoax.png" },
+
+              { id: 21, image: "bigfoot_3 x Hoax.png" },
+
+              { id: 22, image: "bigfoot_3 x Skirmish.png" },
+
+              { id: 23, image: "bigfoot_3 x Skirmish.png" },
+
+              { id: 24, image: "bigfoot_3 x Skirmish.png" },
+
+              { id: 25, image: "bigfoot_3 x Larger Than Life.png" },
+
+              { id: 26, image: "bigfoot_3 x Larger Than Life.png" },
+
+              { id: 27, image: "bigfoot_3 x Larger Than Life.png" },
+
+              { id: 28, image: "bigfoot_3 x Regroup.png" },
+
+              { id: 29, image: "bigfoot_3 x Regroup.png" },
+
+              { id: 30, image: "bigfoot_3 x Regroup.png" },
+
+            ]
+
+          },
+
+robinhood: {
+
+            name: "ROBIN HOOD",
+
+            image: "robinhood_back.jpg",
+
+            infoImage: "robinhood_info.png",
+
+            healthBars: [
+
+      { label: "Robin Hood", startValue: 13, color: "#5CBE8A", size: "large" },
+
+      { label: "Outlaws alive", startValue: 4, color: "#D14C44", size: "small" }],
+
+      intermediateZone: null,
+
+            cards: [
+
+              { id: 1, image: "robinhood_3 x A Hunter's Eye.png" },
+
+              { id: 2, image: "robinhood_3 x A Hunter's Eye.png" },
+
+              { id: 3, image: "robinhood_3 x A Hunter's Eye.png" },
+
+              { id: 4, image: "robinhood_2 x Disarming Shot.png" },
+
+              { id: 5, image: "robinhood_2 x Disarming Shot.png" },
+
+              { id: 6, image: "robinhood_4 x Highway Robbery.png" },
+
+              { id: 7, image: "robinhood_4 x Highway Robbery.png" },
+
+              { id: 8, image: "robinhood_4 x Highway Robbery.png" },
+
+              { id: 9, image: "robinhood_4 x Highway Robbery.png" },
+
+              { id: 10, image: "robinhood_2 x Ambush.png" },
+
+              { id: 11, image: "robinhood_2 x Ambush.png" },
+
+              { id: 12, image: "robinhood_2 x Piercing Shot.png" },
+
+              { id: 13, image: "robinhood_2 x Piercing Shot.png" },
+
+              { id: 14, image: "robinhood_3 x Snark.png" },
+
+              { id: 15, image: "robinhood_3 x Snark.png" },
+
+              { id: 16, image: "robinhood_3 x Snark.png" },
+
+              { id: 17, image: "robinhood_3 x Wily Fighting.png" },
+
+              { id: 18, image: "robinhood_3 x Wily Fighting.png" },
+
+              { id: 19, image: "robinhood_3 x Wily Fighting.png" },
+
+              { id: 20, image: "robinhood_3 x Feint.png" },
+
+              { id: 21, image: "robinhood_3 x Feint.png" },
+
+              { id: 22, image: "robinhood_3 x Feint.png" },
+
+              { id: 23, image: "robinhood_3 x Steal From the Rich.png" },
+
+              { id: 24, image: "robinhood_3 x Steal From the Rich.png" },
+
+              { id: 25, image: "robinhood_3 x Steal From the Rich.png" },
+
+              { id: 26, image: "robinhood_2 x Defenders of Sherwood.png" },
+
+              { id: 27, image: "robinhood_2 x Defenders of Sherwood.png" },
+
+              { id: 28, image: "robinhood_3 x Regroup.png" },
+
+              { id: 29, image: "robinhood_3 x Regroup.png" },
+
+              { id: 30, image: "robinhood_3 x Regroup.png" },
+
+            ]
+
+          },
+
+hamlet: {
+
+            name: "HAMLET",
+
+            image: "hamlet_back.png",
+
+            infoImage: "hamlet_info.png",
+
+            healthBars: [
+
+      { label: "Hamlet", startValue: 15, color: "#C5242D", size: "large" },
+
+      { label: "Rosencrantz & Guildenstern", startValue: 6, color: "#545960", size: "medium" }],
+
+      intermediateZone: null,
+
+    specialAbility: {
+      enabled: true,
+      label: "Question",
+      buttonText: "Ponder the Question",
+      mode: "swap",  // swap between two images
+      deck: [
+        { id: 1, image: "hamlet_Ability_NotToBe.png" },
+        { id: 2, image: "hamlet_Ability_ToBe.png" }
+      ]
+    },
+
+            cards: [
+
+              { id: 1, image: "hamlet_3 x To Sleep, Perchance To Dream.png" },
+
+              { id: 2, image: "hamlet_3 x To Sleep, Perchance To Dream.png" },
+
+              { id: 3, image: "hamlet_3 x To Sleep, Perchance To Dream.png" },
+
+              { id: 4, image: "hamlet_3 x Blood Will Have Blood.png" },
+
+              { id: 5, image: "hamlet_3 x Blood Will Have Blood.png" },
+
+              { id: 6, image: "hamlet_3 x Blood Will Have Blood.png" },
+
+              { id: 7, image: "hamlet_3 x Nothing Either Good Or Bad.png" },
+
+              { id: 8, image: "hamlet_3 x Nothing Either Good Or Bad.png" },
+
+              { id: 9, image: "hamlet_3 x Nothing Either Good Or Bad.png" },
+
+              { id: 10, image: "hamlet_3 x The Play's The Thing.png" },
+
+              { id: 11, image: "hamlet_3 x The Play's The Thing.png" },
+
+              { id: 12, image: "hamlet_3 x The Play's The Thing.png" },
+
+              { id: 13, image: "hamlet_3 x Uncertain Doom.png" },
+
+              { id: 14, image: "hamlet_3 x Uncertain Doom.png" },
+
+              { id: 15, image: "hamlet_3 x Uncertain Doom.png" },
+
+              { id: 16, image: "hamlet_3 x Method In The Madness.png" },
+
+              { id: 17, image: "hamlet_3 x Method In The Madness.png" },
+
+              { id: 18, image: "hamlet_3 x Method In The Madness.png" },
+
+              { id: 19, image: "hamlet_2 x The Ghost.png" },
+
+              { id: 20, image: "hamlet_2 x The Ghost.png" },
+
+              { id: 21, image: "hamlet_2 x The Readiness Is All.png" },
+
+              { id: 22, image: "hamlet_2 x The Readiness Is All.png" },
+
+              { id: 23, image: "hamlet_2 x Maddening Insight.png" },
+
+              { id: 24, image: "hamlet_2 x Maddening Insight.png" },
+
+              { id: 25, image: "hamlet_2 x Outrageous Fortune.png" },
+
+              { id: 26, image: "hamlet_2 x Outrageous Fortune.png" },
+
+              { id: 27, image: "hamlet_2 x The Rest Is Silence.png" },
+
+              { id: 28, image: "hamlet_2 x The Rest Is Silence.png" },
+
+              { id: 29, image: "hamlet_2 x Cruel To Be Kind.png" },
+
+              { id: 30, image: "hamlet_2 x Cruel To Be Kind.png" },
+
+            ]
+
+          },
+
+titania: {
+
+            name: "TITANIA",
+
+            image: "titania_back.png",
+
+            infoImage: "titania_info.png",
+
+            healthBars: [
+
+      { label: "Titania", startValue: 12, color: "#7B449A", size: "large" },
+
+      { label: "Oberon", startValue: 6, color: "#827BB4", size: "medium" }],
+
+      intermediateZone: null,
+specialAbility: {
+      enabled: true,
+      label: "Glamour",
+      buttonText: "Change Glamour",
+      mode: "discard",  // swap between two images
+      deck: [
+        { id: 1, image: "titania_ability1.png" },
+        { id: 2, image: "titania_ability2.png" },
+        { id: 3, image: "titania_ability3.png" },
+        { id: 4, image: "titania_ability4.png" },
+        { id: 5, image: "titania_ability5.png" },
+        { id: 6, image: "titania_ability6.png" }
+      ]
+    },
+
+            cards: [
+
+              { id: 1, image: "titania_3 x As Wise As Beautiful.png" },
+
+              { id: 2, image: "titania_3 x As Wise As Beautiful.png" },
+
+              { id: 3, image: "titania_3 x As Wise As Beautiful.png" },
+
+              { id: 4, image: "titania_3 x Met By Moonlight.png" },
+
+              { id: 5, image: "titania_3 x Met By Moonlight.png" },
+
+              { id: 6, image: "titania_3 x Met By Moonlight.png" },
+
+              { id: 7, image: "titania_3 x Protection Of The Fairy Woods.png" },
+
+              { id: 8, image: "titania_3 x Protection Of The Fairy Woods.png" },
+
+              { id: 9, image: "titania_3 x Protection Of The Fairy Woods.png" },
+
+              { id: 10, image: "titania_3 x Fairy Song.png" },
+
+              { id: 11, image: "titania_3 x Fairy Song.png" },
+
+              { id: 12, image: "titania_3 x Fairy Song.png" },
+
+              { id: 13, image: "titania_3 x Gift Of The Fair Folk.png" },
+
+              { id: 14, image: "titania_3 x Gift Of The Fair Folk.png" },
+
+              { id: 15, image: "titania_3 x Gift Of The Fair Folk.png" },
+
+              { id: 16, image: "titania_3 x Whisked Away.png" },
+
+              { id: 17, image: "titania_3 x Whisked Away.png" },
+
+              { id: 18, image: "titania_3 x Whisked Away.png" },
+
+              { id: 19, image: "titania_2 x The Moon Looks Down.png" },
+
+              { id: 20, image: "titania_2 x The Moon Looks Down.png" },
+
+              { id: 21, image: "titania_2 x What Fools These Mortals Be.png" },
+
+              { id: 22, image: "titania_2 x What Fools These Mortals Be.png" },
+
+              { id: 23, image: "titania_2 x A Momentary Glance.png" },
+
+              { id: 24, image: "titania_2 x A Momentary Glance.png" },
+
+              { id: 25, image: "titania_2 x But A Dream.png" },
+
+              { id: 26, image: "titania_2 x But A Dream.png" },
+
+              { id: 27, image: "titania_2 x Parting Gift.png" },
+
+              { id: 28, image: "titania_2 x Parting Gift.png" },
+
+              { id: 29, image: "titania_2 x Queen Of The Fairies.png" },
+
+              { id: 30, image: "titania_2 x Queen Of The Fairies.png" },
+
+            ]
+
+          },
+
+shakespeare: {
+
+            name: "SHAKESPEARE",
+
+            image: "shakespeare_back.png",
+
+            infoImage: "shakespeare_info.png",
+
+            healthBars: [
+
+      { label: "Shakespeare", startValue: 13, color: "#947F5D", size: "large" },
+
+      { label: "Actors alive", startValue: 3, color: "#EDE8C4", size: "small" }],
+
+      intermediateZone: { enabled: true, name: "Shakespeare's line" },
+
+            cards: [
+
+              { id: 1, image: "shakespeare_3 x Deceive.png" },
+
+              { id: 2, image: "shakespeare_3 x Deceive.png" },
+
+              { id: 3, image: "shakespeare_3 x Deceive.png" },
+
+              { id: 4, image: "shakespeare_3 x My Kingdom For a Horse.png" },
+
+              { id: 5, image: "shakespeare_3 x My Kingdom For a Horse.png" },
+
+              { id: 6, image: "shakespeare_3 x My Kingdom For a Horse.png" },
+
+              { id: 7, image: "shakespeare_3 x Again.png" },
+
+              { id: 8, image: "shakespeare_3 x Again.png" },
+
+              { id: 9, image: "shakespeare_3 x Again.png" },
+
+              { id: 10, image: "shakespeare_2 x Once More Unto The Breach.png" },
+
+              { id: 11, image: "shakespeare_2 x Once More Unto The Breach.png" },
+
+              { id: 12, image: "shakespeare_2 x Revise.png" },
+
+              { id: 13, image: "shakespeare_2 x Revise.png" },
+
+              { id: 14, image: "shakespeare_2 x Alas.png" },
+
+              { id: 15, image: "shakespeare_2 x Alas.png" },
+
+              { id: 16, image: "shakespeare_2 x Places, Places!.png" },
+
+              { id: 17, image: "shakespeare_2 x Places, Places!.png" },
+
+              { id: 18, image: "shakespeare_2 x The Ides Of March.png" },
+
+              { id: 19, image: "shakespeare_2 x The Ides Of March.png" },
+
+              { id: 20, image: "shakespeare_2 x All Are Punished.png" },
+
+              { id: 21, image: "shakespeare_2 x All Are Punished.png" },
+
+              { id: 22, image: "shakespeare_2 x Et Tu, Brute.png" },
+
+              { id: 23, image: "shakespeare_2 x Et Tu, Brute.png" },
+
+              { id: 24, image: "shakespeare_2 x Such Sweet Sorrow.png" },
+
+              { id: 25, image: "shakespeare_2 x Such Sweet Sorrow.png" },
+
+              { id: 26, image: "shakespeare_1 x Horror1.png" },
+
+              { id: 27, image: "shakespeare_1 x Horror2.png" },
+
+              { id: 28, image: "shakespeare_1 x Horror3.png" },
+
+              { id: 29, image: "shakespeare_1 x Horror4.png" },
+
+              { id: 30, image: "shakespeare_1 x Horror5.png" },
+
+            ]
+
+          },
+
+sisters: {
+
+            name: "THE WAYWARD SISTERS",
+
+            image: "sisters_back.png",
+
+            infoImage: "sisters_info.png",
+
+            healthBars: [
+
+      { label: "Sceptre", startValue: 6, color: "#BADA6D", size: "medium" },
+
+      { label: "Book", startValue: 6, color: "#99C563", size: "medium" },
+
+      { label: "Aargh", startValue: 6, color: "#78B058", size: "medium" }],
+
+      intermediateZone: { enabled: true, name: "Sisters' Cauldron" },
+specialAbility: {
+      enabled: true,
+      label: "Cauldron",
+      buttonText: "This does nothing lol",
+      mode: "swap",  // swap between two images
+      deck: [
+        { id: 1, image: "sisters_Ability.png" }
+      ]
+    },
+
+            cards: [
+
+              { id: 1, image: "sisters_3 x Fire Burn And Cauldron Bubble.png" },
+
+              { id: 2, image: "sisters_3 x Fire Burn And Cauldron Bubble.png" },
+
+              { id: 3, image: "sisters_3 x Fire Burn And Cauldron Bubble.png" },
+
+              { id: 4, image: "sisters_3 x Ward.png" },
+
+              { id: 5, image: "sisters_3 x Ward.png" },
+
+              { id: 6, image: "sisters_3 x Ward.png" },
+
+              { id: 7, image: "sisters_3 x Toil And Trouble.png" },
+
+              { id: 8, image: "sisters_3 x Toil And Trouble.png" },
+
+              { id: 9, image: "sisters_3 x Toil And Trouble.png" },
+
+              { id: 10, image: "sisters_3 x Double, Double.png" },
+
+              { id: 11, image: "sisters_3 x Double, Double.png" },
+
+              { id: 12, image: "sisters_3 x Double, Double.png" },
+
+              { id: 13, image: "sisters_3 x Hurly-Burly.png" },
+
+              { id: 14, image: "sisters_3 x Hurly-Burly.png" },
+
+              { id: 15, image: "sisters_3 x Hurly-Burly.png" },
+
+              { id: 16, image: "sisters_3 x The Stars Align.png" },
+
+              { id: 17, image: "sisters_3 x The Stars Align.png" },
+
+              { id: 18, image: "sisters_3 x The Stars Align.png" },
+
+              { id: 19, image: "sisters_2 x Something Wicked This Way Comes.png" },
+
+              { id: 20, image: "sisters_2 x Something Wicked This Way Comes.png" },
+
+              { id: 21, image: "sisters_2 x Curious Familiar.png" },
+
+              { id: 22, image: "sisters_2 x Curious Familiar.png" },
+
+              { id: 23, image: "sisters_2 x Pricking Of My Thumbs.png" },
+
+              { id: 24, image: "sisters_2 x Pricking Of My Thumbs.png" },
+
+              { id: 25, image: "sisters_2 x Prophecy.png" },
+
+              { id: 26, image: "sisters_2 x Prophecy.png" },
+
+              { id: 27, image: "sisters_2 x Unnatural Remedy.png" },
+
+              { id: 28, image: "sisters_2 x Unnatural Remedy.png" },
+
+              { id: 29, image: "sisters_2 x All-Seeing Familiar.png" },
+
+              { id: 30, image: "sisters_2 x All-Seeing Familiar.png" },
+
+            ]
+
+          },
+
+spiderman: {
+
+            name: "SPIDERMAN",
+
+            image: "spiderman_back.png",
+
+            infoImage: "spiderman_info.png",
+
+            healthBars: [
+
+      { label: "spiderman", startValue: 15, color: "#E92824", size: "large" }],
+
+      intermediateZone: null,
+
+            cards: [
+
+              { id: 1, image: "spiderman_3 x Spider-Sense Tingling!.png" },
+
+              { id: 2, image: "spiderman_3 x Spider-Sense Tingling!.png" },
+
+              { id: 3, image: "spiderman_3 x Spider-Sense Tingling!.png" },
+
+              { id: 4, image: "spiderman_3 x Thwip!.png" },
+
+              { id: 5, image: "spiderman_3 x Thwip!.png" },
+
+              { id: 6, image: "spiderman_3 x Thwip!.png" },
+
+              { id: 7, image: "spiderman_3 x Counter-Attack.png" },
+
+              { id: 8, image: "spiderman_3 x Counter-Attack.png" },
+
+              { id: 9, image: "spiderman_3 x Counter-Attack.png" },
+
+              { id: 10, image: "spiderman_3 x Momentous Shift.png" },
+
+              { id: 11, image: "spiderman_3 x Momentous Shift.png" },
+
+              { id: 12, image: "spiderman_3 x Momentous Shift.png" },
+
+              { id: 13, image: "spiderman_3 x Swinging Kick.png" },
+
+              { id: 14, image: "spiderman_3 x Swinging Kick.png" },
+
+              { id: 15, image: "spiderman_3 x Swinging Kick.png" },
+
+              { id: 16, image: "spiderman_3 x Web Shooters.png" },
+
+              { id: 17, image: "spiderman_3 x Web Shooters.png" },
+
+              { id: 18, image: "spiderman_3 x Web Shooters.png" },
+
+              { id: 19, image: "spiderman_2 x Friendly Neighborhood Spider-Man.png" },
+
+              { id: 20, image: "spiderman_2 x Friendly Neighborhood Spider-Man.png" },
+
+              { id: 21, image: "spiderman_2 x Disarming Shot.png" },
+
+              { id: 22, image: "spiderman_2 x Disarming Shot.png" },
+
+              { id: 23, image: "spiderman_2 x Snark.png" },
+
+              { id: 24, image: "spiderman_2 x Snark.png" },
+
+              { id: 25, image: "spiderman_2 x Wall Crawler.png" },
+
+              { id: 26, image: "spiderman_2 x Wall Crawler.png" },
+
+              { id: 27, image: "spiderman_2 x With Great Power.png" },
+
+              { id: 28, image: "spiderman_2 x With Great Power.png" },
+
+              { id: 29, image: "spiderman_2 x Right in the Face!.png" },
+
+              { id: 30, image: "spiderman_2 x Right in the Face!.png" },
+
+            ]
+
+          },
+
+drstrange: {
+
+            name: "DR.STRANGE",
+
+            image: "drstrange_back.png",
+
+            infoImage: "drstrange_info.png",
+
+            healthBars: [
+
+      { label: "Dr.Strange", startValue: 14, color: "#C82026", size: "large" },
+
+      { label: "Wong", startValue: 6, color: "#F1EC21", size: "medium" }],
+
+	intermediateZone: null,
+	
+            cards: [
+
+              { id: 1, image: "drstrange_4 x Bolts of Balthakk.png" },
+
+              { id: 2, image: "drstrange_4 x Bolts of Balthakk.png" },
+
+              { id: 3, image: "drstrange_4 x Bolts of Balthakk.png" },
+
+              { id: 4, image: "drstrange_4 x Bolts of Balthakk.png" },
+
+              { id: 5, image: "drstrange_3 x The Mists of Munnopor.png" },
+
+              { id: 6, image: "drstrange_3 x The Mists of Munnopor.png" },
+
+              { id: 7, image: "drstrange_3 x The Mists of Munnopor.png" },
+
+              { id: 8, image: "drstrange_3 x Seven Suns of Cinnibus.png" },
+
+              { id: 9, image: "drstrange_3 x Seven Suns of Cinnibus.png" },
+
+              { id: 10, image: "drstrange_3 x Seven Suns of Cinnibus.png" },
+
+              { id: 11, image: "drstrange_3 x Steadfast Disciple.png" },
+
+              { id: 12, image: "drstrange_3 x Steadfast Disciple.png" },
+
+              { id: 13, image: "drstrange_3 x Steadfast Disciple.png" },
+
+              { id: 14, image: "drstrange_3 x The Winds of Watoomb.png" },
+
+              { id: 15, image: "drstrange_3 x The Winds of Watoomb.png" },
+
+              { id: 16, image: "drstrange_3 x The Winds of Watoomb.png" },
+
+              { id: 17, image: "drstrange_3 x Master of Kamar-Taj.png" },
+
+              { id: 18, image: "drstrange_3 x Master of Kamar-Taj.png" },
+
+              { id: 19, image: "drstrange_3 x Master of Kamar-Taj.png" },
+
+              { id: 20, image: "drstrange_3 x The Rings of Raggadorr.png" },
+
+              { id: 21, image: "drstrange_3 x The Rings of Raggadorr.png" },
+
+              { id: 22, image: "drstrange_3 x The Rings of Raggadorr.png" },
+
+              { id: 23, image: "drstrange_2 x Feint.png" },
+
+              { id: 24, image: "drstrange_2 x Feint.png" },
+
+              { id: 25, image: "drstrange_2 x Eye of Agamotto.png" },
+
+              { id: 26, image: "drstrange_2 x Eye of Agamotto.png" },
+
+              { id: 27, image: "drstrange_2 x Cloak of Levitation.png" },
+
+              { id: 28, image: "drstrange_2 x Cloak of Levitation.png" },
+
+              { id: 29, image: "drstrange_2 x No Really, I'm a Doctor.png" },
+
+              { id: 30, image: "drstrange_2 x No Really, I'm a Doctor.png" },
+
+            ]
+
+          },
+
+shehulk: {
+
+            name: "SHEHULK",
+
+            image: "shehulk_back.png",
+
+            infoImage: "shehulk_info.png",
+
+            healthBars: [
+
+      { label: "She Hulk", startValue: 20, color: "#78B058", size: "large" }],
+
+	intermediateZone: null,
+	
+            cards: [
+
+              { id: 1, image: "shehulk_3 x Nerve Cluster Strike.png" },
+
+              { id: 2, image: "shehulk_3 x Nerve Cluster Strike.png" },
+
+              { id: 3, image: "shehulk_3 x Nerve Cluster Strike.png" },
+
+              { id: 4, image: "shehulk_3 x Lady Justice.png" },
+
+              { id: 5, image: "shehulk_3 x Lady Justice.png" },
+
+              { id: 6, image: "shehulk_3 x Lady Justice.png" },
+
+              { id: 7, image: "shehulk_3 x Sensational.png" },
+
+              { id: 8, image: "shehulk_3 x Sensational.png" },
+
+              { id: 9, image: "shehulk_3 x Sensational.png" },
+
+              { id: 10, image: "shehulk_3 x Cease and Desist.png" },
+
+              { id: 11, image: "shehulk_3 x Cease and Desist.png" },
+
+              { id: 12, image: "shehulk_3 x Cease and Desist.png" },
+
+              { id: 13, image: "shehulk_3 x Green Energy.png" },
+
+              { id: 14, image: "shehulk_3 x Green Energy.png" },
+
+              { id: 15, image: "shehulk_3 x Green Energy.png" },
+
+              { id: 16, image: "shehulk_3 x Legalese.png" },
+
+              { id: 17, image: "shehulk_3 x Legalese.png" },
+
+              { id: 18, image: "shehulk_3 x Legalese.png" },
+
+              { id: 19, image: "shehulk_2 x Jennifer Walters, Esq.png" },
+
+              { id: 20, image: "shehulk_2 x Jennifer Walters, Esq.png" },
+
+              { id: 21, image: "shehulk_2 x Leap Toward.png" },
+
+              { id: 22, image: "shehulk_2 x Leap Toward.png" },
+
+              { id: 23, image: "shehulk_2 x Omega-Level Threat.png" },
+
+              { id: 24, image: "shehulk_2 x Omega-Level Threat.png" },
+
+              { id: 25, image: "shehulk_2 x Double Jeopardy.png" },
+
+              { id: 26, image: "shehulk_2 x Double Jeopardy.png" },
+
+              { id: 27, image: "shehulk_2 x The Defense Rests.png" },
+
+              { id: 28, image: "shehulk_2 x The Defense Rests.png" },
+
+              { id: 29, image: "shehulk_2 x The Savage She-Hulk.png" },
+
+              { id: 30, image: "shehulk_2 x The Savage She-Hulk.png" },
+
+            ]
+
+          }
+
+};
+</script>
+
+<!-- WELCOME SCREEN -->
+<div id="s-welcome" class="screen active">
+  <div class="welcome-container">
+    <div class="welcome-title">DECK GAME</div>
+    <div class="welcome-subtitle">Choose your mode</div>
+    <div class="welcome-buttons">
+      <button class="btn btn-accent btn-full" onclick="startMultiplayer()">🌐 Multiplayer</button>
+      <button class="btn btn-ghost btn-full" onclick="startSolo()">🎴 Solo Play</button>
+    </div>
+  </div>
+</div>
+
+<!-- MULTIPLAYER MODE SELECT -->
+<div id="s-mp-select" class="screen">
+  <div class="welcome-container">
+    <div class="welcome-title">Multiplayer</div>
+    <div class="welcome-subtitle">Host or join a game</div>
+    <div class="welcome-buttons">
+      <button class="btn btn-accent btn-full" onclick="hostRoom()">Create Room</button>
+      <button class="btn btn-ghost btn-full" onclick="goTo('s-join-room')">Join Room</button>
+      <button class="btn btn-ghost btn-full" onclick="goBack('s-welcome')">← Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- JOIN ROOM -->
+<div id="s-join-room" class="screen">
+  <div class="join-container">
+    <div class="join-input-group">
+      <label class="join-input-label">Enter Room Code</label>
+      <input type="text" class="join-input" id="join-code-input" placeholder="GAME42" maxlength="6">
+    </div>
+    <div class="join-input-group">
+      <label class="join-input-label">Your Name</label>
+      <input type="text" class="join-input" id="join-name-input" placeholder="Player Name" style="letter-spacing:normal;text-transform:none">
+    </div>
+    <div class="welcome-buttons" style="max-width:320px">
+      <button class="btn btn-accent btn-full" onclick="joinRoom()">Join Game</button>
+      <button class="btn btn-ghost btn-full" onclick="goBack('s-mp-select')">← Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOBBY (HOST) -->
+<div id="s-lobby-host" class="screen">
+  <div class="lobby-container">
+    <div class="lobby-code-display">
+      <div class="lobby-code-label">Room Code</div>
+      <div class="lobby-code-value" id="host-code"></div>
+    </div>
+    <div class="qr-container">
+      <div id="qr-code"></div>
+    </div>
+    <div class="lobby-players" id="lobby-players-list"></div>
+    <div class="lobby-controls">
+      <button class="btn btn-ghost btn-sm" onclick="reorderPlayers()">Reorder Players</button>
+      <button class="btn btn-accent btn-full" onclick="startGame()">Start Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOBBY (GUEST) -->
+<div id="s-lobby-guest" class="screen">
+  <div class="lobby-container">
+    <div class="lobby-code-display">
+      <div class="lobby-code-label">Connected to</div>
+      <div class="lobby-code-value" id="guest-code"></div>
+    </div>
+    <div class="lobby-players" id="guest-players-list"></div>
+    <button class="btn btn-accent btn-full" style="margin-top:auto" onclick="goTo('s-editions')">Pick Deck</button>
+  </div>
+</div>
+
+<div id="s-editions" class="screen">
+  <div class="screen-label">Choose Edition</div>
+  <div class="sel-scroll"><div class="img-grid-editions" id="edition-grid"></div></div>
+</div>
+
+<div id="s-decks" class="screen">
+  <div class="top-bar">
+    <button class="back-btn" onclick="goBack('s-editions')">
+      <svg viewBox="0 0 24 24"><polyline points="15,18 9,12 15,6"/></svg>
+    </button>
+  </div>
+  <div class="screen-label" style="padding-top:0">Choose Deck</div>
+  <div class="sel-scroll"><div class="img-grid-decks" id="deck-grid"></div></div>
+</div>
+
+<div id="s-play" class="screen">
+  <!-- PLAYER STATUS AREA - VISIBLE TO ALL MULTIPLAYER PLAYERS (NOT JUST HOST)
+       Displays: All players' names, hero images, HP values, and card counts
+       Customization: Edit CSS for this element in the <style> section above
+       - To change size of hero images: Edit .hero-back-img height property
+       - To change text sizes: Edit .status-name, .status-hp, .status-counts font-size
+       - To change spacing: Edit .player-status-area padding and .player-status-row gap
+       JavaScript handling: Rendered by renderPlayerStatusArea() function in game.js
+  -->
+  <div class="player-status-area" id="player-status-area" style="display:none"></div>
+
+  <div class="play-bar">
+    <button class="back-btn" onclick="confirmBack()">
+      <svg viewBox="0 0 24 24"><polyline points="15,18 9,12 15,6"/></svg>
+    </button>
+    <div class="play-bar-deck-img"><img id="bar-deck-img" src="" alt=""></div>
+    <div class="play-bar-counts" id="bar-counts"></div>
+    <button class="play-bar-info-btn" onclick="openInfo(G.deckKey)">i</button>
+  </div>
+
+  <div class="play-section" id="special-section" style="display:none">
+    <div class="special-zone">
+      <div class="special-label" id="special-label">Special Ability</div>
+      <div class="special-content">
+        <div id="special-card-display"></div>
+        <div class="special-info">
+          <div class="special-pile-count" id="special-pile-count">Deck: 0</div>
+          <button class="special-btn" id="special-action-btn" onclick="useSpecialAbility()">Use</button>
+          <button class="btn btn-ghost btn-sm btn-full" onclick="openSheet('sh-special-deck')">Browse Deck</button>
+          <button class="btn btn-ghost btn-sm btn-full" id="special-browse-discard-btn" onclick="openSheet('sh-special-discard')" style="display:none">Browse Used</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="play-section">
+    <div class="sec-label">Health</div>
+    <div class="hp-grid" id="hp-grid"></div>
+  </div>
+
+  <div class="play-section">
+    <div class="sec-label">Draw <span class="sec-count" id="sc-draw">0</span></div>
+    <div class="draw-zone">
+      <div id="draw-stack-wrap"></div>
+      <div class="draw-info">
+        <div class="draw-big-num" id="draw-big">0</div>
+        <div class="draw-sublabel">tap to draw</div>
+        <div class="draw-actions">
+          <button class="btn btn-ghost btn-sm" onclick="shuffleDraw()">Shuffle</button>
+          <button class="btn btn-ghost btn-sm" onclick="openSheet('sh-draw-browse')">Browse</button>
+          <button class="btn btn-accent btn-sm" onclick="pickRandom('draw')">🎲 Pick Random</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="play-section">
+    <div class="sec-label">Hand <span class="sec-count" id="sc-hand">0</span></div>
+    <div class="hand-top" id="hand-top-bar" style="display:none">
+      <span class="select-hint" id="select-hint">0 selected</span>
+      <button class="btn btn-xs btn-ghost" onclick="selectAll()">All</button>
+      <button class="btn btn-xs btn-ghost" onclick="clearSel()">Clear</button>
+    </div>
+    <div class="hand-grid" id="hand-grid"></div>
+    <div class="select-actions" id="sel-actions" style="display:none">
+      <button class="btn btn-accent btn-sm" onclick="stageSelected()">Stage Selected</button>
+      <button class="btn btn-ghost btn-sm" onclick="discardSelected()">Discard Selected</button>
+      <button class="btn btn-ghost btn-sm" onclick="putSelectedInDeck()">Put in Deck</button>
+      <button class="btn btn-ghost btn-sm" onclick="exitSel()">Done</button>
+    </div>
+    <div id="hand-normal">
+      <button class="btn btn-ghost btn-sm" id="sel-mode-btn" onclick="enterSel()" style="display:none">Select Cards</button>
+      <button class="btn btn-accent btn-sm" id="pick-random-hand-btn" onclick="pickRandom('hand')" style="display:none;margin-top:6px">🎲 Pick Random</button>
+    </div>
+  </div>
+
+  <div class="play-section">
+    <div class="sec-label">Staged <span class="sec-count" id="sc-staged">0</span></div>
+    <div id="staged-content"><div class="staged-empty">Nothing staged yet</div></div>
+    <div class="staged-actions" id="staged-actions" style="display:none">
+      <button class="btn btn-accent btn-sm" onclick="goTo('s-play-screen')">Play</button>
+      <button class="btn btn-red btn-sm" onclick="unstageAll()">Un-stage All</button>
+    </div>
+  </div>
+
+  <div class="play-section" id="intermediate-section" style="display:none">
+    <div class="sec-label"><span id="intermediate-label">Zone</span> <span class="sec-count" id="sc-intermediate">0</span></div>
+    <div id="intermediate-content"><div class="intermediate-empty">No cards here yet</div></div>
+    <button class="btn btn-accent btn-sm" id="pick-random-intermediate-btn" onclick="pickRandom('intermediate')" style="display:none;margin-top:10px">🎲 Pick Random</button>
+  </div>
+
+  <div class="play-section">
+    <div class="sec-label">Discard <span class="sec-count" id="sc-discard">0</span></div>
+    <div class="discard-zone">
+      <div class="discard-card" id="discard-visual">🂠</div>
+      <div class="discard-info">
+        <div class="discard-big" id="discard-big">0</div>
+        <div class="discard-sublabel">discarded</div>
+        <div class="discard-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openSheet('sh-discard-browse')">Browse</button>
+          <button class="btn btn-accent btn-sm" onclick="pickRandom('discard')">🎲 Pick Random</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMBAT AREA (MULTIPLAYER ONLY) -->
+  <div class="combat-area" id="combat-area" style="display:none"></div>
+
+  <!-- DISCARD BROWSING - VISIBLE TO ALL MULTIPLAYER PLAYERS (NOT JUST HOST)
+       Displays: Preview of each player's discard pile with the last card shown
+       Features: 
+         - Click on any card preview to view it larger
+         - "Browse All" button opens full grid of all discarded cards
+       Customization: Edit CSS for this element in the <style> section above
+       - To change card preview size: Edit .discard-last-card aspect-ratio
+       - To change header text size: Edit .discard-preview-header font-size
+       - To change layout spacing: Edit .discard-previews gap
+       - To change section padding: Edit .discard-browsing padding property
+       JavaScript handling: Rendered by renderDiscardBrowsing() function in game.js
+  -->
+  <div class="discard-browsing" id="discard-browsing" style="display:none"></div>
+
+  <div class="search-section">
+    <button class="search-btn" onclick="openSheet('sh-search-all')">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Search for Card
+    </button>
+    <button class="help-btn" onclick="openSheet('sh-help')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      How to Play
+    </button>
+    <button class="btn btn-purple btn-full" id="view-players-btn" onclick="openSheet('sh-other-players')" style="display:none;margin-top:10px">
+      👥 View Other Players
+    </button>
+    <!-- ATTACK BUTTON - Now rendered inside the combat area placeholder when no combat is active -->
+    <!-- Keeping this out of view since the button is now in the combat area -->
+  </div>
+
+  <div class="play-bottom-pad"></div>
+</div>
+
+<div id="s-play-screen" class="screen">
+  <div class="play-screen-label" id="play-screen-label">Face-Down</div>
+  <div class="play-screen-grid" id="play-screen-grid"></div>
+  <div class="play-screen-actions">
+    <button class="btn btn-accent btn-full" id="reveal-flip-btn" onclick="revealFlip()">Reveal</button>
+    <button class="btn btn-ghost btn-full" onclick="goBack('s-play')">Back</button>
+  </div>
+</div>
+
+<!-- REVEAL NOTIFICATION -->
+<div class="reveal-notification" id="reveal-notification">
+  <div class="reveal-notif-title" id="reveal-notif-player">Player revealed cards!</div>
+  <div class="reveal-notif-subtitle" id="reveal-notif-time"></div>
+  <div class="reveal-cards-grid" id="reveal-notif-cards"></div>
+  <button class="btn btn-accent" onclick="closeRevealNotif()">Close</button>
+</div>
+
+<div class="card-overlay" id="card-overlay" onclick="handleOverlayClick(event)">
+  <button class="card-overlay-close" onclick="closeCardOverlay()">✕</button>
+  <div class="card-enlarged"><img id="overlay-img" src="" alt=""></div>
+  <div class="card-overlay-actions" id="overlay-actions"></div>
+</div>
+
+<div class="sheet-overlay" id="sh-info">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">Info</span>
+      <button class="sheet-close" onclick="closeSheet('sh-info')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="info-img-wrap"><img id="info-sheet-img" src="" alt="info"></div>
+      <div id="player-special-info"></div>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sh-draw-browse">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">Draw Pile</span>
+      <button class="sheet-close" onclick="closeSheet('sh-draw-browse')">✕</button>
+    </div>
+    <div class="sheet-body" id="draw-browse-body"></div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sh-discard-browse">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">Discard Pile</span>
+      <button class="sheet-close" onclick="closeSheet('sh-discard-browse')">✕</button>
+    </div>
+    <div class="sheet-body" id="discard-browse-body"></div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sh-search-all">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">Search All Cards</span>
+      <button class="sheet-close" onclick="closeSheet('sh-search-all')">✕</button>
+    </div>
+    <div class="sheet-body" id="search-all-body"></div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sh-shuffle-options">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">Shuffle Into Deck</span>
+      <button class="sheet-close" onclick="closeSheet('sh-shuffle-options')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <button class="btn btn-accent btn-full" style="margin-bottom:10px" onclick="shuffleHandIn()">Shuffle in from Hand</button>
+      <button class="btn btn-accent btn-full" onclick="shuffleDiscardIn()">Shuffle in from Discard</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sh-put-in-deck">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">Put Selected in Deck</span>
+      <button class="sheet-close" onclick="closeSheet('sh-put-in-deck')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <button class="btn btn-accent btn-full" style="margin-bottom:10px" onclick="putInDeck('top')">Put on Top</button>
+      <button class="btn btn-accent btn-full" style="margin-bottom:10px" onclick="putInDeck('bottom')">Put on Bottom</button>
+      <button class="btn btn-accent btn-full" onclick="putInDeck('shuffle')">Shuffle Into Deck</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sh-special-deck">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title" id="special-deck-title">Special Deck</span>
+      <button class="sheet-close" onclick="closeSheet('sh-special-deck')">✕</button>
+    </div>
+    <div class="sheet-body" id="special-deck-body"></div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sh-special-discard">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title" id="special-discard-title">Used Special Cards</span>
+      <button class="sheet-close" onclick="closeSheet('sh-special-discard')">✕</button>
+    </div>
+    <div class="sheet-body" id="special-discard-body"></div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sh-other-players">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">Other Players</span>
+      <button class="sheet-close" onclick="closeSheet('sh-other-players')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="other-players-list" id="other-players-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ATTACK TARGET SELECTION SHEET - Let player choose who to attack -->
+<div class="sheet-overlay" id="sh-attack-target">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">⚔️ Select Opponent</span>
+      <button class="sheet-close" onclick="closeSheet('sh-attack-target')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div style="margin-bottom: 16px; font-size: 0.85rem; color: var(--muted);">
+        Choose an opponent to attack. They will have the chance to defend with cards.
+      </div>
+      <div class="attack-target-list" id="attack-target-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sh-discard-full">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title" id="discard-browse-header">Discard Pile</span>
+      <button class="sheet-close" onclick="closeSheet('sh-discard-full')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="discard-cards-grid" id="discard-browse-grid"></div>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sh-help">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">How to Play</span>
+      <button class="sheet-close" onclick="closeSheet('sh-help')">✕</button>
+    </div>
+    <div class="sheet-body">
+      
+      <div class="help-section">
+        <div class="help-title">Basic Gameplay</div>
+        <div class="help-text">
+          <strong>1. Draw Phase:</strong> Tap the draw pile to draw cards into your hand. Your hand shows all available cards.
+        </div>
+        <div class="help-text">
+          <strong>2. Play Phase:</strong> Select cards from your hand to stage them face-down. When ready, tap "Play" to reveal all staged cards at once.
+        </div>
+        <div class="help-text">
+          <strong>3. Discard Phase:</strong> After revealing, you can discard cards or return them to your hand. Discarded cards go to the discard pile (or intermediate zone if your deck has one).
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-title">Zones Explained</div>
+        
+        <div class="help-subtitle">Draw Pile</div>
+        <div class="help-text">
+          Your deck of cards. Tap to draw one card, or use "Browse" to see all cards and pick specific ones.
+        </div>
+        
+        <div class="help-subtitle">Hand</div>
+        <div class="help-text">
+          Cards you've drawn. Tap any card to see options (stage, discard, return to deck). Use "Select Cards" to work with multiple cards at once.
+        </div>
+        
+        <div class="help-subtitle">Staged</div>
+        <div class="help-text">
+          Cards ready to be played. They appear face-down to other players. Tap "Play" to reveal them all at once with a flip animation.
+        </div>
+        
+        <div class="help-subtitle">Intermediate Zone</div>
+        <div class="help-text">
+          (Only some decks have this) A special zone between hand and discard. When you discard cards, they go here first. Tap any card to move it to hand, discard, or deck.
+        </div>
+        
+        <div class="help-subtitle">Discard Pile</div>
+        <div class="help-text">
+          Cards that have been played and discarded. You can browse them or shuffle them back into the draw pile.
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-title">Button Guide</div>
+        
+        <div class="help-button-list">
+          <div class="help-button-item">
+            <div class="help-button-name">🎲 Pick Random</div>
+            <div class="help-button-desc">Randomly selects a card from that zone and shows it to you with all available options.</div>
+          </div>
+          
+          <div class="help-button-item">
+            <div class="help-button-name">Select Cards</div>
+            <div class="help-button-desc">Enter multi-select mode. Tap cards to select them, then stage, discard, or put them in the deck all at once.</div>
+          </div>
+          
+          <div class="help-button-item">
+            <div class="help-button-name">Browse</div>
+            <div class="help-button-desc">See all cards in that pile with their positions. You can reorder cards in the draw pile or recover specific cards from discard.</div>
+          </div>
+          
+          <div class="help-button-item">
+            <div class="help-button-name">Shuffle</div>
+            <div class="help-button-desc">Randomizes the order of cards in the draw pile.</div>
+          </div>
+          
+          <div class="help-button-item">
+            <div class="help-button-name">Shuffle Into Deck</div>
+            <div class="help-button-desc">Mix cards from your hand or discard pile back into the draw pile in random positions.</div>
+          </div>
+          
+          <div class="help-button-item">
+            <div class="help-button-name">Put in Deck</div>
+            <div class="help-button-desc">When you have cards selected, put them on top, bottom, or shuffled into the draw pile.</div>
+          </div>
+          
+          <div class="help-button-item">
+            <div class="help-button-name">Play</div>
+            <div class="help-button-desc">Reveal all staged cards with a flip animation. After revealing, you can discard them all or return them to hand.</div>
+          </div>
+          
+          <div class="help-button-item">
+            <div class="help-button-name">Search for Card</div>
+            <div class="help-button-desc">Browse all cards from all decks organized by edition. Tap any card to add it directly to your hand.</div>
+          </div>
+
+          <div class="help-button-item">
+            <div class="help-button-name">👥 Player Status Area</div>
+            <div class="help-button-desc">(Multiplayer only) Shows all players with HP, deck info, and card counts. Current player's turn is highlighted.</div>
+          </div>
+
+          <div class="help-button-item">
+            <div class="help-button-name">⚔️ Combat System</div>
+            <div class="help-button-desc">(Multiplayer only) Attack other players by placing cards face-down, then reveal simultaneously.</div>
+          </div>
+
+          <div class="help-button-item">
+            <div class="help-button-name">🗂️ Discard Browsing</div>
+            <div class="help-button-desc">(Multiplayer only) View any player's discard pile at the bottom of the screen.</div>
+          </div>
+
+          <div class="help-button-item">
+            <div class="help-button-name">🔄 Turn System</div>
+            <div class="help-button-desc">(Multiplayer only) Use the END TURN button to pass to the next player. Host can reorder players before game starts.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-title">Multiplayer</div>
+        <div class="help-text">
+          • Create a room and share the code/QR with friends
+        </div>
+        <div class="help-text">
+          • All HP changes are visible to everyone in real-time
+        </div>
+        <div class="help-text">
+          • When you reveal staged cards, all players get a notification
+        </div>
+        <div class="help-text">
+          • Your hand and draw pile stay private - only you can see them
+        </div>
+        <div class="help-text">
+          • Player status area shows everyone's HP, deck, and card counts
+        </div>
+        <div class="help-text">
+          • Combat system allows attacking other players with simultaneous reveals
+        </div>
+        <div class="help-text">
+          • Browse any player's discard pile (only owner can interact)
+        </div>
+        <div class="help-text">
+          • Turn-based gameplay with END TURN button
+        </div>
+      </div>
+
+      <div class="help-section">
+        <div class="help-title">Tips</div>
+        <div class="help-text">
+          • Tap any card in your hand to see all available actions for that card
+        </div>
+        <div class="help-text">
+          • Use the info (i) button to see deck rules and card explanations
+        </div>
+        <div class="help-text">
+          • Health values can be adjusted with + and - buttons
+        </div>
+        <div class="help-text">
+          • The top bar shows quick counts for all zones
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Firebase Initialization -->
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyA5qv_uZkb4zQFziwKytTeP58DVURIgqn8",
+    authDomain: "unmatched-f93c0.firebaseapp.com",
+    databaseURL: "https://unmatched-f93c0-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "unmatched-f93c0",
+    storageBucket: "unmatched-f93c0.firebasestorage.app",
+    messagingSenderId: "966096362246",
+    appId: "1:966096362246:web:6db9304ec08dd27dd89c87"
+  };
+
+  // Store config globally
+  window.firebaseConfig = firebaseConfig;
+
+  // Wait for Firebase SDK to be available
+  window.initializeFirebase = function() {
+    if (typeof firebase === 'undefined') {
+      setTimeout(window.initializeFirebase, 50);
+      return;
+    }
+
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      window.fbDatabase = firebase.database();
+      console.log('✅ Firebase initialized successfully');
+    } catch (error) {
+      console.error('❌ Firebase initialization error:', error);
+    }
+  };
+
+  // Start initialization immediately
+  window.initializeFirebase();
+</script>
+
+<!-- Load and initialize game after Firebase SDK loads -->
+<script>
+  // Wait for both Firebase to be ready AND DOM to be interactive
+  function loadGameScript() {
+    // Try again if not ready yet
+    if (typeof firebase === 'undefined' || !window.fbDatabase) {
+      setTimeout(loadGameScript, 100);
+      return;
+    }
+    
+    // Create game script dynamically to ensure timing
+    const script = document.createElement('script');
+    script.src = 'game.js';
+    script.onerror = function() {
+      console.error('❌ Failed to load game.js');
+      document.body.innerHTML += '<div style="color: red; padding: 20px; text-align: center;">Error loading game. Check browser console.</div>';
+    };
+    document.body.appendChild(script);
+  }
+  
+  // Start loading game when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadGameScript);
+  } else {
+    loadGameScript();
+  }
+</script>
+<!-- QR Code Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</body>
+</html>
