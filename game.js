@@ -880,10 +880,10 @@ function showPlayerDeckInfo(pid) {
   
   // Show special ability if present
   const specialInfo = document.getElementById('player-special-info');
-  if (dk.specialAbility) {
+  if (dk.specialAbility && dk.specialAbility.enabled) {
+    const saLabel = dk.specialAbility.label || 'Special Ability';
     specialInfo.innerHTML = `
-      <div class="special-ability-title">Special Ability</div>
-      <div class="special-ability-desc">${dk.specialAbility}</div>
+      <div class="special-ability-title">${saLabel}</div>
     `;
     specialInfo.style.display = 'block';
   } else {
