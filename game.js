@@ -1037,12 +1037,11 @@ function initiateCombat(targetPid) {
   const roomData = getRoomData();
   if (!roomData) return;
   
-  // Ensure both players have their data in the room
-  if (!roomData.players[G.playerId]) {
-    updateMyPlayer();
-  }
+  // Update attacker's player data in room FIRST
+  updateMyPlayer();
+  const updatedRoomData = getRoomData();
   
-  roomData.combat = {
+  updatedRoomData.combat = {
     attacker: G.playerId,
     defender: targetPid,
     attackerCards: [],
@@ -1052,7 +1051,8 @@ function initiateCombat(targetPid) {
     revealed: false
   };
   
-  setRoomData(roomData);
+  setRoomData(updatedRoomData);
+  G.combat = updatedRoomData.combat; // Sync locally immediately
   
   // Trigger sync on defender's side
   broadcastUpdate();
@@ -1158,16 +1158,33 @@ function initiateAttack(targetPid, targetName) {
 
 
 function addCardToCombat(card) {
-  if (!G.isMultiplayer || !G.combat) return;
+  console.log('addCardToCombat called with card:', card.uid);
+  console.log('G.playerId:', G.playerId);
+  
+  if (!G.isMultiplayer) {
+    console.error('Not in multiplayer mode');
+    return;
+  }
+  
+  if (!G.combat) {
+    console.error('No active combat');
+    return;
+  }
   
   const roomData = getRoomData();
-  if (!roomData || !roomData.combat) return;
+  if (!roomData || !roomData.combat) {
+    console.error('No combat in room data');
+    return;
+  }
   
   const combat = roomData.combat;
   const isAttacker = combat.attacker === G.playerId;
   const isDefender = combat.defender === G.playerId;
   
-  if (!isAttacker && !isDefender) return;
+  if (!isAttacker && !isDefender) {
+    console.error('Player is neither attacker nor defender');
+    return;
+  }
   
   // Remove from hand
   G.hand = G.hand.filter(c => c.uid !== card.uid);
@@ -1185,17 +1202,29 @@ function addCardToCombat(card) {
   renderCombatArea(); // Re-render combat area to show new card
   closeCardOverlay();
   toast('Card added to combat');
-}
+
 
 function toggleCombatReady(side) {
-  if (!G.isMultiplayer || !G.combat) return;
+  console.log('toggleCombatReady called with side:', side);
+  console.log('G.playerId:', G.playerId);
+  
+  if (!G.isMultiplayer || !G.combat) {
+    console.error('Not in multiplayer or no combat');
+    return;
+  }
   
   const roomData = getRoomData();
-  if (!roomData || !roomData.combat) return;
+  if (!roomData || !roomData.combat) {
+    console.error('No room data or combat');
+    return;
+  }
   
   const combat = roomData.combat;
   if ((side === 'attacker' && combat.attacker !== G.playerId) ||
-      (side === 'defender' && combat.defender !== G.playerId)) return;
+      (side === 'defender' && combat.defender !== G.playerId)) {
+    console.error('Player is not the correct side');
+    return;
+  }
   
   if (side === 'attacker') {
     combat.attackerReady = !combat.attackerReady;
@@ -1215,6 +1244,7 @@ function toggleCombatReady(side) {
   }
   
   setRoomData(roomData);
+  renderCombatArea(); // Re-render to show updated buttons
 }
 
 function revealCombatCards() {
