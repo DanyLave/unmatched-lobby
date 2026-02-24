@@ -60,15 +60,22 @@ let firebaseRoomCache = null;
 let firebaseListener = null;
 let firebaseReady = false;
 
-// Firebase drops empty arrays, so always normalize combat object
+// Normalize combat: Firebase drops empty arrays/objects, so ensure structure
 function normalizeCombat(combat) {
   if (!combat) return null;
-  combat.attackerCards = combat.attackerCards || [];
-  combat.defenderCards = combat.defenderCards || [];
-  combat.attackerReady = combat.attackerReady || false;
-  combat.defenderReady = combat.defenderReady || false;
-  combat.revealed = combat.revealed || false;
-  return combat;
+  // New shared combat zone format: { [playerId]: { cards: [], revealed: false } }
+  // Clean out any old attacker/defender keys
+  const clean = {};
+  for (const key of Object.keys(combat)) {
+    if (key.startsWith('p_')) {
+      const entry = combat[key];
+      clean[key] = {
+        cards: entry.cards || [],
+        revealed: entry.revealed || false
+      };
+    }
+  }
+  return Object.keys(clean).length > 0 ? clean : null;
 }
 
 function getRoomData() {
@@ -303,7 +310,7 @@ function syncFromRoom() {
   G.turnOrder = roomData.turnOrder || [];
   G.currentTurn = roomData.currentTurn || 0;
   G.gameStarted = roomData.gameStarted || false;
-  G.combat = normalizeCombat(roomData.combat);
+  G.combat = roomData.combat ? normalizeCombat(roomData.combat) : null;
   
   // Update lobby lists
   if (cur === 's-lobby-host' || cur === 's-lobby-guest') {
@@ -315,12 +322,6 @@ function syncFromRoom() {
     renderPlayerStatusArea();
     renderDiscardBrowsing();
     renderCombatArea();
-    
-    // Attack button is now rendered inside combat area placeholder when inactive
-    const attackBtn = document.getElementById('attack-btn');
-    if (attackBtn) {
-      attackBtn.style.display = 'none'; // Button moved to combat area
-    }
   }
   
   // Update other players view
@@ -451,7 +452,7 @@ function hostRoom() {
   G.turnOrder = roomData.turnOrder;
   G.currentTurn = roomData.currentTurn;
   G.gameStarted = roomData.gameStarted;
-  G.combat = roomData.combat;
+  G.combat = roomData.combat ? normalizeCombat(roomData.combat) : null;
   
   // Show lobby
   document.getElementById('host-code').textContent = G.roomCode;
@@ -553,7 +554,7 @@ function joinRoom() {
     G.turnOrder = roomData.turnOrder || [];
     G.currentTurn = roomData.currentTurn || 0;
     G.gameStarted = roomData.gameStarted || false;
-    G.combat = roomData.combat || null;
+    G.combat = roomData.combat ? normalizeCombat(roomData.combat) : null;
     
     updateMyPlayer();
     
@@ -927,114 +928,92 @@ function openDiscardBrowseSheet(pid) {
   openSheet('sh-discard-full');
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// SHARED COMBAT ZONE - All players can add cards freely
+// Data structure: combat = { [playerId]: { cards: [...], revealed: bool } }
+// ═══════════════════════════════════════════════════════════════════════
+
 function renderCombatArea() {
   if (!G.isMultiplayer) return;
   
   const combatArea = document.getElementById('combat-area');
   const roomData = getRoomData();
+  const combat = roomData ? normalizeCombat(roomData.combat) : null;
   
-  if (!roomData || !roomData.combat) {
-    combatArea.innerHTML = `
-      <div class="combat-placeholder">
-        <div>No active combat</div>
-        <button class="btn btn-red btn-full" onclick="startAttack()" style="margin-top:12px">
-          ⚔️ Attack an Opponent
-        </button>
-      </div>
-    `;
-    return;
-  }
-  
-  const combat = normalizeCombat(roomData.combat);
-  const attacker = roomData.players[combat.attacker];
-  const defender = roomData.players[combat.defender];
-  
-  // READY STATUS COLORS: Show visual feedback for readiness
-  // Both players ready + not yet revealed = shows "READY TO REVEAL"
-  // One player ready = shows "WAITING FOR OPPONENT..."
-  const attackerReadyClass = combat.attackerReady ? 'ready' : 'not-ready';
-  const defenderReadyClass = combat.defenderReady ? 'ready' : 'not-ready';
-  
+  // Always show the combat zone header
   let html = `
     <div class="combat-header">
-      <div class="combat-title">⚔️ COMBAT</div>
-      <div class="combat-players">${attacker?.name || 'Attacker'} vs ${defender?.name || 'Defender'}</div>
-    </div>
-    
-    <div class="combat-main-content">
-      <div class="combat-side combat-attacker">
-        <div class="combat-section-title">🗡️ Attacker</div>
-        <div class="combat-player-label">${attacker?.name || 'Unknown'}</div>
-        <div class="combat-cards" id="attacker-cards">
-  `;
-  
-  (combat.attackerCards || []).forEach(card => {
-    if (combat.revealed) {
-      html += `<div class="combat-card revealed" onclick="viewPlayerSpecialCard('${card.image}')"><img src="${card.image}" alt=""></div>`;
-    } else {
-      html += `<div class="combat-card face-down"></div>`;
-    }
-  });
-  
-  html += `
-        </div>
-        <div class="combat-ready-section ${attackerReadyClass}">
-          ${combat.attacker === G.playerId ? 
-            `<button class="btn btn-accent" onclick="toggleCombatReady('attacker')" id="attacker-ready-btn">
-              ${combat.revealed ? 'Combat Revealed' : (combat.attackerReady ? '✓ Ready!' : 'Ready to Reveal')}
-            </button>` : 
-            `<div class="ready-status ${attackerReadyClass}">
-              ${combat.attackerReady ? '✓ Ready' : '⏳ Not Ready'}
-            </div>`}
-        </div>
-      </div>
-      
-      <div class="combat-vs-divider">VS</div>
-      
-      <div class="combat-side combat-defender">
-        <div class="combat-section-title">🛡️ Defender</div>
-        <div class="combat-player-label">${defender?.name || 'Unknown'}</div>
-        <div class="combat-cards" id="defender-cards">
-  `;
-  
-  (combat.defenderCards || []).forEach(card => {
-    if (combat.revealed) {
-      html += `<div class="combat-card revealed" onclick="viewPlayerSpecialCard('${card.image}')"><img src="${card.image}" alt=""></div>`;
-    } else {
-      html += `<div class="combat-card face-down"></div>`;
-    }
-  });
-  
-  html += `
-        </div>
-        <div class="combat-ready-section ${defenderReadyClass}">
-          ${combat.defender === G.playerId ? 
-            `<button class="btn btn-accent" onclick="toggleCombatReady('defender')" id="defender-ready-btn">
-              ${combat.revealed ? 'Combat Revealed' : (combat.defenderReady ? '✓ Ready!' : 'Ready to Reveal')}
-            </button>` : 
-            `<div class="ready-status ${defenderReadyClass}">
-              ${combat.defenderReady ? '✓ Ready' : '⏳ Not Ready'}
-            </div>`}
-        </div>
-      </div>
+      <div class="combat-title">⚔️ COMBAT ZONE</div>
     </div>
   `;
   
-  // Show simultaneous reveal status when both are ready
-  if (combat.attackerReady && combat.defenderReady && !combat.revealed) {
+  if (!combat || Object.keys(combat).length === 0) {
+    // Empty combat zone
     html += `
-      <div class="combat-reveal-status">
-        <span class="ready-indicator">●</span> Both players ready - Cards will reveal simultaneously!
+      <div class="combat-placeholder">
+        <div style="margin-bottom:8px">No cards in combat yet.</div>
+        <div style="font-size:0.75rem;color:var(--muted)">Tap a card → "Add to Combat" or use Select Cards → "⚔️ Combat"</div>
       </div>
     `;
+  } else {
+    // Show each player's combat section
+    const turnOrder = (roomData.turnOrder || Object.keys(roomData.players || {}));
+    
+    html += '<div class="combat-players-grid">';
+    
+    turnOrder.forEach(pid => {
+      const entry = combat[pid];
+      if (!entry || !entry.cards || entry.cards.length === 0) return;
+      
+      const player = roomData.players[pid];
+      const pName = player ? player.name : 'Unknown';
+      const isMe = pid === G.playerId;
+      const isRevealed = entry.revealed;
+      
+      html += `<div class="combat-player-section ${isRevealed ? 'revealed' : ''}">`;
+      html += `<div class="combat-player-header">`;
+      html += `<span class="combat-player-name">${pName}</span>`;
+      if (isRevealed) {
+        html += `<span class="combat-revealed-badge">✓ Revealed</span>`;
+      } else {
+        html += `<span class="combat-hidden-badge">🎴 ${entry.cards.length} card${entry.cards.length > 1 ? 's' : ''}</span>`;
+      }
+      html += `</div>`;
+      
+      html += `<div class="combat-cards">`;
+      entry.cards.forEach(card => {
+        if (isRevealed) {
+          html += `<div class="combat-card revealed" onclick="viewPlayerSpecialCard('${card.image}')"><img src="${card.image}" alt=""></div>`;
+        } else {
+          html += `<div class="combat-card face-down"></div>`;
+        }
+      });
+      html += `</div>`;
+      
+      // Show Ready button only for this player's own unrevealed cards
+      if (isMe && !isRevealed) {
+        html += `<button class="btn btn-accent btn-full" onclick="revealMyCombatCards()" style="margin-top:8px">
+          🔓 Ready to Reveal
+        </button>`;
+      }
+      // Show "Add More" button for player who already revealed
+      if (isMe && isRevealed) {
+        html += `<button class="btn btn-ghost btn-sm" onclick="addMoreToCombat()" style="margin-top:6px">
+          + Add More Cards
+        </button>`;
+      }
+      
+      html += `</div>`;
+    });
+    
+    html += '</div>';
   }
   
-  if (combat.revealed) {
+  // Always show Clear Combat button if there are cards
+  if (combat && Object.keys(combat).length > 0) {
     html += `
       <div class="combat-actions">
-        ${(combat.attacker === G.playerId || combat.defender === G.playerId) && !combat.boosted ? 
-          '<button class="btn btn-purple" onclick="boostCombat()">⬆️ BOOST (Add More Cards)</button>' : ''}
-        <button class="btn btn-ghost" onclick="endCombat()">End Combat</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearCombatZone()">🗑️ Clear Combat</button>
       </div>
     `;
   }
@@ -1042,288 +1021,129 @@ function renderCombatArea() {
   combatArea.innerHTML = html;
 }
 
-function initiateCombat(targetPid) {
-  if (!G.isMultiplayer || G.combat) return;
-  
-  const roomData = getRoomData();
-  if (!roomData) return;
-  
-  // Update attacker's player data in room FIRST
-  updateMyPlayer();
-  const updatedRoomData = getRoomData();
-  
-  updatedRoomData.combat = {
-    attacker: G.playerId,
-    defender: targetPid,
-    attackerCards: [],
-    defenderCards: [],
-    attackerReady: false,
-    defenderReady: false,
-    revealed: false
-  };
-  
-  setRoomData(updatedRoomData);
-  G.combat = updatedRoomData.combat; // Sync locally immediately
-  
-  // Trigger sync on defender's side
-  broadcastUpdate();
-  
-  // SIMULTANEOUS REVEAL MECHANISM:
-  // Both players must click "Ready to Reveal"
-  // Once both are ready, the game automatically reveals cards for BOTH players
-  // This is controlled by syncFromRoom() which checks if both ready flags are true
-  // The reveal animation triggers on both clients at the same time via the broadcast sync
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// ATTACK SELECTION - ALLOWS PLAYER TO CHOOSE WHO TO ATTACK
-// ═══════════════════════════════════════════════════════════════════════
-
-function startAttack() {
-  if (!G.isMultiplayer || !G.gameStarted || G.combat) {
-    toast('Cannot attack right now');
-    return;
-  }
-  
-  buildSelectAttackTarget();
-  openSheet('sh-attack-target');
-}
-
-function buildSelectAttackTarget() {
-  const roomData = getRoomData();
-  if (!roomData || !roomData.players) return;
-  
-  const container = document.getElementById('attack-target-list');
-  container.innerHTML = '';
-  
-  const turnOrder = roomData.turnOrder || Object.keys(roomData.players);
-  
-  turnOrder.forEach(pid => {
-    if (pid === G.playerId) return; // Can't attack yourself
-    
-    const player = roomData.players[pid];
-    if (!player) return;
-    
-    const card = document.createElement('div');
-    card.className = 'attack-target-card';
-    
-    const deckName = player.deckKey ? DECKS[player.deckKey]?.name || 'Unknown deck' : 'No deck';
-    let hpDisplay = '';
-    if (player.deckKey && player.hp) {
-      const deck = DECKS[player.deckKey];
-      if (deck && deck.healthBars) {
-        hpDisplay = deck.healthBars.map((bar, idx) => {
-          const val = player.hp['bar' + idx] || 0;
-          return `${bar.label}: ${val}`;
-        }).join(' | ');
-      }
-    }
-    
-    card.innerHTML = `
-      <div class="attack-target-header">
-        <div style="font-size: 1rem; font-weight: 700;">${player.name}</div>
-        <div style="font-size: 0.75rem; color: var(--muted);">${deckName}</div>
-      </div>
-      <div class="attack-target-hp" style="font-size: 0.8rem; color: var(--muted); margin: 8px 0;">
-        ${hpDisplay || 'No HP data'}
-      </div>
-    `;
-    
-    card.style.cursor = 'pointer';
-    card.style.padding = '12px';
-    card.style.background = 'var(--surface2)';
-    card.style.border = '1px solid var(--border2)';
-    card.style.borderRadius = 'var(--r-sm)';
-    card.style.marginBottom = '8px';
-    
-    card.onclick = () => {
-      closeSheet('sh-attack-target');
-      initiateAttack(pid, player.name);
-    };
-    
-    container.appendChild(card);
-  });
-  
-  if (container.children.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted)">No other players to attack</div>';
-  }
-}
-
-function initiateAttack(targetPid, targetName) {
-  if (!G.isMultiplayer) return;
-  
-  const roomData = getRoomData();
-  if (!roomData || roomData.combat) {
-    toast('Combat already in progress');
-    return;
-  }
-  
-  // Initialize combat
-  initiateCombat(targetPid);
-  
-  // Show combat area
-  renderCombatArea();
-  
-  toast(`Attacking ${targetName}!`);
-}
-
-
+// Add a single card to combat (from card overlay)
 function addCardToCombat(card) {
-  console.log('addCardToCombat called with card:', card.uid);
-  
-  if (!G.isMultiplayer) {
-    toast('Not in multiplayer mode');
-    return;
-  }
+  if (!G.isMultiplayer) { toast('Not in multiplayer'); return; }
   
   const roomData = getRoomData();
-  if (!roomData || !roomData.combat) {
-    toast('No active combat found');
-    return;
+  if (!roomData) { toast('No room data'); return; }
+  
+  // Initialize combat object if it doesn't exist
+  if (!roomData.combat) roomData.combat = {};
+  
+  // Initialize this player's section if needed
+  if (!roomData.combat[G.playerId]) {
+    roomData.combat[G.playerId] = { cards: [], revealed: false };
+  }
+  if (!roomData.combat[G.playerId].cards) {
+    roomData.combat[G.playerId].cards = [];
   }
   
-  const combat = normalizeCombat(roomData.combat);
-  roomData.combat = combat; // write normalized version back
-  
-  // Sync G.combat from room data
-  G.combat = combat;
-  
-  const isAttacker = combat.attacker === G.playerId;
-  const isDefender = combat.defender === G.playerId;
-  
-  console.log('addCardToCombat - attacker:', combat.attacker, 'defender:', combat.defender, 'me:', G.playerId, 'isAtt:', isAttacker, 'isDef:', isDefender);
-  
-  if (!isAttacker && !isDefender) {
-    toast('You are not in this combat');
-    return;
-  }
-  
-  // Remove from hand
+  // Remove card from hand
   G.hand = G.hand.filter(c => c.uid !== card.uid);
   
   // Add to combat
-  const cardData = { image: card.image, uid: card.uid };
-  if (isAttacker) {
-    combat.attackerCards.push(cardData);
-  } else {
-    combat.defenderCards.push(cardData);
-  }
+  roomData.combat[G.playerId].cards.push({ image: card.image, uid: card.uid });
   
-  console.log('Card added, attackerCards:', combat.attackerCards.length, 'defenderCards:', combat.defenderCards.length);
+  // If player already revealed, new cards are auto-revealed
+  // (already handled by the revealed flag on the player entry)
   
   setRoomData(roomData);
+  G.combat = normalizeCombat(roomData.combat);
   updateAll();
   renderCombatArea();
   toast('Card added to combat');
 }
 
-function toggleCombatReady(side) {
-  console.log('toggleCombatReady called with side:', side);
+// Add multiple selected cards to combat (from select mode)
+function addSelectedToCombat() {
+  if (!G.isMultiplayer || !G.selected.length) return;
   
+  const roomData = getRoomData();
+  if (!roomData) return;
+  
+  if (!roomData.combat) roomData.combat = {};
+  if (!roomData.combat[G.playerId]) {
+    roomData.combat[G.playerId] = { cards: [], revealed: false };
+  }
+  if (!roomData.combat[G.playerId].cards) {
+    roomData.combat[G.playerId].cards = [];
+  }
+  
+  const selectedCards = G.hand.filter(c => G.selected.includes(c.uid));
+  selectedCards.forEach(card => {
+    roomData.combat[G.playerId].cards.push({ image: card.image, uid: card.uid });
+    G.hand = G.hand.filter(c => c.uid !== card.uid);
+  });
+  
+  setRoomData(roomData);
+  G.combat = normalizeCombat(roomData.combat);
+  exitSel();
+  updateAll();
+  renderCombatArea();
+  toast(`${selectedCards.length} card${selectedCards.length > 1 ? 's' : ''} added to combat`);
+}
+
+// Reveal this player's combat cards
+function revealMyCombatCards() {
   if (!G.isMultiplayer) return;
   
   const roomData = getRoomData();
-  if (!roomData || !roomData.combat) {
-    toast('No active combat');
+  if (!roomData || !roomData.combat || !roomData.combat[G.playerId]) {
+    toast('No cards to reveal');
     return;
   }
   
-  const combat = normalizeCombat(roomData.combat);
-  roomData.combat = combat;
-  G.combat = combat;
-  if ((side === 'attacker' && combat.attacker !== G.playerId) ||
-      (side === 'defender' && combat.defender !== G.playerId)) {
-    console.error('Player is not the correct side');
-    return;
-  }
-  
-  if (side === 'attacker') {
-    combat.attackerReady = !combat.attackerReady;
-  } else {
-    combat.defenderReady = !combat.defenderReady;
-  }
-  
-  // SIMULTANEOUS REVEAL CHECK:
-  // Once BOTH players click "Ready to Reveal", cards are revealed for EVERYONE simultaneously
-  // This happens through the shared room data sync mechanism
-  if (combat.attackerReady && combat.defenderReady && !combat.revealed) {
-    combat.revealed = true;
-    combat.revealTime = Date.now(); // Timestamp for synchronized reveal
-    
-    // Small delay so UI updates feel natural before the flip animation starts
-    setTimeout(() => revealCombatCards(), 300);
-  }
+  roomData.combat[G.playerId].revealed = true;
   
   setRoomData(roomData);
-  renderCombatArea(); // Re-render to show updated buttons
-}
-
-function revealCombatCards() {
-  // Animation is handled by CSS classes in renderCombatArea
+  G.combat = normalizeCombat(roomData.combat);
   renderCombatArea();
+  toast('Cards revealed!');
 }
 
-function boostCombat() {
-  if (!G.isMultiplayer || !G.combat) return;
-  
-  // Show hand for selection
+// Add more cards after already revealing (enters select mode)
+function addMoreToCombat() {
   enterSel();
   document.getElementById('sel-actions').innerHTML = `
-    <button class="btn btn-accent" onclick="selectRandomForBoost()">Pick Random</button>
-    <button class="btn btn-ghost" onclick="confirmBoostSelection()">Add Selected</button>
-    <button class="btn btn-ghost" onclick="cancelBoost()">Cancel</button>
+    <button class="btn btn-accent btn-sm" onclick="addSelectedToCombat()">Add to Combat</button>
+    <button class="btn btn-ghost btn-sm" onclick="exitSel()">Cancel</button>
   `;
 }
 
-function selectRandomForBoost() {
-  if (!G.hand.length) return;
-  const randomIndex = Math.floor(Math.random() * G.hand.length);
-  G.selected = [G.hand[randomIndex].uid];
-  updHint();
-  renderHand();
-}
-
-function confirmBoostSelection() {
-  if (!G.selected.length) return;
-  
-  const selectedCards = G.hand.filter(c => G.selected.includes(c.uid));
-  selectedCards.forEach(card => addCardToCombat(card));
-  
-  exitSel();
-  renderCombatArea();
-}
-
-function cancelBoost() {
-  exitSel();
-}
-
-function endCombat() {
-  if (!G.isMultiplayer || !G.combat) return;
+// Clear all combat cards — moves to discard piles
+function clearCombatZone() {
+  if (!G.isMultiplayer) return;
   
   const roomData = getRoomData();
   if (!roomData || !roomData.combat) return;
   
   const combat = roomData.combat;
   
-  // Move cards to discard piles
-  if (combat.attackerCards) {
-    const attacker = roomData.players[combat.attacker];
-    if (attacker) {
-      attacker.discardCards = attacker.discardCards || [];
-      attacker.discardCards.push(...combat.attackerCards);
+  // Move each player's combat cards to their discard pile
+  for (const pid of Object.keys(combat)) {
+    if (!pid.startsWith('p_')) continue;
+    const entry = combat[pid];
+    if (!entry || !entry.cards) continue;
+    
+    const player = roomData.players[pid];
+    if (player) {
+      player.discardCards = player.discardCards || [];
+      entry.cards.forEach(c => player.discardCards.push(c));
     }
-  }
-  
-  if (combat.defenderCards) {
-    const defender = roomData.players[combat.defender];
-    if (defender) {
-      defender.discardCards = defender.discardCards || [];
-      defender.discardCards.push(...combat.defenderCards);
+    
+    // If this is me, also add to local discard
+    if (pid === G.playerId) {
+      entry.cards.forEach(c => G.discard.push(c));
     }
   }
   
   roomData.combat = null;
   setRoomData(roomData);
+  G.combat = null;
+  updateAll();
+  renderCombatArea();
+  toast('Combat cleared');
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1385,27 +1205,11 @@ function goTo(id) {
     if (id === 's-play-screen') buildPlayScreen();
     if (id === 's-play') {
       document.getElementById('s-play').scrollTop = 0;
-      // Show/hide multiplayer UI elements - AVAILABLE FOR ALL PLAYERS
+      // Show/hide multiplayer UI elements
       if (G.isMultiplayer && G.gameStarted) {
-        // PLAYER STATUS AREA - Shows all players' HP, deck info, and card counts
-        // Visible to: All players | Can be customized: Text size, colors, card preview size
         document.getElementById('player-status-area').style.display = 'block';
-        
-        // COMBAT AREA - Shows active combat between two players
-        // Visible to: All players | Can be customized: Card size, layout, button styles
         document.getElementById('combat-area').style.display = 'block';
-        
-        // DISCARD PREVIEWS - Shows each player's discard pile with last card displayed
-        // Visible to: All players | Can be customized: Preview card size, header styling, grid layout
         document.getElementById('discard-browsing').style.display = 'block';
-      }
-      
-      // ATTACK BUTTON - Allow players to initiate combat (hidden if combat is active)
-      // Note: Button is now rendered inside the combat-area placeholder when inactive
-      const roomData = getRoomData();
-      const attackBtn = document.getElementById('attack-btn');
-      if (attackBtn) {
-        attackBtn.style.display = 'none'; // Button moved to combat area
       }
       
       renderPlayerStatusArea();
@@ -1415,10 +1219,6 @@ function goTo(id) {
       document.getElementById('player-status-area').style.display = 'none';
       document.getElementById('combat-area').style.display = 'none';
       document.getElementById('discard-browsing').style.display = 'none';
-      const attackBtn = document.getElementById('attack-btn');
-      if (attackBtn) {
-        attackBtn.style.display = 'none';
-      }
     }
   } catch (error) {
     console.error('❌ Error in goTo:', error);
@@ -1462,7 +1262,6 @@ function openSheet(id) {
   if (id === 'sh-special-deck') buildSpecialDeckBrowse();
   if (id === 'sh-special-discard') buildSpecialDiscardBrowse();
   if (id === 'sh-other-players') buildOtherPlayersList();
-  if (id === 'sh-attack-target') buildSelectAttackTarget();
   document.getElementById(id).classList.add('open');
 }
 
@@ -1741,6 +1540,9 @@ function enterSel() {
   document.getElementById('hand-top-bar').style.display = 'flex';
   document.getElementById('sel-actions').style.display = 'flex';
   document.getElementById('hand-normal').style.display = 'none';
+  // Show combat button in select mode if multiplayer
+  const combatBtn = document.getElementById('sel-combat-btn');
+  if (combatBtn) combatBtn.style.display = (G.isMultiplayer && G.gameStarted) ? 'inline-flex' : 'none';
   renderHand();
 }
 
@@ -1942,21 +1744,13 @@ function renderOverlayMenu() {
         { label: 'Return to Deck', cls: 'btn btn-ghost btn-full', fn: () => { _overlayMenu = 'return'; renderOverlayMenu(); } },
       ];
       
-      // Add combat option if applicable
-      const roomData = getRoomData();
-      const activeCombat = normalizeCombat((roomData && roomData.combat) || G.combat);
-      
-      if (activeCombat && !activeCombat.revealed) {
-        const isAttacker = activeCombat.attacker === G.playerId;
-        const isDefender = activeCombat.defender === G.playerId;
-        console.log('⚔️ Combat overlay:', {attacker: activeCombat.attacker, defender: activeCombat.defender, me: G.playerId, isAtt: isAttacker, isDef: isDefender});
-        if (isAttacker || isDefender) {
-          buttons.unshift({
-            label: '⚔️ Add to Combat',
-            cls: 'btn btn-red btn-full',
-            fn: () => addCardToCombat(card)
-          });
-        }
+      // Add combat option if in multiplayer
+      if (G.isMultiplayer && G.gameStarted) {
+        buttons.unshift({
+          label: '⚔️ Add to Combat',
+          cls: 'btn btn-red btn-full',
+          fn: () => addCardToCombat(card)
+        });
       }
       
       buttons.forEach(b => {

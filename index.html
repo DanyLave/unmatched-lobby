@@ -400,7 +400,7 @@ body {
 }
 
 .combat-header {
-  text-align: center; margin-bottom: 16px;
+  text-align: center; margin-bottom: 12px;
 }
 
 .combat-title {
@@ -408,50 +408,54 @@ body {
   margin-bottom: 4px;
 }
 
-.combat-players {
-  font-size: 0.8rem; color: var(--muted);
+.combat-players-grid {
+  display: flex; flex-direction: column; gap: 12px;
 }
 
-.combat-main-content {
-  display: flex; gap: 16px; align-items: stretch; 
-  justify-content: center; margin-bottom: 16px;
-}
-
-.combat-side {
-  flex: 1; max-width: 180px;
+.combat-player-section {
   background: var(--surface2); border: 1px solid var(--border2);
   border-radius: var(--r-sm); padding: 12px;
-  display: flex; flex-direction: column;
 }
 
-.combat-attacker, .combat-defender {
-  margin-bottom: 0;
+.combat-player-section.revealed {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(228, 200, 74, 0.15);
 }
 
-.combat-section-title {
-  font-size: 0.85rem; font-weight: 700; margin-bottom: 4px;
-  color: var(--accent);
+.combat-player-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
 }
 
-.combat-player-label {
-  font-size: 0.8rem; color: var(--text); font-weight: 600;
-  margin-bottom: 8px; border-bottom: 1px solid var(--border);
-  padding-bottom: 4px;
+.combat-player-name {
+  font-size: 0.9rem; font-weight: 700; color: var(--text);
+}
+
+.combat-revealed-badge {
+  font-size: 0.7rem; font-weight: 700; color: var(--green);
+  background: rgba(76, 191, 116, 0.15); padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.combat-hidden-badge {
+  font-size: 0.7rem; font-weight: 600; color: var(--muted);
+  background: var(--surface); padding: 2px 8px;
+  border-radius: 10px;
 }
 
 .combat-cards {
-  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;
-  min-height: 100px; align-items: flex-start; justify-content: center;
-  flex: 1;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  min-height: 60px; align-items: flex-start; justify-content: center;
 }
 
 .combat-card {
-  width: 400px; aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
+  width: 70px; aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
   border: 2px solid var(--border2); background: var(--surface);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.5rem; color: var(--muted);
   transition: transform 0.3s ease;
   cursor: pointer;
+  overflow: hidden;
 }
 
 .combat-card:hover {
@@ -464,7 +468,7 @@ body {
 }
 
 .combat-card.revealed img {
-  width: 140%; height: 140%; object-fit: contain; border-radius: var(--r-hand); /*mod combat zone card reveal size*/
+  width: 100%; height: 100%; object-fit: cover; border-radius: var(--r-hand);
 }
 
 .combat-card.face-down {
@@ -479,71 +483,9 @@ body {
   position: absolute;
 }
 
-.combat-ready-section {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-}
-
-.ready-status {
-  font-size: 0.75rem; font-weight: 700; text-align: center;
-  padding: 6px 10px; border-radius: var(--r-sm);
-  width: 100%;
-}
-
-.ready-status.ready {
-  background: rgba(76, 191, 116, 0.2);
-  color: var(--green);
-}
-
-.ready-status.not-ready {
-  background: rgba(217, 80, 80, 0.2);
-  color: var(--red);
-}
-
-.combat-vs-divider {
-  text-align: center; font-size: 1.8rem; font-weight: 800;
-  color: var(--accent); margin: 0 8px;
-  display: flex; align-items: center;
-  user-select: none;
-}
-
-.combat-reveal-status {
-  background: rgba(228, 200, 74, 0.1);
-  border: 1px solid var(--accent);
-  color: var(--accent);
-  padding: 12px;
-  border-radius: var(--r-sm);
-  text-align: center;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin: 12px 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.ready-indicator {
-  display: inline-block;
-  animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
 .combat-actions {
   display: flex; gap: 8px; justify-content: center;
-  margin-top: 16px; flex-wrap: wrap;
-}
-
-/* Attack Target Selection Sheet */
-.attack-target-list {
-  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 12px; flex-wrap: wrap;
 }
 
 
@@ -2350,6 +2292,7 @@ shehulk: {
     <div class="hand-grid" id="hand-grid"></div>
     <div class="select-actions" id="sel-actions" style="display:none">
       <button class="btn btn-accent btn-sm" onclick="stageSelected()">Stage Selected</button>
+      <button class="btn btn-red btn-sm" onclick="addSelectedToCombat()" id="sel-combat-btn" style="display:none">⚔️ Combat</button>
       <button class="btn btn-ghost btn-sm" onclick="discardSelected()">Discard Selected</button>
       <button class="btn btn-ghost btn-sm" onclick="putSelectedInDeck()">Put in Deck</button>
       <button class="btn btn-ghost btn-sm" onclick="exitSel()">Done</button>
