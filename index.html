@@ -3905,6 +3905,7 @@ moonknight: {
       <svg viewBox="0 0 24 24"><polyline points="15,18 9,12 15,6"/></svg>
     </button>
     <div class="play-bar-counts" id="bar-counts"></div>
+    <button class="play-bar-info-btn" id="play-bar-deck-info-btn" onclick="openDeckInfo(G.deckKey, event)" style="display:none">i</button>
   </div>
   <div class="player-status-area" id="player-status-area" style="display:none"></div>
 
@@ -4412,7 +4413,7 @@ moonknight: {
     const script = document.createElement('script');
     // Try to detect the base path for GitHub Pages
     const basePath = window.location.pathname.includes('/unmatched-lobby/') ? '/unmatched-lobby/' : './';
-    script.src = basePath + 'game.js?v=20260225e';
+    script.src = basePath + 'game.js?v=20260225f';
     script.onerror = function() {
       console.error('❌ Failed to load game.js from:', basePath + 'game.js');
       console.error('Current URL:', window.location.href);

@@ -1573,6 +1573,8 @@ function goTo(id) {
         document.getElementById('discard-browsing').style.display = 'block';
         document.getElementById('turn-control').style.display = 'block';
       }
+      // Show deck info button only in solo mode (multiplayer has it per-player in status area)
+      document.getElementById('play-bar-deck-info-btn').style.display = G.isMultiplayer ? 'none' : 'flex';
 
       renderPlayerStatusArea();
       renderDiscardBrowsing();
@@ -1583,6 +1585,7 @@ function goTo(id) {
       document.getElementById('combat-area').style.display = 'none';
       document.getElementById('discard-browsing').style.display = 'none';
       document.getElementById('turn-control').style.display = 'none';
+      document.getElementById('play-bar-deck-info-btn').style.display = 'none';
     }
   } catch (error) {
     console.error('❌ Error in goTo:', error);
@@ -1813,6 +1816,7 @@ function drawCard() {
 
 function shuffleDraw() {
   G.draw = shuffle(G.draw);
+  addLogEntry('You shuffled the draw pile', 'other');
   buildDrawBrowse();
   toast('Shuffled');
   updateAll();
