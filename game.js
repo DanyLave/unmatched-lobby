@@ -2554,6 +2554,8 @@ function updateAll() {
   if (G.isMultiplayer) {
     updateMyCardCounts();
   }
+  // Keep special ability display in sync (e.g. Sinbad voyage counter)
+  if (G.specialMode) updateSpecialDisplay();
 }
 
 function renderHand() {
@@ -2949,6 +2951,19 @@ function initSpecialAbility(dk) {
 
   const sa = dk.specialAbility;
   G.specialMode = sa.mode;
+
+  if (sa.mode === 'voyage-counter') {
+    G.specialDeck = [];
+    G.specialDiscard = [];
+    G.specialCurrent = null;
+    document.getElementById('special-section').style.display = 'block';
+    document.getElementById('special-label').textContent = sa.label || 'Voyages Used';
+    document.getElementById('special-action-btn').style.display = 'none';
+    document.getElementById('special-browse-discard-btn').style.display = 'none';
+    updateSpecialDisplay();
+    return;
+  }
+
   G.specialDeck = shuffle([...sa.deck]);
   G.specialDiscard = [];
   G.specialCurrent = G.specialDeck.shift() || null;
@@ -2956,6 +2971,7 @@ function initSpecialAbility(dk) {
   document.getElementById('special-section').style.display = 'block';
   document.getElementById('special-label').textContent = sa.label;
   document.getElementById('special-action-btn').textContent = sa.buttonText;
+  document.getElementById('special-action-btn').style.display = '';
   document.getElementById('special-deck-title').textContent = sa.label + ' Deck';
   document.getElementById('special-discard-title').textContent = 'Used ' + sa.label;
 
@@ -2972,6 +2988,13 @@ function updateSpecialDisplay() {
   const display = document.getElementById('special-card-display');
   const count = document.getElementById('special-pile-count');
   const btn = document.getElementById('special-action-btn');
+
+  if (G.specialMode === 'voyage-counter') {
+    const vcCount = G.discard.filter(c => /voyage/i.test(c.image || '')).length;
+    display.innerHTML = `<div class="voyage-counter-display"><span class="voyage-counter-num">${vcCount}</span><span class="voyage-counter-label">in discard</span></div>`;
+    count.textContent = '';
+    return;
+  }
 
   if (G.specialCurrent) {
     display.innerHTML = `<div class="special-card-slot" onclick="viewSpecialCard()">
@@ -3231,14 +3254,19 @@ function executeHandEffect(pid, cardUid, cardImage, cardDeckKey, effectType, car
   const roomData = getRoomData();
   if (!roomData || !roomData.players[pid]) { toast('Cannot find player'); return; }
   const player = roomData.players[pid];
-  if (!player.handCards) { toast('Cannot read hand'); return; }
-  const cardIdx = player.handCards.findIndex(c => c.uid === cardUid);
-  if (cardIdx === -1) { toast('Card not found in hand'); return; }
-  player.handCards.splice(cardIdx, 1);
+  // Update Firebase-side handCards if synced; the event handles the victim's side regardless
+  if (player.handCards) {
+    const cardIdx = player.handCards.findIndex(c => c.uid === cardUid);
+    if (cardIdx !== -1) {
+      player.handCards.splice(cardIdx, 1);
+      if (effectType === 'force-discard') {
+        if (!player.discardCards) player.discardCards = [];
+        player.discardCards.push({ image: cardImage, uid: cardUid, deckKey: cardDeckKey });
+      }
+    }
+  }
+  if (!roomData.reveals) roomData.reveals = [];
   if (effectType === 'force-discard') {
-    if (!player.discardCards) player.discardCards = [];
-    player.discardCards.push({ image: cardImage, uid: cardUid, deckKey: cardDeckKey });
-    if (!roomData.reveals) roomData.reveals = [];
     roomData.reveals.push({ playerId: G.playerId, playerName: G.playerName, timestamp: Date.now(),
       action: 'force-discard-hand', victimId: pid, victimName: victimName,
       cardUid: cardUid, cardImage: cardImage, cardName: cardName, cardDeckKey: cardDeckKey });
@@ -3246,7 +3274,6 @@ function executeHandEffect(pid, cardUid, cardImage, cardDeckKey, effectType, car
     setRoomData(roomData);
     addLogEntry('You forced ' + victimName + ' to discard "' + cardName + '"', 'other');
   } else {
-    if (!roomData.reveals) roomData.reveals = [];
     roomData.reveals.push({ playerId: G.playerId, playerName: G.playerName, timestamp: Date.now(),
       action: 'force-shuffle-to-deck', victimId: pid, victimName: victimName,
       cardUid: cardUid, cardImage: cardImage, cardName: cardName, cardDeckKey: cardDeckKey });
@@ -3404,6 +3431,7 @@ function acceptHandShare() {
   const notif = document.getElementById('hand-share-notif');
   if (notif) notif.style.display = 'none';
   if (!_pendingHandShare) return;
+  syncMyHand(); // Ensure Firebase has current hand so requester can act on it
   addLogEntry('You shared your hand with ' + _pendingHandShare.requesterName, 'other');
   publishEvent({ action: 'hand-share-response', requesterId: _pendingHandShare.requesterId,
     responderId: G.playerId, victimName: G.playerName,
