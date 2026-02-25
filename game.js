@@ -42,6 +42,10 @@ const _exitingCards = new Map();
 // UID of the last card chosen via Pick Random (for log prefix)
 let _randomPickedUid = null;
 
+// State for deck/hand inspect flows
+let _inspectState = { source: 'own', pid: null, cards: [], assignments: {}, deckSortOrder: [] };
+let _pendingDeckShare = null; // { requesterId, requesterName, count }
+
 function scheduleCardExit(card) {
   _exitingCards.set(card.uid, { image: card.image, uid: card.uid });
   setTimeout(() => {
@@ -515,7 +519,7 @@ function checkNewReveals(roomData) {
         type = 'hp';
         break;
       case 'added-to-combat':
-        text = n + (r.random ? ' added a random card to combat \ud83c\udfb2\u2694\ufe0f' : ' added ' + cWord + ' to combat \u2694\ufe0f');
+        text = n + (r.random ? ' added a random card to combat \ud83c\udfb2\u2694\ufe0f' : r.fromTopDeck ? ' added the top card of their deck to combat \u2694\ufe0f' : ' added ' + cWord + ' to combat \u2694\ufe0f');
         type = 'combat';
         break;
       case 'combat-reveal':
@@ -567,6 +571,69 @@ function checkNewReveals(roomData) {
       case 'turn-end':
         text = n + ' ended their turn';
         type = 'turn';
+        break;
+      case 'force-discard-hand':
+        if (r.victimId === G.playerId) {
+          G.hand = G.hand.filter(c => c.uid !== r.cardUid);
+          if (r.cardImage) G.discard.push({ image: r.cardImage, uid: r.cardUid, deckKey: r.cardDeckKey || G.deckKey });
+          syncMyDiscard(); syncMyHand(); updateAll();
+        }
+        text = r.victimId === G.playerId
+          ? r.playerName + ' forced you to discard "' + (r.cardName || 'a card') + '"'
+          : n + ' made ' + (r.victimName || 'someone') + ' discard "' + (r.cardName || 'a card') + '"';
+        type = 'other';
+        break;
+      case 'force-shuffle-to-deck':
+        if (r.victimId === G.playerId) {
+          G.hand = G.hand.filter(c => c.uid !== r.cardUid);
+          if (r.cardImage) { G.draw.push({ image: r.cardImage, uid: r.cardUid, deckKey: r.cardDeckKey || G.deckKey }); G.draw = shuffle(G.draw); }
+          syncMyHand(); updateAll();
+        }
+        text = r.victimId === G.playerId
+          ? r.playerName + ' shuffled "' + (r.cardName || 'a card') + '" from your hand into your deck'
+          : n + ' shuffled "' + (r.cardName || 'a card') + '" from ' + (r.victimName || 'someone') + "'s hand into their deck";
+        type = 'other';
+        break;
+      case 'deck-share-request':
+        if (r.victimId === G.playerId) {
+          _pendingDeckShare = { requesterId: r.playerId, requesterName: r.playerName, count: r.count };
+          const dsText = document.getElementById('deck-share-text');
+          if (dsText) dsText.textContent = r.playerName + ' wants to see your top ' + r.count + ' cards';
+          const dsNotif = document.getElementById('deck-share-notif');
+          if (dsNotif) { dsNotif.style.display = 'block'; setTimeout(() => dsNotif.style.display = 'none', 15000); }
+        }
+        text = n + ' is peeking at ' + (r.victimName || 'someone') + "'s top " + r.count + ' cards';
+        type = 'other';
+        break;
+      case 'deck-share-response':
+        if (r.requesterId === G.playerId) {
+          _inspectState = { source: 'opp', pid: r.responderId, cards: (r.topCards || []).map((c, i) => ({ ...c, pos: i + 1 })), assignments: {}, deckSortOrder: (r.topCards || []).map(c => c.uid) };
+          _inspectState.cards.forEach(c => { _inspectState.assignments[c.uid] = 'keep'; });
+          buildOppDeckInspectSheet(r.victimName || r.playerName || 'Opponent', r.count || _inspectState.cards.length);
+          openSheet('sh-inspect-top-n');
+        }
+        text = n + ' shared their top ' + (r.count || '?') + ' cards';
+        type = 'other';
+        break;
+      case 'force-deck-peek-discard':
+        if (r.victimId === G.playerId) {
+          G.draw = G.draw.filter(c => c.uid !== r.cardUid);
+          updateAll();
+        }
+        text = r.victimId === G.playerId
+          ? n + ' discarded "' + (r.cardName || 'a card') + '" from your deck'
+          : n + ' discarded "' + (r.cardName || 'a card') + '" from ' + (r.victimName || 'someone') + "'s deck";
+        type = 'discard';
+        break;
+      case 'force-deck-peek-reorder':
+        if (r.victimId === G.playerId && r.orderedUids) {
+          const topN = r.orderedUids.map(uid => G.draw.find(c => c.uid === uid)).filter(Boolean);
+          const rest = G.draw.filter(c => !r.orderedUids.includes(c.uid));
+          G.draw = [...topN, ...rest];
+          updateAll();
+        }
+        text = n + ' reordered the top of ' + (r.victimName || 'someone') + "'s deck";
+        type = 'other';
         break;
       default:
         text = n + ' performed an action';
@@ -1024,6 +1091,14 @@ function syncMyDiscard() {
   const roomData = getRoomData();
   if (!roomData || !roomData.players || !roomData.players[G.playerId]) return;
   roomData.players[G.playerId].discardCards = G.discard.map(c => ({ image: c.image, uid: c.uid, deckKey: c.deckKey || G.deckKey }));
+  setRoomData(roomData);
+}
+
+function syncMyHand() {
+  if (!G.isMultiplayer || !G.roomCode) return;
+  const roomData = getRoomData();
+  if (!roomData || !roomData.players || !roomData.players[G.playerId]) return;
+  roomData.players[G.playerId].handCards = G.hand.map(c => ({ image: c.image, uid: c.uid, deckKey: c.deckKey || G.deckKey }));
   setRoomData(roomData);
 }
 
@@ -1582,6 +1657,12 @@ function goTo(id) {
       }
       // Show deck info button only in solo mode (multiplayer has it per-player in status area)
       document.getElementById('play-bar-deck-info-btn').style.display = G.isMultiplayer ? 'none' : 'flex';
+      // Show effects button only in multiplayer
+      const effectsBtn = document.getElementById('play-effects-btn');
+      if (effectsBtn) effectsBtn.style.display = G.isMultiplayer ? 'flex' : 'none';
+      // Show hand sync icon when multiplayer
+      const syncIcon = document.getElementById('hand-sync-icon');
+      if (syncIcon) syncIcon.style.display = G.isMultiplayer ? 'inline' : 'none';
 
       renderPlayerStatusArea();
       renderDiscardBrowsing();
@@ -1593,6 +1674,8 @@ function goTo(id) {
       document.getElementById('discard-browsing').style.display = 'none';
       document.getElementById('turn-control').style.display = 'none';
       document.getElementById('play-bar-deck-info-btn').style.display = 'none';
+      const effectsBtnH = document.getElementById('play-effects-btn');
+      if (effectsBtnH) effectsBtnH.style.display = 'none';
     }
   } catch (error) {
     console.error('❌ Error in goTo:', error);
@@ -1817,7 +1900,7 @@ function drawCard() {
   const c = G.draw.shift();
   G.hand.push(c);
   addLogEntry('You drew: ' + cardLabel(c), 'draw');
-  if (G.isMultiplayer) publishEvent({ action: 'drew', count: 1 });
+  if (G.isMultiplayer) { publishEvent({ action: 'drew', count: 1 }); syncMyHand(); }
   updateAll();
 }
 
@@ -1838,7 +1921,7 @@ function shuffleHandIn() {
   G.draw = shuffle([...G.draw, ...G.hand]);
   G.hand = [];
   addLogEntry('You shuffled hand (' + hCount + ' card' + (hCount > 1 ? 's' : '') + ') into deck', 'other');
-  if (G.isMultiplayer) publishEvent({ action: 'shuffled-hand-in', count: hCount });
+  if (G.isMultiplayer) { publishEvent({ action: 'shuffled-hand-in', count: hCount }); syncMyHand(); }
   updateAll();
   closeSheet('sh-shuffle-options');
   toast('Hand → Draw pile');
@@ -1877,6 +1960,8 @@ function discardCard(card) {
       if (roomData && roomData.players[G.playerId]) {
         if (!roomData.players[G.playerId].discardCards) roomData.players[G.playerId].discardCards = [];
         roomData.players[G.playerId].discardCards.push({ image: card.image, uid: card.uid });
+        if (!roomData.players[G.playerId].handCards) roomData.players[G.playerId].handCards = [];
+        roomData.players[G.playerId].handCards = G.hand.map(c => ({ image: c.image, uid: c.uid, deckKey: c.deckKey || G.deckKey }));
         if (!roomData.reveals) roomData.reveals = [];
         roomData.reveals.push(Object.assign({ playerId: G.playerId, playerName: G.playerName, timestamp: Date.now(),
           action: 'discarded', cards: [{ image: card.image }] }, rndPrefixDiscard ? { random: true } : {}));
@@ -1894,7 +1979,7 @@ function moveToHand(card) {
   G.intermediate = G.intermediate.filter(c => c.uid !== card.uid);
   G.hand.push(card);
   addLogEntry('You moved "' + cardLabel(card) + '" → hand', 'other');
-  if (G.isMultiplayer) { publishEvent({ action: 'moved-zone-to-hand', cardName: cardLabel(card) }); syncMyDiscard(); updateMyCardCounts(); }
+  if (G.isMultiplayer) { publishEvent({ action: 'moved-zone-to-hand', cardName: cardLabel(card) }); syncMyHand(); syncMyDiscard(); updateMyCardCounts(); }
   updateAll();
   closeCardOverlay();
   toast('Moved to hand');
@@ -1934,7 +2019,7 @@ function returnToDeck(card, pos) {
   }
   const posLabel = pos === 'top' ? 'top of deck' : pos === 'bottom' ? 'bottom of deck' : 'shuffled into deck';
   addLogEntry('You returned "' + cardLabel(card) + '" to ' + posLabel, 'other');
-  if (G.isMultiplayer) publishEvent({ action: 'returned-to-deck', count: 1, pos: pos || 'shuffle' });
+  if (G.isMultiplayer) { publishEvent({ action: 'returned-to-deck', count: 1, pos: pos || 'shuffle' }); syncMyHand(); }
   syncTS();
   updateAll();
   closeCardOverlay();
@@ -2040,6 +2125,7 @@ function discardSelected() {
       roomData.reveals[roomData.reveals.length - 1].action = 'discarded';
       setRoomData(roomData);
     }
+    syncMyHand();
   }
   const count = discarded.length;
   syncTS();
@@ -2071,7 +2157,7 @@ function putInDeck(pos) {
   if (pos === 'shuffle') G.draw = shuffle(G.draw);
   const putPosLabel = pos === 'top' ? 'top of deck' : pos === 'bottom' ? 'bottom of deck' : 'shuffled into deck';
   addLogEntry('You returned ' + cards.length + ' card' + (cards.length > 1 ? 's' : '') + ' to ' + putPosLabel, 'other');
-  if (G.isMultiplayer) publishEvent({ action: 'returned-to-deck', count: cards.length, pos: pos });
+  if (G.isMultiplayer) { publishEvent({ action: 'returned-to-deck', count: cards.length, pos: pos }); syncMyHand(); }
   closeSheet('sh-put-in-deck');
   exitSel();
   updateAll();
@@ -2307,6 +2393,7 @@ function discardAllStaged() {
   const ts = getTS();
   delete ts[myId()];
   setTS(ts);
+  if (G.isMultiplayer) syncMyHand();
   updateAll();
   goBack('s-play');
   toast('All discarded');
@@ -2648,6 +2735,7 @@ function moveDown(idx) {
 function drawSpecific(idx) {
   const [card] = G.draw.splice(idx, 1);
   G.hand.push(card);
+  if (G.isMultiplayer) syncMyHand();
   updateAll();
   buildDrawBrowse();
   toast('Added to hand');
@@ -2945,7 +3033,8 @@ function buildSpecialDiscardBrowse() {
     item.appendChild(info);
     const btns = document.createElement('div');
     btns.className = 'browse-btns';
-    btns.innerHTML = `<button class="btn btn-sm btn-accent" onclick="recoverSpecialCard(${realIdx})">Set as Active</button>`;
+    btns.innerHTML = `<button class="btn btn-sm btn-accent" onclick="recoverSpecialCard(${realIdx})">Set as Active</button>
+      <button class="btn btn-sm btn-ghost" onclick="recoverSpecialCardToBottom(${realIdx})">\u2192 Bottom of Deck</button>`;
     item.appendChild(btns);
     body.appendChild(item);
   });
@@ -2960,6 +3049,333 @@ function recoverSpecialCard(idx) {
   buildSpecialDiscardBrowse();
   toast('Card recovered');
 }
+
+function recoverSpecialCardToBottom(idx) {
+  const card = G.specialDiscard.splice(idx, 1)[0];
+  G.specialDeck.push(card);
+  const dk = DECKS[G.deckKey];
+  addLogEntry('You returned "' + cardLabel(card) + '" to the bottom of your ' + (dk && dk.specialAbility && dk.specialAbility.label ? dk.specialAbility.label : 'special') + ' deck', 'other');
+  updateSpecialDisplay();
+  buildSpecialDiscardBrowse();
+  toast('Returned to bottom of deck');
+}
+
+// \u2550\u2550\u2550 CARD EFFECTS \u2550\u2550\u2550
+
+function openEffectsSheet() {
+  const hasSA = G.specialDiscard && G.specialDiscard.length > 0;
+  const salEl = document.getElementById('special-recover-label');
+  const sabEl = document.getElementById('special-recover-effect-btn');
+  if (salEl) salEl.style.display = hasSA ? 'block' : 'none';
+  if (sabEl) sabEl.style.display = hasSA ? 'flex' : 'none';
+  openSheet('sh-card-effects');
+}
+
+function addTopCardToCombat() {
+  if (!G.isMultiplayer) { toast('Not in multiplayer'); return; }
+  if (!G.draw.length) { toast('Draw pile is empty'); return; }
+  const roomData = getRoomData();
+  if (!roomData) return;
+  if (!roomData.combat) roomData.combat = {};
+  if (!roomData.combat[G.playerId]) roomData.combat[G.playerId] = { cards: [], revealed: false };
+  const card = G.draw.shift();
+  roomData.combat[G.playerId].cards = roomData.combat[G.playerId].cards || [];
+  roomData.combat[G.playerId].cards.push({ image: card.image, uid: card.uid });
+  setRoomData(roomData);
+  G.combat = normalizeCombat(roomData.combat);
+  addLogEntry('You added the top card of your deck to combat \u2694\ufe0f', 'combat');
+  publishEvent({ action: 'added-to-combat', count: 1, fromTopDeck: true });
+  updateAll();
+  renderCombatArea();
+  closeSheet('sh-card-effects');
+  toast('Top card added to combat');
+}
+
+function openViewOpponentHandEffect(effectType) {
+  const roomData = getRoomData();
+  if (!roomData) return;
+  const body = document.getElementById('view-opp-hand-body');
+  const opponents = Object.keys(roomData.players || {}).filter(pid => pid !== G.playerId);
+  if (!opponents.length) { toast('No opponents found'); return; }
+  if (opponents.length === 1) { loadOpponentForEffect(opponents[0], effectType); return; }
+  body.innerHTML = '<div style="padding:8px 0;font-size:.8rem;color:var(--muted);margin-bottom:8px">Select opponent:</div>';
+  opponents.forEach(pid => {
+    const p = roomData.players[pid];
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-ghost btn-full'; btn.style.marginBottom = '8px';
+    btn.textContent = (p && p.name) || pid;
+    btn.onclick = () => loadOpponentForEffect(pid, effectType);
+    body.appendChild(btn);
+  });
+  document.getElementById('view-opp-hand-title').textContent = effectType === 'force-discard' ? 'Force Discard' : 'Shuffle to Deck';
+  openSheet('sh-view-opp-hand');
+}
+
+function loadOpponentForEffect(pid, effectType) {
+  const roomData = getRoomData();
+  if (!roomData || !roomData.players[pid]) return;
+  const player = roomData.players[pid];
+  const handCards = player.handCards || [];
+  const title = effectType === 'force-discard'
+    ? (player.name || pid) + "'s Hand \u2014 Force Discard"
+    : (player.name || pid) + "'s Hand \u2014 Shuffle to Deck";
+  document.getElementById('view-opp-hand-title').textContent = title;
+  const body = document.getElementById('view-opp-hand-body');
+  body.innerHTML = '';
+  if (!handCards.length) {
+    body.innerHTML = '<p style="color:var(--muted);text-align:center;padding:24px">Hand is empty or not synced yet</p>';
+    openSheet('sh-view-opp-hand'); return;
+  }
+  handCards.forEach(card => {
+    const row = document.createElement('div');
+    row.className = 'inspect-card-row';
+    const safeLabel = cardLabel(card).replace(/'/g, "\\'");
+    const safeName = (player.name || pid).replace(/'/g, "\\'");
+    const safeKey = (card.deckKey || G.deckKey).replace(/'/g, "\\'");
+    const safeBtnLabel = effectType === 'force-discard' ? '\uD83D\uDDD1 Discard' : '\u2192 Deck';
+    row.innerHTML = `<div class="inspect-card-thumb"><img src="${card.image}" alt=""></div>
+      <div class="inspect-card-meta"><div class="inspect-card-name">${cardLabel(card)}</div></div>
+      <div class="inspect-card-actions">
+        <button class="btn btn-sm btn-red" onclick="executeHandEffect('${pid}','${card.uid}','${card.image}','${safeKey}','${effectType}','${safeLabel}','${safeName}')">${safeBtnLabel}</button>
+      </div>`;
+    body.appendChild(row);
+  });
+  openSheet('sh-view-opp-hand');
+}
+
+function executeHandEffect(pid, cardUid, cardImage, cardDeckKey, effectType, cardName, victimName) {
+  const roomData = getRoomData();
+  if (!roomData || !roomData.players[pid]) { toast('Cannot find player'); return; }
+  const player = roomData.players[pid];
+  if (!player.handCards) { toast('Cannot read hand'); return; }
+  const cardIdx = player.handCards.findIndex(c => c.uid === cardUid);
+  if (cardIdx === -1) { toast('Card not found in hand'); return; }
+  player.handCards.splice(cardIdx, 1);
+  if (effectType === 'force-discard') {
+    if (!player.discardCards) player.discardCards = [];
+    player.discardCards.push({ image: cardImage, uid: cardUid, deckKey: cardDeckKey });
+    if (!roomData.reveals) roomData.reveals = [];
+    roomData.reveals.push({ playerId: G.playerId, playerName: G.playerName, timestamp: Date.now(),
+      action: 'force-discard-hand', victimId: pid, victimName: victimName,
+      cardUid: cardUid, cardImage: cardImage, cardName: cardName, cardDeckKey: cardDeckKey });
+    if (roomData.reveals.length > 50) roomData.reveals = roomData.reveals.slice(-50);
+    setRoomData(roomData);
+    addLogEntry('You forced ' + victimName + ' to discard "' + cardName + '"', 'other');
+  } else {
+    if (!roomData.reveals) roomData.reveals = [];
+    roomData.reveals.push({ playerId: G.playerId, playerName: G.playerName, timestamp: Date.now(),
+      action: 'force-shuffle-to-deck', victimId: pid, victimName: victimName,
+      cardUid: cardUid, cardImage: cardImage, cardName: cardName, cardDeckKey: cardDeckKey });
+    if (roomData.reveals.length > 50) roomData.reveals = roomData.reveals.slice(-50);
+    setRoomData(roomData);
+    addLogEntry('You shuffled "' + cardName + '" from ' + victimName + "'s hand back into their deck", 'other');
+  }
+  closeSheet('sh-view-opp-hand');
+  closeSheet('sh-card-effects');
+  toast('Done!');
+}
+
+function openInspectTopNSheet() {
+  document.getElementById('inspect-top-n-title').textContent = 'Inspect Your Top Cards';
+  const body = document.getElementById('inspect-top-n-body');
+  body.innerHTML = `<div style="text-align:center;padding:8px 0 16px">
+    <div style="font-size:.82rem;color:var(--muted);margin-bottom:12px">How many cards to inspect?</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      ${[2,3,4,5].map(n => `<button class="btn btn-accent btn-sm" onclick="loadInspectTopN(${n})">${n}</button>`).join('')}
+    </div></div>`;
+  openSheet('sh-inspect-top-n');
+}
+
+function loadInspectTopN(n) {
+  if (!G.draw.length) { toast('Draw pile empty'); return; }
+  n = Math.min(n, G.draw.length);
+  _inspectState = { source: 'own', pid: null, cards: [], assignments: {}, deckSortOrder: [] };
+  G.draw.slice(0, n).forEach((c, i) => {
+    const card = { ...c, pos: i + 1 };
+    _inspectState.cards.push(card);
+    _inspectState.assignments[c.uid] = 'deck';
+    _inspectState.deckSortOrder.push(c.uid);
+  });
+  renderInspectTopN();
+}
+
+function renderInspectTopN() {
+  const body = document.getElementById('inspect-top-n-body');
+  const n = _inspectState.cards.length;
+  let html = `<div style="font-size:.72rem;color:var(--muted);margin-bottom:12px">Toggle each card to keep in deck or take to hand. Use \u2191\u2193 to reorder cards going back to deck.</div>`;
+  _inspectState.cards.forEach(card => {
+    const isHand = _inspectState.assignments[card.uid] === 'hand';
+    const deckIdx = _inspectState.deckSortOrder.indexOf(card.uid);
+    html += `<div class="inspect-card-row">
+      <div class="inspect-card-thumb"><img src="${card.image}" alt=""></div>
+      <div class="inspect-card-meta">
+        <div class="inspect-card-name">${cardLabel(card)}</div>
+        <div class="inspect-card-pos">Card #${card.pos} from top</div>
+      </div>
+      <div class="inspect-card-actions">
+        <button class="btn btn-sm ${isHand ? 'btn-accent' : 'btn-ghost'}" onclick="toggleInspectAssign('${card.uid}')">
+          ${isHand ? '\u270B Hand' : '\uD83D\uDCE4 Deck'}
+        </button>
+        ${!isHand ? `<button class="btn btn-xs btn-ghost" onclick="moveInspectDeckCard('${card.uid}',-1)" ${deckIdx === 0 ? 'disabled' : ''}>\u2191</button>
+        <button class="btn btn-xs btn-ghost" onclick="moveInspectDeckCard('${card.uid}',1)" ${deckIdx === _inspectState.deckSortOrder.length - 1 ? 'disabled' : ''}>\u2193</button>` : ''}
+      </div></div>`;
+  });
+  const handPicks = _inspectState.cards.filter(c => _inspectState.assignments[c.uid] === 'hand');
+  const deckPicks = _inspectState.deckSortOrder.length;
+  html += `<button class="btn btn-accent btn-full" style="margin-top:16px" onclick="confirmInspectTopN()">
+    \u2713 Confirm: ${handPicks.length} \u2192 Hand, ${deckPicks} back to deck</button>`;
+  body.innerHTML = html;
+}
+
+function toggleInspectAssign(uid) {
+  if (_inspectState.assignments[uid] === 'deck') {
+    _inspectState.assignments[uid] = 'hand';
+    _inspectState.deckSortOrder = _inspectState.deckSortOrder.filter(x => x !== uid);
+  } else {
+    _inspectState.assignments[uid] = 'deck';
+    _inspectState.deckSortOrder.push(uid);
+  }
+  renderInspectTopN();
+}
+
+function moveInspectDeckCard(uid, dir) {
+  const arr = _inspectState.deckSortOrder;
+  const idx = arr.indexOf(uid);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= arr.length) return;
+  [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+  renderInspectTopN();
+}
+
+function confirmInspectTopN() {
+  const n = _inspectState.cards.length;
+  const toHand = _inspectState.cards.filter(c => _inspectState.assignments[c.uid] === 'hand');
+  const toDeckOrdered = _inspectState.deckSortOrder.map(uid => _inspectState.cards.find(c => c.uid === uid)).filter(Boolean);
+  G.draw.splice(0, n);
+  G.draw.unshift(...toDeckOrdered);
+  toHand.forEach(c => G.hand.push(c));
+  const handNums = toHand.map(c => '#' + c.pos).join(', ') || 'none';
+  const deckDesc = toDeckOrdered.map((c, i) => '#' + c.pos + '\u2192#' + (i + 1)).join(', ') || 'none';
+  addLogEntry('You inspected top ' + n + ' cards: took ' + handNums + ' to hand; returned ' + deckDesc + ' to deck', 'other');
+  if (G.isMultiplayer) { publishEvent({ action: 'inspected-own-deck', count: toHand.length, total: n }); syncMyHand(); }
+  closeSheet('sh-inspect-top-n');
+  closeSheet('sh-card-effects');
+  updateAll();
+  toast('Done!');
+}
+
+function openOpponentTopNRequest() {
+  const roomData = getRoomData(); if (!roomData) return;
+  const opponents = Object.keys(roomData.players || {}).filter(pid => pid !== G.playerId);
+  if (!opponents.length) { toast('No opponents found'); return; }
+  document.getElementById('inspect-top-n-title').textContent = "Peek Opponent's Deck";
+  const body = document.getElementById('inspect-top-n-body');
+  let html = '<div style="font-size:.8rem;color:var(--muted);margin-bottom:10px">Select opponent and number of cards:</div>';
+  opponents.forEach(pid => {
+    const p = roomData.players[pid];
+    const safeName = (p && p.name ? p.name : pid).replace(/'/g, "\\'");
+    html += `<div style="margin-bottom:14px"><div style="font-weight:600;margin-bottom:6px">${p && p.name ? p.name : pid}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${[2,3,4].map(n => `<button class="btn btn-ghost btn-sm" onclick="requestDeckShare('${pid}',${n},'${safeName}')">Top ${n}</button>`).join('')}
+      </div></div>`;
+  });
+  body.innerHTML = html;
+  openSheet('sh-inspect-top-n');
+}
+
+function requestDeckShare(pid, n, victimName) {
+  addLogEntry('You requested to peek at ' + victimName + "'s top " + n + ' cards', 'other');
+  publishEvent({ action: 'deck-share-request', victimId: pid, victimName: victimName, count: n });
+  closeSheet('sh-inspect-top-n');
+  closeSheet('sh-card-effects');
+  toast('Request sent \u2014 waiting for ' + victimName);
+}
+
+function acceptDeckShare() {
+  const notif = document.getElementById('deck-share-notif');
+  if (notif) notif.style.display = 'none';
+  if (!_pendingDeckShare) return;
+  const n = Math.min(_pendingDeckShare.count, G.draw.length);
+  if (!n) { toast('Draw pile is empty'); _pendingDeckShare = null; return; }
+  const topCards = G.draw.slice(0, n).map((c, i) => ({ image: c.image, uid: c.uid, deckKey: c.deckKey || G.deckKey, pos: i + 1 }));
+  addLogEntry('You shared your top ' + n + ' cards with ' + _pendingDeckShare.requesterName, 'other');
+  publishEvent({ action: 'deck-share-response', requesterId: _pendingDeckShare.requesterId,
+    responderId: G.playerId, victimName: G.playerName, topCards: topCards, count: n });
+  _pendingDeckShare = null;
+}
+
+function buildOppDeckInspectSheet(victimName, count) {
+  document.getElementById('inspect-top-n-title').textContent = victimName + "'s Top " + count;
+  const body = document.getElementById('inspect-top-n-body');
+  const cards = _inspectState.cards;
+  let html = `<div style="font-size:.78rem;color:var(--muted);margin-bottom:12px">Select one card to discard, then reorder the rest:</div>`;
+  cards.forEach(card => {
+    const isDiscard = _inspectState.assignments[card.uid] === 'discard';
+    const deckIdx = _inspectState.deckSortOrder.indexOf(card.uid);
+    html += `<div class="inspect-card-row">
+      <div class="inspect-card-thumb"><img src="${card.image}" alt=""></div>
+      <div class="inspect-card-meta"><div class="inspect-card-name">${cardLabel(card)}</div>
+        <div class="inspect-card-pos">Card #${card.pos} from top</div></div>
+      <div class="inspect-card-actions">
+        <button class="btn btn-sm ${isDiscard ? 'btn-red' : 'btn-ghost'}" onclick="toggleOppDeckAssign('${card.uid}')">
+          ${isDiscard ? '\uD83D\uDDD1 Discard' : 'Keep'}
+        </button>
+        ${!isDiscard ? `<button class="btn btn-xs btn-ghost" onclick="moveOppDeckCard('${card.uid}',-1)" ${deckIdx === 0 ? 'disabled' : ''}>\u2191</button>
+        <button class="btn btn-xs btn-ghost" onclick="moveOppDeckCard('${card.uid}',1)" ${deckIdx === _inspectState.deckSortOrder.length - 1 ? 'disabled' : ''}>\u2193</button>` : ''}
+      </div></div>`;
+  });
+  const discardCount = cards.filter(c => _inspectState.assignments[c.uid] === 'discard').length;
+  html += `<button class="btn btn-accent btn-full" style="margin-top:16px" ${discardCount !== 1 ? 'disabled' : ''} onclick="confirmOppDeckAction()">
+    \u2713 Discard 1, Return ${cards.length - discardCount} to deck</button>`;
+  body.innerHTML = html;
+}
+
+function toggleOppDeckAssign(uid) {
+  const cards = _inspectState.cards;
+  cards.forEach(c => { _inspectState.assignments[c.uid] = 'keep'; });
+  if (!_inspectState.assignments[uid] || _inspectState.assignments[uid] !== 'discard') {
+    _inspectState.assignments[uid] = 'discard';
+    _inspectState.deckSortOrder = cards.filter(c => c.uid !== uid).map(c => c.uid);
+  } else {
+    _inspectState.assignments[uid] = 'keep';
+    _inspectState.deckSortOrder = cards.map(c => c.uid);
+  }
+  const victimName = document.getElementById('inspect-top-n-title').textContent.replace(/'s Top.*$/, '');
+  buildOppDeckInspectSheet(victimName, cards.length);
+}
+
+function moveOppDeckCard(uid, dir) {
+  const arr = _inspectState.deckSortOrder;
+  const idx = arr.indexOf(uid);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= arr.length) return;
+  [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+  const victimName = document.getElementById('inspect-top-n-title').textContent.replace(/'s Top.*$/, '');
+  buildOppDeckInspectSheet(victimName, _inspectState.cards.length);
+}
+
+function confirmOppDeckAction() {
+  const pid = _inspectState.pid;
+  const discardCard = _inspectState.cards.find(c => _inspectState.assignments[c.uid] === 'discard');
+  const keepOrdered = _inspectState.deckSortOrder.map(uid => _inspectState.cards.find(c => c.uid === uid)).filter(Boolean);
+  if (!discardCard) { toast('Select one card to discard'); return; }
+  const roomData = getRoomData();
+  const victim = roomData && roomData.players && roomData.players[pid] ? roomData.players[pid] : null;
+  const victimName = victim ? (victim.name || pid) : 'Opponent';
+  addLogEntry('You discarded "' + cardLabel(discardCard) + '" (#' + discardCard.pos + ') from ' + victimName + "'s deck", 'discard');
+  if (keepOrdered.length) addLogEntry('You returned ' + keepOrdered.map((c, i) => '#' + c.pos + '\u2192#' + (i + 1)).join(', ') + ' to ' + victimName + "'s deck", 'other');
+  publishEvent({ action: 'force-deck-peek-discard', victimId: pid, victimName: victimName,
+    cardUid: discardCard.uid, cardName: cardLabel(discardCard) });
+  if (keepOrdered.length) {
+    publishEvent({ action: 'force-deck-peek-reorder', victimId: pid, victimName: victimName,
+      orderedUids: keepOrdered.map(c => c.uid) });
+  }
+  closeSheet('sh-inspect-top-n');
+  closeSheet('sh-card-effects');
+  toast('Done!');
+}
+
+// \u2550\u2550\u2550 END CARD EFFECTS \u2550\u2550\u2550
 
 // ═══════════════════════════════════════════════════════════════════════
 // TOAST
