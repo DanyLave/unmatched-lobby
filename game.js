@@ -553,6 +553,10 @@ function checkNewReveals(roomData) {
         text = n + ' shuffled discard (' + (r.count || '?') + ' cards) into deck';
         type = 'other';
         break;
+      case 'used-special':
+        text = n + ' used ' + (r.saLabel || 'special ability') + (r.cardName ? ': ' + r.cardName : '');
+        type = 'other';
+        break;
       case 'turn-end':
         text = n + ' ended their turn';
         type = 'turn';
@@ -1446,8 +1450,18 @@ function addMoreToCombat() {
   enterSel();
   document.getElementById('sel-actions').innerHTML = `
     <button class="btn btn-accent btn-sm" onclick="addSelectedToCombat()">Add to Combat</button>
+    <button class="btn btn-ghost btn-sm" onclick="pickRandomForCombat()">🎲 Random</button>
     <button class="btn btn-ghost btn-sm" onclick="exitSel()">Cancel</button>
   `;
+}
+
+function pickRandomForCombat() {
+  if (!G.hand.length) { toast('No cards in hand'); return; }
+  const idx = Math.floor(Math.random() * G.hand.length);
+  const card = G.hand[idx];
+  _randomPickedUid = card.uid;
+  exitSel();
+  addCardToCombat(card);
 }
 
 // Clear all combat cards — moves to intermediate (if present) or discard
@@ -2167,7 +2181,7 @@ function renderOverlayMenu() {
     } else {
       const buttons = [
         { label: '▶ Play', cls: 'btn btn-accent btn-full', fn: () => playCard(card) },
-        { label: 'Discard', cls: 'btn btn-ghost btn-full', fn: () => { discardCard(card); closeCardOverlay(); toast('Discarded'); if (G.isMultiplayer) publishAction(card, 'discarded'); } },
+        { label: 'Discard', cls: 'btn btn-ghost btn-full', fn: () => { discardCard(card); closeCardOverlay(); toast('Discarded'); } },
         { label: 'Return to Deck', cls: 'btn btn-ghost btn-full', fn: () => { _overlayMenu = 'return'; renderOverlayMenu(); } },
       ];
       
@@ -2684,10 +2698,16 @@ function updateSpecialDisplay() {
 
 function useSpecialAbility() {
   if (!G.specialCurrent) return;
+  const dk = DECKS[G.deckKey];
+  const sa = dk && dk.specialAbility ? dk.specialAbility : {};
+  const saLabel = sa.label || 'Special Ability';
 
   if (G.specialMode === 'discard') {
-    G.specialDiscard.push(G.specialCurrent);
+    const usedCard = G.specialCurrent;
+    G.specialDiscard.push(usedCard);
     G.specialCurrent = G.specialDeck.shift() || null;
+    addLogEntry('You used ' + saLabel + (usedCard ? ': ' + cardLabel(usedCard) : ''), 'other');
+    if (G.isMultiplayer) publishEvent({ action: 'used-special', saLabel, cardName: cardLabel(usedCard) });
     toast('Special ability used');
   } else if (G.specialMode === 'swap') {
     const currentIdx = G.specialDeck.findIndex(c => c.id === G.specialCurrent.id);
@@ -2698,6 +2718,8 @@ function useSpecialAbility() {
       G.specialDeck.unshift(G.specialCurrent);
       G.specialCurrent = G.specialDeck[1] || G.specialDeck[0];
     }
+    addLogEntry('You swapped ' + saLabel + ' → ' + cardLabel(G.specialCurrent), 'other');
+    if (G.isMultiplayer) publishEvent({ action: 'used-special', saLabel, cardName: cardLabel(G.specialCurrent) });
     toast('Swapped');
   }
 
