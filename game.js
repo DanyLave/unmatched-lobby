@@ -494,18 +494,12 @@ function checkNewReveals(roomData) {
 
     switch (r.action) {
       case 'played':
-        if (r.random) {
-          text = n + ' played a random card 🎲';
-          type = 'other';
-          // Don't set lastShowNotif — don't reveal which card it was
-        } else {
-          text = n + ' played ' + cWord;
-          type = 'other';
-          lastShowNotif = r;
-        }
+        text = r.random ? n + ' played a random card 🎲' : n + ' played ' + cWord;
+        type = 'other';
+        lastShowNotif = r; // always show popup; showRevealNotification handles random
         break;
       case 'discarded':
-        text = n + ' discarded ' + cWord;
+        text = r.random ? n + ' discarded a random card 🎲' : n + ' discarded ' + cWord;
         type = 'discard';
         lastShowNotif = r;
         break;
@@ -519,7 +513,7 @@ function checkNewReveals(roomData) {
         type = 'hp';
         break;
       case 'added-to-combat':
-        text = n + ' added ' + cWord + ' to combat \u2694\ufe0f';
+        text = n + (r.random ? ' added a random card to combat \ud83c\udfb2\u2694\ufe0f' : ' added ' + cWord + ' to combat \u2694\ufe0f');
         type = 'combat';
         break;
       case 'combat-reveal':
@@ -582,7 +576,7 @@ function showRevealNotification(reveal) {
   const action = reveal.action || 'played';
   const verb = action === 'discarded' ? 'discarded' : 'played';
   const count = reveal.cards ? reveal.cards.length : 0;
-  const cardWord = count === 1 ? 'a card' : count + ' cards';
+  const cardWord = reveal.random ? 'a random card \ud83c\udfb2' : (count === 1 ? 'a card' : count + ' cards');
   document.getElementById('reveal-notif-player').textContent = reveal.playerName + ' ' + verb + ' ' + cardWord + '!';
   
   const timeAgo = Math.floor((Date.now() - reveal.timestamp) / 1000);
@@ -590,12 +584,21 @@ function showRevealNotification(reveal) {
   
   const grid = document.getElementById('reveal-notif-cards');
   grid.innerHTML = '';
-  reveal.cards.forEach(card => {
+  if (reveal.random) {
+    // Don't show the actual card image — keep it secret
     const div = document.createElement('div');
     div.className = 'reveal-card-item';
-    div.innerHTML = `<img src="${card.image}" alt="">`;
+    div.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:2rem;min-width:60px;';
+    div.textContent = '\ud83c\udfb2';
     grid.appendChild(div);
-  });
+  } else {
+    reveal.cards.forEach(card => {
+      const div = document.createElement('div');
+      div.className = 'reveal-card-item';
+      div.innerHTML = `<img src="${card.image}" alt="">`;
+      grid.appendChild(div);
+    });
+  }
   
   notif.classList.add('show');
 }
@@ -1853,15 +1856,15 @@ function discardCard(card) {
     G.intermediate.push(card);
   } else {
     G.discard.push(card);
-    
-    // Sync discard cards in multiplayer
     if (G.isMultiplayer) {
       const roomData = getRoomData();
       if (roomData && roomData.players[G.playerId]) {
-        if (!roomData.players[G.playerId].discardCards) {
-          roomData.players[G.playerId].discardCards = [];
-        }
+        if (!roomData.players[G.playerId].discardCards) roomData.players[G.playerId].discardCards = [];
         roomData.players[G.playerId].discardCards.push({ image: card.image, uid: card.uid });
+        if (!roomData.reveals) roomData.reveals = [];
+        roomData.reveals.push(Object.assign({ playerId: G.playerId, playerName: G.playerName, timestamp: Date.now(),
+          action: 'discarded', cards: [{ image: card.image }] }, rndPrefixDiscard ? { random: true } : {}));
+        if (roomData.reveals.length > 50) roomData.reveals = roomData.reveals.slice(-50);
         setRoomData(roomData);
       }
     }
