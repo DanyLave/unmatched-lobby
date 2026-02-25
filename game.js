@@ -13,6 +13,8 @@ const G = {
   intermediate: [],
   selected: [],
   selectMode: false,
+  intermediateSelected: [],
+  intermediateSelectMode: false,
   hp: {},
   specialDeck: [],
   specialDiscard: [],
@@ -557,6 +559,11 @@ function checkNewReveals(roomData) {
         text = n + ' used ' + (r.saLabel || 'special ability') + (r.cardName ? ': ' + r.cardName : '');
         type = 'other';
         break;
+      case 'activated-special':
+        text = n + (r.random ? ' randomly activated their special ability 🎲✨' : ' activated their special ability ✨');
+        type = 'play';
+        lastShowNotif = r;
+        break;
       case 'turn-end':
         text = n + ' ended their turn';
         type = 'turn';
@@ -578,10 +585,10 @@ function checkNewReveals(roomData) {
 function showRevealNotification(reveal) {
   const notif = document.getElementById('reveal-notification');
   const action = reveal.action || 'played';
-  const verb = action === 'discarded' ? 'discarded' : 'played';
+  const verb = action === 'discarded' ? 'discarded' : action === 'activated-special' ? 'activated their special ability' : 'played';
   const count = reveal.cards ? reveal.cards.length : 0;
-  const cardWord = reveal.random ? 'a random card \ud83c\udfb2' : (count === 1 ? 'a card' : count + ' cards');
-  document.getElementById('reveal-notif-player').textContent = reveal.playerName + ' ' + verb + ' ' + cardWord + '!';
+  const cardWord = action === 'activated-special' ? '' : (reveal.random ? 'a random card \ud83c\udfb2' : (count === 1 ? 'a card' : count + ' cards'));
+  document.getElementById('reveal-notif-player').textContent = reveal.playerName + ' ' + verb + (cardWord ? ' ' + cardWord : '') + '!';
   
   const timeAgo = Math.floor((Date.now() - reveal.timestamp) / 1000);
   document.getElementById('reveal-notif-time').textContent = timeAgo < 5 ? 'Just now' : timeAgo + 's ago';
@@ -2172,8 +2179,9 @@ function renderOverlayMenu() {
       acts.appendChild(closeBtn);
     } else if (_overlaySource === 'intermediate') {
       [
-        { label: '→ Hand', cls: 'btn btn-accent btn-full', fn: () => moveToHand(card) },
-        { label: '→ Discard', cls: 'btn btn-ghost btn-full', fn: () => moveToDiscard(card) },
+        { label: '▶ Activate (→ Discard)', cls: 'btn btn-accent btn-full', fn: () => playFromIntermediate(card) },
+        { label: '→ Hand', cls: 'btn btn-ghost btn-full', fn: () => moveToHand(card) },
+        { label: '→ Discard (silent)', cls: 'btn btn-ghost btn-full', fn: () => moveToDiscard(card) },
         { label: 'Return to Deck', cls: 'btn btn-ghost btn-full', fn: () => { _overlayMenu = 'return'; renderOverlayMenu(); } },
       ].forEach(b => {
         const btn = document.createElement('button');
@@ -2369,6 +2377,8 @@ function updateAll() {
   document.getElementById('sel-mode-btn').style.display = h > 0 ? 'inline-flex' : 'none';
   document.getElementById('pick-random-hand-btn').style.display = h > 0 ? 'inline-flex' : 'none';
   document.getElementById('pick-random-intermediate-btn').style.display = iz > 0 ? 'inline-flex' : 'none';
+  const izSelBtn = document.getElementById('intermediate-sel-mode-btn');
+  if (izSelBtn) izSelBtn.style.display = iz > 0 ? 'inline-flex' : 'none';
 
   renderHand();
   if (document.getElementById('staged-content')) renderStaged();
@@ -2446,13 +2456,122 @@ function renderIntermediate() {
   row.className = 'intermediate-zone';
   G.intermediate.forEach(card => {
     const c = document.createElement('div');
-    c.className = 'intermediate-card';
+    const isSel = G.intermediateSelectMode && G.intermediateSelected.includes(card.uid);
+    c.className = 'intermediate-card' + (isSel ? ' selected' : '');
     c.innerHTML = `<img src="${card.image}" alt="" onerror="this.style.opacity='.2'">`;
-    c.onclick = () => openCardOverlay(card, 'intermediate');
+    c.onclick = G.intermediateSelectMode
+      ? () => intermediateToggleSel(card.uid)
+      : () => openCardOverlay(card, 'intermediate');
     row.appendChild(c);
   });
   cont.innerHTML = '';
   cont.appendChild(row);
+}
+
+function enterIntermediateSel() {
+  G.intermediateSelectMode = true;
+  G.intermediateSelected = [];
+  document.getElementById('intermediate-top-bar').style.display = 'flex';
+  document.getElementById('intermediate-sel-actions').style.display = 'flex';
+  document.getElementById('intermediate-normal').style.display = 'none';
+  renderIntermediate();
+}
+
+function exitIntermediateSel() {
+  G.intermediateSelectMode = false;
+  G.intermediateSelected = [];
+  document.getElementById('intermediate-top-bar').style.display = 'none';
+  document.getElementById('intermediate-sel-actions').style.display = 'none';
+  document.getElementById('intermediate-normal').style.display = 'block';
+  renderIntermediate();
+}
+
+function intermediateSelectAll() {
+  G.intermediateSelected = G.intermediate.map(c => c.uid);
+  intermediateUpdHint();
+  renderIntermediate();
+}
+
+function intermediateSelClear() {
+  G.intermediateSelected = [];
+  intermediateUpdHint();
+  renderIntermediate();
+}
+
+function intermediateUpdHint() {
+  document.getElementById('intermediate-hint').textContent = G.intermediateSelected.length + ' selected';
+}
+
+function intermediateToggleSel(uid) {
+  G.intermediateSelected.includes(uid)
+    ? (G.intermediateSelected = G.intermediateSelected.filter(x => x !== uid))
+    : G.intermediateSelected.push(uid);
+  intermediateUpdHint();
+  renderIntermediate();
+}
+
+function playFromIntermediate(card) {
+  const isRnd = card.uid === _randomPickedUid;
+  if (isRnd) _randomPickedUid = null;
+  G.intermediate = G.intermediate.filter(c => c.uid !== card.uid);
+  G.discard.push(card);
+  addLogEntry((isRnd ? '🎲 Random: ' : '') + 'You activated: ' + cardLabel(card), 'play');
+  if (G.isMultiplayer) {
+    const roomData = getRoomData();
+    if (roomData && roomData.players && roomData.players[G.playerId]) {
+      if (!roomData.players[G.playerId].discardCards) roomData.players[G.playerId].discardCards = [];
+      roomData.players[G.playerId].discardCards.push({ image: card.image, uid: card.uid, deckKey: card.deckKey || G.deckKey });
+      if (!roomData.reveals) roomData.reveals = [];
+      roomData.reveals.push(Object.assign({ playerId: G.playerId, playerName: G.playerName, timestamp: Date.now(),
+        action: 'activated-special', cards: [{ image: card.image }] }, isRnd ? { random: true } : {}));
+      if (roomData.reveals.length > 50) roomData.reveals = roomData.reveals.slice(-50);
+      setRoomData(roomData);
+    }
+  }
+  syncTS();
+  updateAll();
+  closeCardOverlay();
+  toast('Activated!');
+}
+
+function playSelectedFromIntermediate() {
+  if (!G.intermediateSelected.length) { toast('Select at least one card'); return; }
+  const cards = G.intermediate.filter(c => G.intermediateSelected.includes(c.uid));
+  cards.forEach(card => {
+    G.intermediate = G.intermediate.filter(c => c.uid !== card.uid);
+    G.discard.push(card);
+  });
+  addLogEntry('You activated ' + cards.length + ' card' + (cards.length > 1 ? 's' : ''), 'play');
+  if (G.isMultiplayer) {
+    const roomData = getRoomData();
+    if (roomData && roomData.players && roomData.players[G.playerId]) {
+      if (!roomData.players[G.playerId].discardCards) roomData.players[G.playerId].discardCards = [];
+      cards.forEach(c => roomData.players[G.playerId].discardCards.push({ image: c.image, uid: c.uid, deckKey: c.deckKey || G.deckKey }));
+      if (!roomData.reveals) roomData.reveals = [];
+      roomData.reveals.push({ playerId: G.playerId, playerName: G.playerName, timestamp: Date.now(),
+        action: 'activated-special', cards: cards.map(c => ({ image: c.image })) });
+      if (roomData.reveals.length > 50) roomData.reveals = roomData.reveals.slice(-50);
+      setRoomData(roomData);
+    }
+  }
+  exitIntermediateSel();
+  syncTS();
+  updateAll();
+  toast(cards.length + ' activated!');
+}
+
+function discardSelectedFromIntermediate() {
+  if (!G.intermediateSelected.length) { toast('Select at least one card'); return; }
+  const cards = G.intermediate.filter(c => G.intermediateSelected.includes(c.uid));
+  cards.forEach(card => {
+    G.intermediate = G.intermediate.filter(c => c.uid !== card.uid);
+    G.discard.push(card);
+  });
+  addLogEntry('You moved ' + cards.length + ' card' + (cards.length > 1 ? 's' : '') + ' → discard', 'discard');
+  if (G.isMultiplayer) syncMyDiscard();
+  exitIntermediateSel();
+  updateAll();
+  toast(cards.length + ' discarded');
 }
 
 function renderDiscard() {

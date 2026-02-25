@@ -771,6 +771,7 @@ body {
 }
 .intermediate-card:active { transform: scale(0.95); }
 .intermediate-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.intermediate-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .intermediate-empty { font-size: 0.76rem; color: var(--muted); padding: 14px 0; font-weight: 500; }
 
 .discard-zone { display: flex; gap: 14px; align-items: flex-start; }
@@ -3977,8 +3978,21 @@ moonknight: {
 
   <div class="play-section" id="intermediate-section" style="display:none">
     <div class="sec-label collapsible" onclick="toggleSection(this)"><span id="intermediate-label">Zone</span> <span class="sec-count" id="sc-intermediate">0</span></div>
+    <div class="hand-top-bar" id="intermediate-top-bar" style="display:none">
+      <span class="select-hint" id="intermediate-hint">0 selected</span>
+      <button class="btn btn-xs btn-ghost" onclick="intermediateSelectAll()">All</button>
+      <button class="btn btn-xs btn-ghost" onclick="intermediateSelClear()">Clear</button>
+    </div>
     <div id="intermediate-content"><div class="intermediate-empty">No cards here yet</div></div>
-    <button class="btn btn-accent btn-sm" id="pick-random-intermediate-btn" onclick="pickRandom('intermediate')" style="display:none;margin-top:10px">🎲 Pick Random</button>
+    <div id="intermediate-normal">
+      <button class="btn btn-ghost btn-sm" id="intermediate-sel-mode-btn" onclick="enterIntermediateSel()" style="display:none;margin-top:6px">Select Cards</button>
+      <button class="btn btn-accent btn-sm" id="pick-random-intermediate-btn" onclick="pickRandom('intermediate')" style="display:none;margin-top:6px">🎲 Pick Random</button>
+    </div>
+    <div class="select-actions" id="intermediate-sel-actions" style="display:none">
+      <button class="btn btn-accent btn-sm" onclick="playSelectedFromIntermediate()">▶ Activate</button>
+      <button class="btn btn-ghost btn-sm" onclick="discardSelectedFromIntermediate()">→ Discard</button>
+      <button class="btn btn-ghost btn-sm" onclick="exitIntermediateSel()">Done</button>
+    </div>
   </div>
 
   <div class="play-section">
@@ -4413,7 +4427,7 @@ moonknight: {
     const script = document.createElement('script');
     // Try to detect the base path for GitHub Pages
     const basePath = window.location.pathname.includes('/unmatched-lobby/') ? '/unmatched-lobby/' : './';
-    script.src = basePath + 'game.js?v=20260225f';
+    script.src = basePath + 'game.js?v=20260225g';
     script.onerror = function() {
       console.error('❌ Failed to load game.js from:', basePath + 'game.js');
       console.error('Current URL:', window.location.href);
