@@ -520,7 +520,13 @@ function checkNewReveals(roomData) {
         type = 'hp';
         break;
       case 'added-to-combat':
-        text = n + (r.random ? ' added a random card to combat \ud83c\udfb2\u2694\ufe0f' : r.fromTopDeck ? ' added the top card of their deck to combat \u2694\ufe0f' : ' added ' + cWord + ' to combat \u2694\ufe0f');
+        text = r.random
+          ? n + ' added a random card from hand to combat \uD83C\uDFB2\u2694\uFE0F'
+          : r.fromTopDeck
+            ? n + ' added the top card of their deck to combat \u2694\uFE0F'
+            : r.fromHand
+              ? n + ' added ' + cWord + ' from hand to combat \u2694\uFE0F'
+              : n + ' added ' + cWord + ' to combat \u2694\uFE0F';
         type = 'combat';
         break;
       case 'combat-reveal':
@@ -1510,8 +1516,10 @@ function addCardToCombat(card) {
   
   setRoomData(roomData);
   G.combat = normalizeCombat(roomData.combat);
-  addLogEntry('You added “' + cardLabel(card) + '” to combat ⚔️', 'combat');
-  publishEvent({ action: 'added-to-combat', count: 1 });
+  const isRnd = card.uid === _randomPickedUid;
+  if (isRnd) _randomPickedUid = null;
+  addLogEntry((isRnd ? '🎲 Random: ' : '') + 'You added “' + cardLabel(card) + '” to combat from hand ⚔️', 'combat');
+  publishEvent({ action: 'added-to-combat', count: 1, fromHand: true, random: isRnd || undefined });
   updateAll();
   renderCombatArea();
   toast('Card added to combat');
@@ -1540,8 +1548,8 @@ function addSelectedToCombat() {
   
   setRoomData(roomData);
   G.combat = normalizeCombat(roomData.combat);
-  addLogEntry('You added ' + selectedCards.length + ' card' + (selectedCards.length > 1 ? 's' : '') + ' to combat ⚔️', 'combat');
-  publishEvent({ action: 'added-to-combat', count: selectedCards.length });
+  addLogEntry('You added ' + selectedCards.length + ' card' + (selectedCards.length > 1 ? 's' : '') + ' from hand to combat \u2694\uFE0F', 'combat');
+  publishEvent({ action: 'added-to-combat', count: selectedCards.length, fromHand: true });
   exitSel();
   updateAll();
   renderCombatArea();
