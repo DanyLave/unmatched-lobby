@@ -45,6 +45,7 @@ let _randomPickedUid = null;
 // State for deck/hand inspect flows
 let _inspectState = { source: 'own', pid: null, cards: [], assignments: {}, deckSortOrder: [] };
 let _pendingDeckShare = null; // { requesterId, requesterName, count }
+let _pendingHandShare = null; // { requesterId, requesterName }
 
 function scheduleCardExit(card) {
   _exitingCards.set(card.uid, { image: card.image, uid: card.uid });
@@ -609,7 +610,7 @@ function checkNewReveals(roomData) {
         if (r.requesterId === G.playerId) {
           _inspectState = { source: 'opp', pid: r.responderId, cards: (r.topCards || []).map((c, i) => ({ ...c, pos: i + 1 })), assignments: {}, deckSortOrder: (r.topCards || []).map(c => c.uid) };
           _inspectState.cards.forEach(c => { _inspectState.assignments[c.uid] = 'keep'; });
-          buildOppDeckInspectSheet(r.victimName || r.playerName || 'Opponent', r.count || _inspectState.cards.length);
+          buildOppTopNBrowseSheet(r.victimName || r.playerName || 'Opponent');
           openSheet('sh-inspect-top-n');
         }
         text = n + ' shared their top ' + (r.count || '?') + ' cards';
@@ -633,6 +634,46 @@ function checkNewReveals(roomData) {
           updateAll();
         }
         text = n + ' reordered the top of ' + (r.victimName || 'someone') + "'s deck";
+        type = 'other';
+        break;
+      case 'force-deck-take-to-hand':
+        if (r.victimId === G.playerId) {
+          G.draw = G.draw.filter(c => c.uid !== r.cardUid);
+          updateAll();
+        }
+        text = r.victimId === G.playerId
+          ? n + ' took \u201c' + (r.cardName || 'a card') + '\u201d from your deck'
+          : n + ' took \u201c' + (r.cardName || 'a card') + '\u201d from ' + (r.victimName || 'someone') + "'s deck to their hand";
+        type = 'other';
+        break;
+      case 'force-take-from-hand':
+        if (r.victimId === G.playerId) {
+          G.hand = G.hand.filter(c => c.uid !== r.cardUid);
+          syncMyHand();
+          updateAll();
+        }
+        text = r.victimId === G.playerId
+          ? n + ' took \u201c' + (r.cardName || 'a card') + '\u201d from your hand'
+          : n + ' took \u201c' + (r.cardName || 'a card') + '\u201d from ' + (r.victimName || 'someone') + "'s hand";
+        type = 'other';
+        break;
+      case 'hand-share-request':
+        if (r.victimId === G.playerId) {
+          _pendingHandShare = { requesterId: r.playerId, requesterName: r.playerName };
+          const hsText = document.getElementById('hand-share-text');
+          if (hsText) hsText.textContent = r.playerName + ' wants to see your hand';
+          const hsNotif = document.getElementById('hand-share-notif');
+          if (hsNotif) { hsNotif.style.display = 'block'; setTimeout(() => hsNotif.style.display = 'none', 15000); }
+        }
+        text = n + ' wants to see ' + (r.victimName || 'someone') + "'s hand";
+        type = 'other';
+        break;
+      case 'hand-share-response':
+        if (r.requesterId === G.playerId) {
+          buildOppHandViewSheet(r.victimName || r.playerName || 'Opponent', r.handCards || [], r.responderId);
+          openSheet('sh-view-opp-hand');
+        }
+        text = n + ' shared their hand';
         type = 'other';
         break;
       default:
@@ -1529,10 +1570,14 @@ function revealMyCombatCards() {
 
 // Add more cards after already revealing (enters select mode)
 function addMoreToCombat() {
+  openSheet('sh-combat-add-more');
+}
+
+function enterCombatHandSelect() {
+  closeSheet('sh-combat-add-more');
   enterSel();
   document.getElementById('sel-actions').innerHTML = `
     <button class="btn btn-accent btn-sm" onclick="addSelectedToCombat()">Add to Combat</button>
-    <button class="btn btn-ghost btn-sm" onclick="pickRandomForCombat()">🎲 Random</button>
     <button class="btn btn-ghost btn-sm" onclick="exitSel()">Cancel</button>
   `;
 }
@@ -1544,6 +1589,31 @@ function pickRandomForCombat() {
   _randomPickedUid = card.uid;
   exitSel();
   addCardToCombat(card);
+}
+
+function pickRandomForCombatFromMenu() {
+  closeSheet('sh-combat-add-more');
+  pickRandomForCombat();
+}
+
+function addTopCardToCombatDirect() {
+  closeSheet('sh-combat-add-more');
+  if (!G.isMultiplayer) { toast('Not in multiplayer'); return; }
+  if (!G.draw.length) { toast('Draw pile is empty'); return; }
+  const roomData = getRoomData();
+  if (!roomData) return;
+  if (!roomData.combat) roomData.combat = {};
+  if (!roomData.combat[G.playerId]) roomData.combat[G.playerId] = { cards: [], revealed: false };
+  const card = G.draw.shift();
+  roomData.combat[G.playerId].cards = roomData.combat[G.playerId].cards || [];
+  roomData.combat[G.playerId].cards.push({ image: card.image, uid: card.uid });
+  setRoomData(roomData);
+  G.combat = normalizeCombat(roomData.combat);
+  addLogEntry('You added the top card of your deck to combat ⚔️', 'combat');
+  publishEvent({ action: 'added-to-combat', count: 1, fromTopDeck: true });
+  updateAll();
+  renderCombatArea();
+  toast('Top card added to combat');
 }
 
 // Clear all combat cards — moves to intermediate (if present) or discard
@@ -3063,12 +3133,18 @@ function recoverSpecialCardToBottom(idx) {
 // \u2550\u2550\u2550 CARD EFFECTS \u2550\u2550\u2550
 
 function openEffectsSheet() {
-  const hasSA = G.specialDiscard && G.specialDiscard.length > 0;
-  const salEl = document.getElementById('special-recover-label');
-  const sabEl = document.getElementById('special-recover-effect-btn');
-  if (salEl) salEl.style.display = hasSA ? 'block' : 'none';
-  if (sabEl) sabEl.style.display = hasSA ? 'flex' : 'none';
+  _buildInteractHome();
   openSheet('sh-card-effects');
+}
+
+function _buildInteractHome() {
+  const body = document.getElementById('interact-body');
+  if (!body) return;
+  body.innerHTML = `
+    <div class="effects-list">
+      <button class="btn btn-accent btn-full" onclick="openTopNRequest()">🔍 See Player's Top N Cards</button>
+      <button class="btn btn-ghost btn-full" style="margin-top:8px" onclick="openHandViewRequest()">✋ See Player's Hand</button>
+    </div>`;
 }
 
 function addTopCardToCombat() {
@@ -3264,29 +3340,72 @@ function confirmInspectTopN() {
   toast('Done!');
 }
 
-function openOpponentTopNRequest() {
+function openTopNRequest() {
   const roomData = getRoomData(); if (!roomData) return;
   const opponents = Object.keys(roomData.players || {}).filter(pid => pid !== G.playerId);
   if (!opponents.length) { toast('No opponents found'); return; }
-  document.getElementById('inspect-top-n-title').textContent = "Peek Opponent's Deck";
-  const body = document.getElementById('inspect-top-n-body');
-  let html = '<div style="font-size:.8rem;color:var(--muted);margin-bottom:10px">Select opponent and number of cards:</div>';
-  opponents.forEach(pid => {
+  const body = document.getElementById('interact-body');
+  const oppButtons = opponents.map(pid => {
     const p = roomData.players[pid];
-    const safeName = (p && p.name ? p.name : pid).replace(/'/g, "\\'");
-    html += `<div style="margin-bottom:14px"><div style="font-weight:600;margin-bottom:6px">${p && p.name ? p.name : pid}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${[2,3,4].map(n => `<button class="btn btn-ghost btn-sm" onclick="requestDeckShare('${pid}',${n},'${safeName}')">Top ${n}</button>`).join('')}
-      </div></div>`;
-  });
-  body.innerHTML = html;
-  openSheet('sh-inspect-top-n');
+    const safeN = (p && p.name ? p.name : pid).replace(/'/g, "\\'");
+    return `<button class="btn btn-ghost btn-full" style="margin-bottom:6px" onclick="confirmTopNRequest('${pid}','${safeN}')">${p && p.name ? p.name : pid}</button>`;
+  }).join('');
+  body.innerHTML = `
+    <div class="interact-back-row" onclick="_buildInteractHome()">
+      <svg viewBox="0 0 24 24" width="16" height="16"><polyline points="15,18 9,12 15,6"/></svg> Back
+    </div>
+    <div style="font-size:.82rem;font-weight:600;margin-bottom:8px">How many cards to see?</div>
+    <input type="number" id="top-n-input" value="3" min="1" max="15"
+      style="width:72px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text);font-size:1rem;margin-bottom:14px">
+    <div style="font-size:.82rem;font-weight:600;margin-bottom:8px">Select player:</div>
+    ${oppButtons}`;
+}
+
+function confirmTopNRequest(pid, victimName) {
+  const inp = document.getElementById('top-n-input');
+  const n = Math.max(1, Math.min(15, parseInt(inp ? inp.value : '3') || 3));
+  requestDeckShare(pid, n, victimName);
+}
+
+function openHandViewRequest() {
+  const roomData = getRoomData(); if (!roomData) return;
+  const opponents = Object.keys(roomData.players || {}).filter(pid => pid !== G.playerId);
+  if (!opponents.length) { toast('No opponents found'); return; }
+  const body = document.getElementById('interact-body');
+  const oppButtons = opponents.map(pid => {
+    const p = roomData.players[pid];
+    const safeN = (p && p.name ? p.name : pid).replace(/'/g, "\\'");
+    return `<button class="btn btn-ghost btn-full" style="margin-bottom:6px" onclick="requestHandShare('${pid}','${safeN}')">${p && p.name ? p.name : pid}</button>`;
+  }).join('');
+  body.innerHTML = `
+    <div class="interact-back-row" onclick="_buildInteractHome()">
+      <svg viewBox="0 0 24 24" width="16" height="16"><polyline points="15,18 9,12 15,6"/></svg> Back
+    </div>
+    <div style="font-size:.82rem;font-weight:600;margin-bottom:8px">Select player to view their hand:</div>
+    ${oppButtons}`;
+}
+
+function requestHandShare(pid, victimName) {
+  addLogEntry('You requested to see ' + victimName + "'s hand", 'other');
+  publishEvent({ action: 'hand-share-request', victimId: pid, victimName: victimName });
+  closeSheet('sh-card-effects');
+  toast('Request sent \u2014 waiting for ' + victimName);
+}
+
+function acceptHandShare() {
+  const notif = document.getElementById('hand-share-notif');
+  if (notif) notif.style.display = 'none';
+  if (!_pendingHandShare) return;
+  addLogEntry('You shared your hand with ' + _pendingHandShare.requesterName, 'other');
+  publishEvent({ action: 'hand-share-response', requesterId: _pendingHandShare.requesterId,
+    responderId: G.playerId, victimName: G.playerName,
+    handCards: G.hand.map(c => ({ image: c.image, uid: c.uid, deckKey: c.deckKey || G.deckKey })) });
+  _pendingHandShare = null;
 }
 
 function requestDeckShare(pid, n, victimName) {
   addLogEntry('You requested to peek at ' + victimName + "'s top " + n + ' cards', 'other');
   publishEvent({ action: 'deck-share-request', victimId: pid, victimName: victimName, count: n });
-  closeSheet('sh-inspect-top-n');
   closeSheet('sh-card-effects');
   toast('Request sent \u2014 waiting for ' + victimName);
 }
@@ -3304,75 +3423,158 @@ function acceptDeckShare() {
   _pendingDeckShare = null;
 }
 
-function buildOppDeckInspectSheet(victimName, count) {
-  document.getElementById('inspect-top-n-title').textContent = victimName + "'s Top " + count;
+function buildOppTopNBrowseSheet(victimName) {
+  document.getElementById('inspect-top-n-title').textContent = victimName + "'s Deck (Top " + _inspectState.cards.length + ')';
   const body = document.getElementById('inspect-top-n-body');
-  const cards = _inspectState.cards;
-  let html = `<div style="font-size:.78rem;color:var(--muted);margin-bottom:12px">Select one card to discard, then reorder the rest:</div>`;
-  cards.forEach(card => {
-    const isDiscard = _inspectState.assignments[card.uid] === 'discard';
-    const deckIdx = _inspectState.deckSortOrder.indexOf(card.uid);
-    html += `<div class="inspect-card-row">
-      <div class="inspect-card-thumb"><img src="${card.image}" alt=""></div>
-      <div class="inspect-card-meta"><div class="inspect-card-name">${cardLabel(card)}</div>
-        <div class="inspect-card-pos">Card #${card.pos} from top</div></div>
-      <div class="inspect-card-actions">
-        <button class="btn btn-sm ${isDiscard ? 'btn-red' : 'btn-ghost'}" onclick="toggleOppDeckAssign('${card.uid}')">
-          ${isDiscard ? '\uD83D\uDDD1 Discard' : 'Keep'}
-        </button>
-        ${!isDiscard ? `<button class="btn btn-xs btn-ghost" onclick="moveOppDeckCard('${card.uid}',-1)" ${deckIdx === 0 ? 'disabled' : ''}>\u2191</button>
-        <button class="btn btn-xs btn-ghost" onclick="moveOppDeckCard('${card.uid}',1)" ${deckIdx === _inspectState.deckSortOrder.length - 1 ? 'disabled' : ''}>\u2193</button>` : ''}
-      </div></div>`;
+  body.innerHTML = '';
+  if (!_inspectState.cards.length) {
+    body.innerHTML = '<p style="color:var(--muted);text-align:center;padding:24px">All cards have been actioned.</p>';
+    return;
+  }
+  const hint = document.createElement('div');
+  hint.style.cssText = 'font-size:.72rem;color:var(--muted);margin-bottom:14px';
+  hint.textContent = '\u2195 Reorder, take cards to your hand, or discard them. Tap \u2713 Confirm to put remaining back on top of their deck.';
+  body.appendChild(hint);
+  _inspectState.cards.forEach((card, idx) => {
+    const item = document.createElement('div');
+    item.className = 'browse-item';
+    const cardBig = document.createElement('div');
+    cardBig.className = 'browse-card-big';
+    cardBig.innerHTML = `<img src="${card.image}" alt="" onerror="this.outerHTML='<span>\uD83C\uDCCB</span>'">`;
+    item.appendChild(cardBig);
+    const info = document.createElement('div');
+    info.className = 'browse-info-text';
+    info.textContent = '#' + (idx + 1) + ' from top';
+    item.appendChild(info);
+    const btns = document.createElement('div');
+    btns.className = 'browse-btns';
+    const safeLabel = cardLabel(card).replace(/'/g, "\\'");
+    const safeVic = victimName.replace(/'/g, "\\'");
+    btns.innerHTML = `
+      <button class="btn btn-sm btn-accent" onclick="oppTopNTakeToHand('${card.uid}','${safeVic}')">→ My Hand</button>
+      <button class="btn btn-sm btn-red" onclick="oppTopNDiscard('${card.uid}','${safeLabel}','${safeVic}')">Discard</button>
+      <button class="btn btn-sm btn-ghost" ${idx === 0 ? 'disabled' : ''} onclick="oppTopNMoveUp(${idx})">↑ Up</button>
+      <button class="btn btn-sm btn-ghost" ${idx === _inspectState.cards.length - 1 ? 'disabled' : ''} onclick="oppTopNMoveDown(${idx})">↓ Down</button>`;
+    item.appendChild(btns);
+    body.appendChild(item);
   });
-  const discardCount = cards.filter(c => _inspectState.assignments[c.uid] === 'discard').length;
-  html += `<button class="btn btn-accent btn-full" style="margin-top:16px" ${discardCount !== 1 ? 'disabled' : ''} onclick="confirmOppDeckAction()">
-    \u2713 Discard 1, Return ${cards.length - discardCount} to deck</button>`;
-  body.innerHTML = html;
+  const doneBtn = document.createElement('button');
+  doneBtn.className = 'btn btn-accent btn-full';
+  doneBtn.style.marginTop = '16px';
+  const safeVicFinal = victimName.replace(/'/g, "\\'");
+  doneBtn.textContent = '\u2713 Confirm Order \u2014 put ' + _inspectState.cards.length + ' card' + (_inspectState.cards.length !== 1 ? 's' : '') + ' back on top';
+  doneBtn.onclick = () => confirmOppTopNReorder(victimName);
+  body.appendChild(doneBtn);
 }
 
-function toggleOppDeckAssign(uid) {
-  const cards = _inspectState.cards;
-  cards.forEach(c => { _inspectState.assignments[c.uid] = 'keep'; });
-  if (!_inspectState.assignments[uid] || _inspectState.assignments[uid] !== 'discard') {
-    _inspectState.assignments[uid] = 'discard';
-    _inspectState.deckSortOrder = cards.filter(c => c.uid !== uid).map(c => c.uid);
-  } else {
-    _inspectState.assignments[uid] = 'keep';
-    _inspectState.deckSortOrder = cards.map(c => c.uid);
-  }
-  const victimName = document.getElementById('inspect-top-n-title').textContent.replace(/'s Top.*$/, '');
-  buildOppDeckInspectSheet(victimName, cards.length);
-}
-
-function moveOppDeckCard(uid, dir) {
-  const arr = _inspectState.deckSortOrder;
-  const idx = arr.indexOf(uid);
-  const newIdx = idx + dir;
-  if (newIdx < 0 || newIdx >= arr.length) return;
-  [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
-  const victimName = document.getElementById('inspect-top-n-title').textContent.replace(/'s Top.*$/, '');
-  buildOppDeckInspectSheet(victimName, _inspectState.cards.length);
-}
-
-function confirmOppDeckAction() {
+function oppTopNTakeToHand(uid, victimName) {
+  const card = _inspectState.cards.find(c => c.uid === uid);
+  if (!card) return;
+  _inspectState.cards = _inspectState.cards.filter(c => c.uid !== uid);
+  _inspectState.deckSortOrder = _inspectState.deckSortOrder.filter(x => x !== uid);
+  G.hand.push({ image: card.image, uid: card.uid, deckKey: card.deckKey || G.deckKey });
   const pid = _inspectState.pid;
-  const discardCard = _inspectState.cards.find(c => _inspectState.assignments[c.uid] === 'discard');
-  const keepOrdered = _inspectState.deckSortOrder.map(uid => _inspectState.cards.find(c => c.uid === uid)).filter(Boolean);
-  if (!discardCard) { toast('Select one card to discard'); return; }
-  const roomData = getRoomData();
-  const victim = roomData && roomData.players && roomData.players[pid] ? roomData.players[pid] : null;
-  const victimName = victim ? (victim.name || pid) : 'Opponent';
-  addLogEntry('You discarded "' + cardLabel(discardCard) + '" (#' + discardCard.pos + ') from ' + victimName + "'s deck", 'discard');
-  if (keepOrdered.length) addLogEntry('You returned ' + keepOrdered.map((c, i) => '#' + c.pos + '\u2192#' + (i + 1)).join(', ') + ' to ' + victimName + "'s deck", 'other');
+  publishEvent({ action: 'force-deck-take-to-hand', victimId: pid, victimName: victimName,
+    cardUid: uid, cardName: cardLabel(card) });
+  addLogEntry('You took \u201c' + cardLabel(card) + '\u201d from ' + victimName + "'s deck to your hand", 'other');
+  syncMyHand();
+  updateAll();
+  if (!_inspectState.cards.length) { closeSheet('sh-inspect-top-n'); toast('Done!'); return; }
+  buildOppTopNBrowseSheet(victimName);
+}
+
+function oppTopNDiscard(uid, cardName, victimName) {
+  const card = _inspectState.cards.find(c => c.uid === uid);
+  if (!card) return;
+  _inspectState.cards = _inspectState.cards.filter(c => c.uid !== uid);
+  _inspectState.deckSortOrder = _inspectState.deckSortOrder.filter(x => x !== uid);
+  const pid = _inspectState.pid;
   publishEvent({ action: 'force-deck-peek-discard', victimId: pid, victimName: victimName,
-    cardUid: discardCard.uid, cardName: cardLabel(discardCard) });
-  if (keepOrdered.length) {
-    publishEvent({ action: 'force-deck-peek-reorder', victimId: pid, victimName: victimName,
-      orderedUids: keepOrdered.map(c => c.uid) });
-  }
+    cardUid: uid, cardName: cardName });
+  addLogEntry('You discarded \u201c' + cardName + '\u201d from ' + victimName + "'s deck", 'discard');
+  if (!_inspectState.cards.length) { closeSheet('sh-inspect-top-n'); toast('Done!'); return; }
+  buildOppTopNBrowseSheet(victimName);
+}
+
+function oppTopNMoveUp(idx) {
+  if (idx === 0) return;
+  [_inspectState.cards[idx - 1], _inspectState.cards[idx]] = [_inspectState.cards[idx], _inspectState.cards[idx - 1]];
+  const n = document.getElementById('inspect-top-n-title').textContent.replace(/'s Deck.*$/, '');
+  buildOppTopNBrowseSheet(n);
+}
+
+function oppTopNMoveDown(idx) {
+  if (idx >= _inspectState.cards.length - 1) return;
+  [_inspectState.cards[idx], _inspectState.cards[idx + 1]] = [_inspectState.cards[idx + 1], _inspectState.cards[idx]];
+  const n = document.getElementById('inspect-top-n-title').textContent.replace(/'s Deck.*$/, '');
+  buildOppTopNBrowseSheet(n);
+}
+
+function confirmOppTopNReorder(victimName) {
+  const pid = _inspectState.pid;
+  const remaining = _inspectState.cards;
+  if (!remaining.length) { closeSheet('sh-inspect-top-n'); return; }
+  if (!victimName) victimName = document.getElementById('inspect-top-n-title').textContent.replace(/'s Deck.*$/, '');
+  publishEvent({ action: 'force-deck-peek-reorder', victimId: pid, victimName: victimName,
+    orderedUids: remaining.map(c => c.uid) });
+  addLogEntry('You put ' + remaining.map((c, i) => '#' + (i + 1)).join(', ') + ' back on top of ' + victimName + "'s deck", 'other');
   closeSheet('sh-inspect-top-n');
-  closeSheet('sh-card-effects');
   toast('Done!');
+}
+
+function buildOppHandViewSheet(victimName, handCards, pid) {
+  document.getElementById('view-opp-hand-title').textContent = victimName + "'s Hand";
+  const body = document.getElementById('view-opp-hand-body');
+  body.innerHTML = '';
+  if (!handCards || !handCards.length) {
+    body.innerHTML = '<p style="color:var(--muted);text-align:center;padding:24px">Hand is empty</p>';
+    return;
+  }
+  handCards.forEach(card => {
+    const item = document.createElement('div');
+    item.className = 'browse-item';
+    const cardBig = document.createElement('div');
+    cardBig.className = 'browse-card-big';
+    cardBig.innerHTML = `<img src="${card.image}" alt="" onerror="this.outerHTML='<span>\uD83C\uDCCB</span>'">`;
+    item.appendChild(cardBig);
+    const info = document.createElement('div');
+    info.className = 'browse-info-text';
+    info.textContent = cardLabel(card);
+    item.appendChild(info);
+    const btns = document.createElement('div');
+    btns.className = 'browse-btns';
+    const safeLabel = cardLabel(card).replace(/'/g, "\\'");
+    const safeName = victimName.replace(/'/g, "\\'");
+    const safeKey = (card.deckKey || G.deckKey).replace(/'/g, "\\'");
+    btns.innerHTML = `
+      <button class="btn btn-sm btn-accent" onclick="oppHandTakeToHand('${pid}','${card.uid}','${card.image}','${safeKey}','${safeLabel}','${safeName}')">\u2192 My Hand</button>
+      <button class="btn btn-sm btn-red" onclick="executeHandEffect('${pid}','${card.uid}','${card.image}','${safeKey}','force-discard','${safeLabel}','${safeName}')">Force Discard</button>
+      <button class="btn btn-sm btn-ghost" onclick="executeHandEffect('${pid}','${card.uid}','${card.image}','${safeKey}','shuffle-to-deck','${safeLabel}','${safeName}')">→ Their Deck</button>`;
+    item.appendChild(btns);
+    body.appendChild(item);
+  });
+}
+
+function oppHandTakeToHand(pid, cardUid, cardImage, cardDeckKey, cardName, victimName) {
+  const roomData = getRoomData();
+  if (!roomData || !roomData.players[pid]) { toast('Cannot find player'); return; }
+  const player = roomData.players[pid];
+  if (!player.handCards) { toast('Hand data not synced'); return; }
+  const idx = player.handCards.findIndex(c => c.uid === cardUid);
+  if (idx === -1) { toast('Card not found'); return; }
+  player.handCards.splice(idx, 1);
+  G.hand.push({ image: cardImage, uid: cardUid, deckKey: cardDeckKey });
+  if (!roomData.reveals) roomData.reveals = [];
+  roomData.reveals.push({ playerId: G.playerId, playerName: G.playerName, timestamp: Date.now(),
+    action: 'force-take-from-hand', victimId: pid, victimName: victimName,
+    cardUid: cardUid, cardImage: cardImage, cardName: cardName, cardDeckKey: cardDeckKey });
+  if (roomData.reveals.length > 50) roomData.reveals = roomData.reveals.slice(-50);
+  setRoomData(roomData);
+  syncMyHand();
+  updateAll();
+  addLogEntry('You took \u201c' + cardName + '\u201d from ' + victimName + "'s hand", 'other');
+  buildOppHandViewSheet(victimName, player.handCards, pid);
+  toast('Card taken!');
 }
 
 // \u2550\u2550\u2550 END CARD EFFECTS \u2550\u2550\u2550

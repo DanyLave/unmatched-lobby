@@ -784,6 +784,8 @@ body {
 .inspect-card-name { font-size: .82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .inspect-card-pos { font-size: .68rem; color: var(--muted); margin-top: 2px; }
 .inspect-card-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+.interact-back-row { display:flex; align-items:center; gap:6px; margin-bottom:14px; cursor:pointer; color:var(--muted); font-size:.82rem; padding:4px 0; }
+.interact-back-row:hover { color:var(--text); }
 #deck-share-notif { display:none; position:fixed; bottom:86px; left:50%; transform:translateX(-50%); background:var(--surface2); border:1.5px solid var(--accent); border-radius:14px; padding:14px 16px; z-index:600; max-width:300px; width:88%; text-align:center; box-shadow:0 4px 24px rgba(0,0,0,.55); }
 
 .discard-zone { display: flex; gap: 14px; align-items: flex-start; }
@@ -4184,20 +4186,9 @@ moonknight: {
 
 <div class="sheet-overlay" id="sh-card-effects">
   <div class="sheet"><div class="sheet-handle"></div>
-    <div class="sheet-head"><span class="sheet-title">⚡ Card Effects</span><button class="sheet-close" onclick="closeSheet('sh-card-effects')">✕</button></div>
-    <div class="sheet-body">
-      <div class="effects-list">
-        <div class="effect-group-label">Combat</div>
-        <button class="btn btn-accent btn-full" onclick="addTopCardToCombat()">⚔️ Add Top Deck Card to Combat</button>
-        <div class="effect-group-label">Opponent Hand Effects</div>
-        <button class="btn btn-ghost btn-full" onclick="closeSheet('sh-card-effects');openViewOpponentHandEffect('force-discard')">👁 View Opponent Hand → Force Discard</button>
-        <button class="btn btn-ghost btn-full" onclick="closeSheet('sh-card-effects');openViewOpponentHandEffect('shuffle-to-deck')">🔀 View Opponent Hand → Shuffle to Their Deck</button>
-        <div class="effect-group-label">Deck Effects</div>
-        <button class="btn btn-ghost btn-full" onclick="closeSheet('sh-card-effects');openInspectTopNSheet()">🔍 Inspect Your Top N Cards</button>
-        <button class="btn btn-ghost btn-full" onclick="closeSheet('sh-card-effects');openOpponentTopNRequest()">🔍 Peek Opponent Top N Cards</button>
-        <div class="effect-group-label" id="special-recover-label" style="display:none">Special Deck</div>
-        <button class="btn btn-ghost btn-full" id="special-recover-effect-btn" style="display:none" onclick="closeSheet('sh-card-effects');openSheet('sh-special-discard')">♻️ Recover Used Special Card</button>
-      </div>
+    <div class="sheet-head"><span class="sheet-title">👥 Interact</span><button class="sheet-close" onclick="closeSheet('sh-card-effects')">✕</button></div>
+    <div class="sheet-body" id="interact-body">
+      <!-- Built dynamically by openEffectsSheet() -->
     </div>
   </div>
 </div>
@@ -4221,6 +4212,27 @@ moonknight: {
   <div style="display:flex;gap:8px;justify-content:center">
     <button class="btn btn-accent btn-sm" onclick="acceptDeckShare()">Share</button>
     <button class="btn btn-ghost btn-sm" onclick="document.getElementById('deck-share-notif').style.display='none'">Deny</button>
+  </div>
+</div>
+
+<div id="hand-share-notif" style="display:none;position:fixed;bottom:86px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1.5px solid var(--accent);border-radius:14px;padding:14px 16px;z-index:601;max-width:300px;width:88%;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.55)">
+  <div id="hand-share-text" style="font-size:.85rem;margin-bottom:10px"></div>
+  <div style="display:flex;gap:8px;justify-content:center">
+    <button class="btn btn-accent btn-sm" onclick="acceptHandShare()">Share</button>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('hand-share-notif').style.display='none'">Deny</button>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sh-combat-add-more">
+  <div class="sheet"><div class="sheet-handle"></div>
+    <div class="sheet-head"><span class="sheet-title">⚔️ Add More Cards</span><button class="sheet-close" onclick="closeSheet('sh-combat-add-more')">✕</button></div>
+    <div class="sheet-body">
+      <div class="effects-list">
+        <button class="btn btn-accent btn-full" onclick="enterCombatHandSelect()">🃋 Select from Hand</button>
+        <button class="btn btn-ghost btn-full" onclick="pickRandomForCombatFromMenu()">🎲 Random from Hand</button>
+        <button class="btn btn-ghost btn-full" onclick="addTopCardToCombatDirect()">↑ Top of Deck</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -4482,7 +4494,7 @@ moonknight: {
     const script = document.createElement('script');
     // Try to detect the base path for GitHub Pages
     const basePath = window.location.pathname.includes('/unmatched-lobby/') ? '/unmatched-lobby/' : './';
-    script.src = basePath + 'game.js?v=20260225h';
+    script.src = basePath + 'game.js?v=20260225i';
     script.onerror = function() {
       console.error('❌ Failed to load game.js from:', basePath + 'game.js');
       console.error('Current URL:', window.location.href);
