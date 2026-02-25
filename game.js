@@ -34,6 +34,20 @@ const G = {
   combat: null // { attacker, defender, attackerCards, defenderCards, attackerReady, defenderReady, revealed }
 };
 
+// Cards currently playing their exit animation (uid -> card)
+const _exitingCards = new Map();
+
+// UID of the last card chosen via Pick Random (for log prefix)
+let _randomPickedUid = null;
+
+function scheduleCardExit(card) {
+  _exitingCards.set(card.uid, { image: card.image, uid: card.uid });
+  setTimeout(() => {
+    _exitingCards.delete(card.uid);
+    renderHand();
+  }, 320);
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // MULTIPLAYER - LOCAL STORAGE SYNC
 // ═══════════════════════════════════════════════════════════════════════
@@ -294,9 +308,24 @@ function publishAction(card, action) {
   setRoomData(roomData);
 }
 
+// Generic event publisher — broadcasts any game action to all players via Firebase reveals
+function publishEvent(payload) {
+  if (!G.isMultiplayer || !G.roomCode) return;
+  const roomData = getRoomData();
+  if (!roomData) return;
+  if (!roomData.reveals) roomData.reveals = [];
+  roomData.reveals.push(Object.assign({ playerId: G.playerId, playerName: G.playerName, timestamp: Date.now() }, payload));
+  if (roomData.reveals.length > 50) roomData.reveals = roomData.reveals.slice(-50);
+  setRoomData(roomData);
+}
+
 // Play a card: discard it (or intermediate) + notify others
 function playCard(card) {
   const dk = DECKS[G.deckKey];
+  scheduleCardExit(card);
+  const rndPrefixPlay = (card.uid === _randomPickedUid) ? '🎲 Random: ' : '';
+  if (rndPrefixPlay) _randomPickedUid = null;
+  addLogEntry(rndPrefixPlay + 'You played: ' + cardLabel(card), 'play');
   G.hand = G.hand.filter(c => c.uid !== card.uid);
   G.staged = G.staged.filter(c => c.uid !== card.uid);
 
@@ -314,7 +343,13 @@ function playCard(card) {
     }
   }
 
-  if (G.isMultiplayer) publishAction(card, 'played');
+  if (G.isMultiplayer) {
+    if (rndPrefixPlay) {
+      publishEvent({ action: 'played', cards: [{ image: card.image }], random: true });
+    } else {
+      publishAction(card, 'played');
+    }
+  }
   syncTS();
   updateAll();
   closeCardOverlay();
@@ -326,6 +361,8 @@ function playSelected() {
   if (!G.selected.length) { toast('Select at least one card'); return; }
   const dk = DECKS[G.deckKey];
   const cards = G.hand.filter(c => G.selected.includes(c.uid));
+  cards.forEach(c => scheduleCardExit(c));
+  if (cards.length > 0) addLogEntry('You played ' + cards.length + ' card' + (cards.length > 1 ? 's' : ''), 'play');
   cards.forEach(c => {
     G.hand = G.hand.filter(x => x.uid !== c.uid);
     G.staged = G.staged.filter(x => x.uid !== c.uid);
@@ -438,17 +475,105 @@ function syncFromRoom() {
 
 function checkNewReveals(roomData) {
   if (!roomData.reveals || roomData.reveals.length === 0) return;
-  
-  // Find reveals newer than last seen
-  const newReveals = roomData.reveals.filter(r => 
+
+  const newReveals = roomData.reveals.filter(r =>
     r.timestamp > G.lastSeenRevealTimestamp && r.playerId !== G.playerId
   );
-  
-  if (newReveals.length > 0) {
-    // Show most recent reveal
-    const latestReveal = newReveals[newReveals.length - 1];
-    G.lastSeenRevealTimestamp = latestReveal.timestamp;
-    showRevealNotification(latestReveal);
+
+  if (newReveals.length === 0) return;
+
+  G.lastSeenRevealTimestamp = newReveals[newReveals.length - 1].timestamp;
+
+  let lastShowNotif = null;
+
+  newReveals.forEach(function(r) {
+    const n = r.playerName || 'Someone';
+    const cnt = r.cards ? r.cards.length : (r.count || 1);
+    const cWord = cnt === 1 ? '1 card' : cnt + ' cards';
+    let text, type;
+
+    switch (r.action) {
+      case 'played':
+        if (r.random) {
+          text = n + ' played a random card 🎲';
+          type = 'other';
+          // Don't set lastShowNotif — don't reveal which card it was
+        } else {
+          text = n + ' played ' + cWord;
+          type = 'other';
+          lastShowNotif = r;
+        }
+        break;
+      case 'discarded':
+        text = n + ' discarded ' + cWord;
+        type = 'discard';
+        lastShowNotif = r;
+        break;
+      case 'drew':
+        text = n + ' drew ' + cWord;
+        type = 'draw';
+        break;
+      case 'hp-change':
+        var dir = (r.delta > 0) ? 'increased' : 'decreased';
+        text = n + ' ' + dir + ' ' + r.barLabel + ': ' + r.from + ' \u2192 ' + r.to + ' HP';
+        type = 'hp';
+        break;
+      case 'added-to-combat':
+        text = n + ' added ' + cWord + ' to combat \u2694\ufe0f';
+        type = 'combat';
+        break;
+      case 'combat-reveal':
+        text = n + ' revealed their combat cards \ud83d\udd13';
+        type = 'combat';
+        break;
+      case 'combat-cleared':
+        text = n + ' cleared the combat zone \ud83d\uddd1\ufe0f';
+        type = 'combat';
+        break;
+      case 'returned-to-deck':
+        var posLabel = r.pos === 'top' ? 'top of deck' : r.pos === 'bottom' ? 'bottom of deck' : 'shuffled into deck';
+        text = n + ' returned ' + cWord + ' to ' + posLabel;
+        type = 'other';
+        break;
+      case 'took-from-discard':
+        text = n + ' took \u201c' + (r.cardName || 'a card') + '\u201d from ' + (r.fromName || 'someone') + "'s discard";
+        type = 'other';
+        break;
+      case 'took-from-own-discard':
+        text = n + ' recovered \u201c' + (r.cardName || 'a card') + '\u201d from their own discard';
+        type = 'other';
+        break;
+      case 'moved-zone-to-hand':
+        text = n + ' moved \u201c' + (r.cardName || 'a card') + '\u201d \u2192 hand';
+        type = 'other';
+        break;
+      case 'moved-zone-to-discard':
+        text = n + ' moved \u201c' + (r.cardName || 'a card') + '\u201d \u2192 discard';
+        type = 'discard';
+        break;
+      case 'shuffled-hand-in':
+        text = n + ' shuffled hand (' + (r.count || '?') + ' cards) into deck';
+        type = 'other';
+        break;
+      case 'shuffled-discard-in':
+        text = n + ' shuffled discard (' + (r.count || '?') + ' cards) into deck';
+        type = 'other';
+        break;
+      case 'turn-end':
+        text = n + ' ended their turn';
+        type = 'turn';
+        break;
+      default:
+        text = n + ' performed an action';
+        type = 'other';
+    }
+
+    if (text) addLogEntry(text, type);
+  });
+
+  // Show reveal notification only for the latest played/discarded event
+  if (lastShowNotif && lastShowNotif.cards && lastShowNotif.cards.length > 0) {
+    showRevealNotification(lastShowNotif);
   }
 }
 
@@ -789,9 +914,10 @@ function renderPlayerStatusArea() {
     if (!player) return;
     
     const isMe = pid === G.playerId;
-    
+    const isActiveTurn = G.turnOrder.length > 0 && G.turnOrder[G.currentTurn] === pid;
+
     const row = document.createElement('div');
-    row.className = 'player-status-row';
+    row.className = 'player-status-row' + (isActiveTurn ? ' active-turn' : '');
     
     // Get deck data for hero image
     const deck = player.deckKey ? DECKS[player.deckKey] : null;
@@ -824,6 +950,10 @@ function renderPlayerStatusArea() {
       `;
     }
     
+    const turnBadge = isActiveTurn
+      ? `<div class="turn-badge ${isMe ? 'my-turn' : 'their-turn'}">${isMe ? 'YOUR TURN' : 'ACTIVE'}</div>`
+      : '';
+
     row.innerHTML = `
       <div class="status-name">${player.name} ${isMe ? '(You)' : ''}</div>
       <div class="status-hero">
@@ -839,10 +969,23 @@ function renderPlayerStatusArea() {
         <span>I:${counts.intermediate}</span>
         <span>Disc:${counts.discard}</span>
       </div>
+      ${turnBadge}
     `;
-    
+
     container.appendChild(row);
   });
+
+  // Update End Turn button state
+  const endTurnBtn = document.getElementById('end-turn-btn');
+  if (endTurnBtn && G.isMultiplayer && G.gameStarted) {
+    const myTurn = G.turnOrder.length > 0 && G.turnOrder[G.currentTurn] === G.playerId;
+    const currentPid = G.turnOrder[G.currentTurn];
+    const currentRoomData = getRoomData();
+    const currentName = currentRoomData && currentRoomData.players && currentRoomData.players[currentPid]
+      ? currentRoomData.players[currentPid].name : '?';
+    endTurnBtn.disabled = !myTurn;
+    endTurnBtn.textContent = myTurn ? '✓ End My Turn' : currentName + "'s Turn";
+  }
 }
 
 function viewPlayerSpecialCard(imagePath) {
@@ -949,6 +1092,28 @@ function reorderPlayers() {
     roomData.turnOrder.push(G.playerId);
     setRoomData(roomData);
   }
+}
+
+function endTurn() {
+  if (!G.isMultiplayer || !G.gameStarted) return;
+
+  const roomData = getRoomData();
+  if (!roomData) return;
+
+  const prevPid = G.turnOrder[G.currentTurn];
+  const prevName = roomData.players[prevPid] ? roomData.players[prevPid].name : 'Unknown';
+
+  roomData.currentTurn = (roomData.currentTurn + 1) % roomData.turnOrder.length;
+  setRoomData(roomData);
+  G.currentTurn = roomData.currentTurn;
+
+  const nextPid = G.turnOrder[G.currentTurn];
+  const nextName = roomData.players[nextPid] ? roomData.players[nextPid].name : 'Unknown';
+
+  addLogEntry(prevName + ' ended turn \u2192 ' + nextName, 'turn');
+  publishEvent({ action: 'turn-end' });
+  renderPlayerStatusArea();
+  toast(nextName + "'s turn!");
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1069,6 +1234,17 @@ function takeFromPlayerDiscard(pid, cardUid) {
   // Prevent duplicate in hand
   if (G.hand.find(c => c.uid === cardUid)) { toast('Already in hand'); return; }
   G.hand.push(handCard);
+
+  // Log the action
+  const fromName = player.name || 'unknown';
+  const cName = cardLabel({ image: card.image });
+  if (pid === G.playerId) {
+    addLogEntry('You recovered "' + cName + '" from your own discard', 'other');
+    if (G.isMultiplayer) publishEvent({ action: 'took-from-own-discard', cardName: cName });
+  } else {
+    addLogEntry('You took "' + cName + '" from ' + fromName + "'s discard", 'other');
+    if (G.isMultiplayer) publishEvent({ action: 'took-from-discard', fromName: fromName, cardName: cName });
+  }
   
   // If taking from my own pile, also remove from local G.discard
   if (pid === G.playerId) {
@@ -1213,6 +1389,8 @@ function addCardToCombat(card) {
   
   setRoomData(roomData);
   G.combat = normalizeCombat(roomData.combat);
+  addLogEntry('You added “' + cardLabel(card) + '” to combat ⚔️', 'combat');
+  publishEvent({ action: 'added-to-combat', count: 1 });
   updateAll();
   renderCombatArea();
   toast('Card added to combat');
@@ -1241,6 +1419,8 @@ function addSelectedToCombat() {
   
   setRoomData(roomData);
   G.combat = normalizeCombat(roomData.combat);
+  addLogEntry('You added ' + selectedCards.length + ' card' + (selectedCards.length > 1 ? 's' : '') + ' to combat ⚔️', 'combat');
+  publishEvent({ action: 'added-to-combat', count: selectedCards.length });
   exitSel();
   updateAll();
   renderCombatArea();
@@ -1258,9 +1438,11 @@ function revealMyCombatCards() {
   }
   
   roomData.combat[G.playerId].revealed = true;
-  
+
   setRoomData(roomData);
   G.combat = normalizeCombat(roomData.combat);
+  addLogEntry('You revealed your combat cards 🔓', 'combat');
+  publishEvent({ action: 'combat-reveal' });
   renderCombatArea();
   toast('Cards revealed!');
 }
@@ -1310,6 +1492,8 @@ function clearCombatZone() {
   roomData.combat = null;
   setRoomData(roomData);
   G.combat = null;
+  addLogEntry('Combat zone cleared 🗑️', 'combat');
+  publishEvent({ action: 'combat-cleared' });
   updateAll();
   renderCombatArea();
   toast(hasIntermediate ? 'Combat → Intermediate Zone' : 'Combat cleared');
@@ -1379,15 +1563,18 @@ function goTo(id) {
         document.getElementById('player-status-area').style.display = 'block';
         document.getElementById('combat-area').style.display = 'block';
         document.getElementById('discard-browsing').style.display = 'block';
+        document.getElementById('turn-control').style.display = 'block';
       }
-      
+
       renderPlayerStatusArea();
       renderDiscardBrowsing();
       renderCombatArea();
+      renderActionLog();
     } else {
       document.getElementById('player-status-area').style.display = 'none';
       document.getElementById('combat-area').style.display = 'none';
       document.getElementById('discard-browsing').style.display = 'none';
+      document.getElementById('turn-control').style.display = 'none';
     }
   } catch (error) {
     console.error('❌ Error in goTo:', error);
@@ -1565,9 +1752,17 @@ function buildHealthBars(dk) {
 }
 
 function hpChange(barKey, delta) {
+  const prevVal = G.hp[barKey];
   G.hp[barKey] = Math.max(0, G.hp[barKey] + delta);
   document.getElementById('hp-' + barKey).textContent = G.hp[barKey];
-  
+
+  const idx = parseInt(barKey.replace('bar', ''));
+  const dk = DECKS[G.deckKey];
+  const barLabel = dk && dk.healthBars && dk.healthBars[idx] ? dk.healthBars[idx].label : barKey;
+  const verb = delta > 0 ? '+' + delta : '' + delta;
+  addLogEntry(barLabel + ': ' + verb + ' \u2192 ' + G.hp[barKey] + ' HP', 'hp');
+  if (G.isMultiplayer) publishEvent({ action: 'hp-change', barLabel: barLabel, from: prevVal, to: G.hp[barKey], delta: delta });
+
   if (G.isMultiplayer) {
     updateMyPlayer();
   }
@@ -1603,6 +1798,8 @@ function drawCard() {
   }
   const c = G.draw.shift();
   G.hand.push(c);
+  addLogEntry('You drew: ' + cardLabel(c), 'draw');
+  if (G.isMultiplayer) publishEvent({ action: 'drew', count: 1 });
   updateAll();
 }
 
@@ -1618,8 +1815,11 @@ function shuffleHandIn() {
     toast('Hand is empty');
     return;
   }
+  const hCount = G.hand.length;
   G.draw = shuffle([...G.draw, ...G.hand]);
   G.hand = [];
+  addLogEntry('You shuffled hand (' + hCount + ' card' + (hCount > 1 ? 's' : '') + ') into deck', 'other');
+  if (G.isMultiplayer) publishEvent({ action: 'shuffled-hand-in', count: hCount });
   updateAll();
   closeSheet('sh-shuffle-options');
   toast('Hand → Draw pile');
@@ -1630,9 +1830,11 @@ function shuffleDiscardIn() {
     toast('Discard pile is empty');
     return;
   }
+  const dCount = G.discard.length;
   G.draw = shuffle([...G.draw, ...G.discard]);
   G.discard = [];
-  if (G.isMultiplayer) syncMyDiscard();
+  addLogEntry('You shuffled discard (' + dCount + ' card' + (dCount > 1 ? 's' : '') + ') into deck', 'other');
+  if (G.isMultiplayer) { publishEvent({ action: 'shuffled-discard-in', count: dCount }); syncMyDiscard(); }
   updateAll();
   closeSheet('sh-shuffle-options');
   toast('Discard → Draw pile');
@@ -1640,6 +1842,10 @@ function shuffleDiscardIn() {
 
 function discardCard(card) {
   const dk = DECKS[G.deckKey];
+  scheduleCardExit(card);
+  const rndPrefixDiscard = (card.uid === _randomPickedUid) ? '🎲 Random: ' : '';
+  if (rndPrefixDiscard) _randomPickedUid = null;
+  addLogEntry(rndPrefixDiscard + 'You discarded: ' + cardLabel(card), 'discard');
   G.hand = G.hand.filter(c => c.uid !== card.uid);
   G.staged = G.staged.filter(c => c.uid !== card.uid);
 
@@ -1668,7 +1874,8 @@ function discardCard(card) {
 function moveToHand(card) {
   G.intermediate = G.intermediate.filter(c => c.uid !== card.uid);
   G.hand.push(card);
-  if (G.isMultiplayer) { syncMyDiscard(); updateMyCardCounts(); }
+  addLogEntry('You moved "' + cardLabel(card) + '" → hand', 'other');
+  if (G.isMultiplayer) { publishEvent({ action: 'moved-zone-to-hand', cardName: cardLabel(card) }); syncMyDiscard(); updateMyCardCounts(); }
   updateAll();
   closeCardOverlay();
   toast('Moved to hand');
@@ -1677,7 +1884,20 @@ function moveToHand(card) {
 function moveToDiscard(card) {
   G.intermediate = G.intermediate.filter(c => c.uid !== card.uid);
   G.discard.push(card);
-  if (G.isMultiplayer) syncMyDiscard();
+  addLogEntry('You moved "' + cardLabel(card) + '" → discard', 'discard');
+  if (G.isMultiplayer) {
+    // Single write: push to discardCards + append reveal event atomically
+    const roomData = getRoomData();
+    if (roomData && roomData.players && roomData.players[G.playerId]) {
+      if (!roomData.players[G.playerId].discardCards) roomData.players[G.playerId].discardCards = [];
+      roomData.players[G.playerId].discardCards.push({ image: card.image, uid: card.uid, deckKey: card.deckKey || G.deckKey });
+      if (!roomData.reveals) roomData.reveals = [];
+      roomData.reveals.push({ playerId: G.playerId, playerName: G.playerName, timestamp: Date.now(),
+        action: 'moved-zone-to-discard', cardName: cardLabel(card) });
+      if (roomData.reveals.length > 50) roomData.reveals = roomData.reveals.slice(-50);
+      setRoomData(roomData);
+    }
+  }
   updateAll();
   closeCardOverlay();
   toast('Moved to discard');
@@ -1693,6 +1913,9 @@ function returnToDeck(card, pos) {
     G.draw.push(card);
     G.draw = shuffle(G.draw);
   }
+  const posLabel = pos === 'top' ? 'top of deck' : pos === 'bottom' ? 'bottom of deck' : 'shuffled into deck';
+  addLogEntry('You returned "' + cardLabel(card) + '" to ' + posLabel, 'other');
+  if (G.isMultiplayer) publishEvent({ action: 'returned-to-deck', count: 1, pos: pos || 'shuffle' });
   syncTS();
   updateAll();
   closeCardOverlay();
@@ -1769,6 +1992,8 @@ function discardSelected() {
   }
   const dk = DECKS[G.deckKey];
   const discarded = G.hand.filter(c => G.selected.includes(c.uid));
+  discarded.forEach(c => scheduleCardExit(c));
+  if (discarded.length > 0) addLogEntry('You discarded ' + discarded.length + ' card' + (discarded.length > 1 ? 's' : ''), 'discard');
   discarded.forEach(c => {
     G.hand = G.hand.filter(x => x.uid !== c.uid);
     G.staged = G.staged.filter(x => x.uid !== c.uid);
@@ -1825,6 +2050,9 @@ function putInDeck(pos) {
     else G.draw.push(c);
   });
   if (pos === 'shuffle') G.draw = shuffle(G.draw);
+  const putPosLabel = pos === 'top' ? 'top of deck' : pos === 'bottom' ? 'bottom of deck' : 'shuffled into deck';
+  addLogEntry('You returned ' + cards.length + ' card' + (cards.length > 1 ? 's' : '') + ' to ' + putPosLabel, 'other');
+  if (G.isMultiplayer) publishEvent({ action: 'returned-to-deck', count: cards.length, pos: pos });
   closeSheet('sh-put-in-deck');
   exitSel();
   updateAll();
@@ -1865,6 +2093,7 @@ function pickRandom(zone) {
 
   const idx = Math.floor(Math.random() * pool.length);
   const card = pool[idx];
+  _randomPickedUid = card.uid;
 
   const t = document.getElementById('toast');
   t.innerHTML = '<span class="dice-icon">🎲</span> Rolling...';
@@ -2063,6 +2292,53 @@ function discardAllStaged() {
   toast('All discarded');
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// ACTION LOG, COLLAPSIBLE SECTIONS, CARD LABEL HELPERS
+// ═══════════════════════════════════════════════════════════════════════
+
+let _actionLog = [];
+
+function cardLabel(card) {
+  const img = (card && card.image) ? card.image : '';
+  const match = img.match(/\d+ x (.+)\.png$/i);
+  if (match) return match[1];
+  return img.replace(/^.*[\\/]/, '').replace(/\.[^.]+$/, '') || 'card';
+}
+
+function timeLabel(ts) {
+  const d = new Date(ts);
+  return d.getHours().toString().padStart(2, '0') + ':' +
+         d.getMinutes().toString().padStart(2, '0') + ':' +
+         d.getSeconds().toString().padStart(2, '0');
+}
+
+function addLogEntry(text, type) {
+  type = type || 'neutral';
+  _actionLog.unshift({ text: text, type: type, time: Date.now() });
+  if (_actionLog.length > 30) _actionLog.pop();
+  renderActionLog();
+}
+
+function renderActionLog() {
+  const container = document.getElementById('action-log');
+  if (!container) return;
+  if (_actionLog.length === 0) {
+    container.innerHTML = '<div class="log-empty">No actions yet</div>';
+    return;
+  }
+  container.innerHTML = _actionLog.map(function(e) {
+    return '<div class="log-entry log-' + e.type + '">' +
+      '<span class="log-text">' + e.text + '</span>' +
+      '<span class="log-time">' + timeLabel(e.time) + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+function toggleSection(label) {
+  const section = label.closest('.play-section');
+  if (section) section.classList.toggle('collapsed');
+}
+
 function updateAll() {
   const d = G.draw.length, h = G.hand.length, s = G.staged.length, di = G.discard.length, iz = G.intermediate.length;
   document.getElementById('sc-draw').textContent = d;
@@ -2112,6 +2388,16 @@ function renderHand() {
       ${isStaged ? '<div class="staged-ribbon">Staged</div>' : ''}
       <div class="hand-check"><svg viewBox="0 0 24 24"><polyline points="20,6 9,17 4,12"/></svg></div>`;
     div.onclick = G.selectMode ? () => toggleSel(card.uid) : () => openCardOverlay(card, 'hand');
+    grid.appendChild(div);
+  });
+
+  // Render cards playing their exit animation
+  _exitingCards.forEach((card, uid) => {
+    if (G.hand.find(c => c.uid === uid)) return;
+    const div = document.createElement('div');
+    div.className = 'hand-card exiting';
+    div.style.pointerEvents = 'none';
+    div.innerHTML = '<img src="' + card.image + '" alt="">';
     grid.appendChild(div);
   });
 }
