@@ -584,21 +584,12 @@ function showRevealNotification(reveal) {
   
   const grid = document.getElementById('reveal-notif-cards');
   grid.innerHTML = '';
-  if (reveal.random) {
-    // Don't show the actual card image — keep it secret
+  reveal.cards.forEach(card => {
     const div = document.createElement('div');
     div.className = 'reveal-card-item';
-    div.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:2rem;min-width:60px;';
-    div.textContent = '\ud83c\udfb2';
+    div.innerHTML = `<img src="${card.image}" alt="">`;
     grid.appendChild(div);
-  } else {
-    reveal.cards.forEach(card => {
-      const div = document.createElement('div');
-      div.className = 'reveal-card-item';
-      div.innerHTML = `<img src="${card.image}" alt="">`;
-      grid.appendChild(div);
-    });
-  }
+  });
   
   notif.classList.add('show');
 }
