@@ -2964,6 +2964,18 @@ function initSpecialAbility(dk) {
     return;
   }
 
+  if (sa.mode === 'trick-counter') {
+    G.specialDeck = [];
+    G.specialDiscard = [];
+    G.specialCurrent = null;
+    document.getElementById('special-section').style.display = 'block';
+    document.getElementById('special-label').textContent = sa.label || 'Trick Tracker';
+    document.getElementById('special-action-btn').style.display = 'none';
+    document.getElementById('special-browse-discard-btn').style.display = 'none';
+    updateSpecialDisplay();
+    return;
+  }
+
   G.specialDeck = shuffle([...sa.deck]);
   G.specialDiscard = [];
   G.specialCurrent = G.specialDeck.shift() || null;
@@ -2993,6 +3005,17 @@ function updateSpecialDisplay() {
     const vcCount = G.discard.filter(c => /voyage/i.test(c.image || '')).length;
     display.innerHTML = `<div class="voyage-counter-display"><span class="voyage-counter-num">${vcCount}</span><span class="voyage-counter-label">in discard</span></div>`;
     count.textContent = '';
+    return;
+  }
+
+  if (G.specialMode === 'trick-counter') {
+    const dk = DECKS[G.deckKey];
+    const trickTotal = dk ? dk.cards.filter(c => /trick/i.test(c.image || '')).length : 0;
+    const myPiles = [...G.draw, ...G.hand, ...G.discard, ...G.staged, ...(G.intermediate || [])];
+    const inMyPiles = myPiles.filter(c => /trick/i.test(c.image || '')).length;
+    const inOppHands = Math.max(0, trickTotal - inMyPiles);
+    display.innerHTML = `<div class="voyage-counter-display"><span class="voyage-counter-num">${inOppHands}</span><span class="voyage-counter-label">tricks in opp. hands</span></div>`;
+    count.textContent = `${inMyPiles} / ${trickTotal} still with you`;
     return;
   }
 
