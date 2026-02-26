@@ -3465,15 +3465,19 @@ function openTopNRequest() {
       <svg viewBox="0 0 24 24" width="16" height="16"><polyline points="15,18 9,12 15,6"/></svg> Back
     </div>
     <div style="font-size:.82rem;font-weight:600;margin-bottom:8px">How many cards to see?</div>
-    <input type="number" id="top-n-input" value="3" min="1" max="15"
-      style="width:72px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text);font-size:1rem;margin-bottom:14px">
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <input type="number" id="top-n-input" min="1" placeholder="How many?"
+        style="flex:1;padding:6px 10px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text);font-size:1rem">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('top-n-input').value='all'">All</button>
+    </div>
     <div style="font-size:.82rem;font-weight:600;margin-bottom:8px">Select player:</div>
     ${oppButtons}`;
 }
 
 function confirmTopNRequest(pid, victimName) {
   const inp = document.getElementById('top-n-input');
-  const n = Math.max(1, Math.min(15, parseInt(inp ? inp.value : '3') || 3));
+  const raw = inp ? inp.value : '3';
+  const n = raw === 'all' ? 999 : Math.max(1, parseInt(raw) || 3);
   requestDeckShare(pid, n, victimName);
 }
 
