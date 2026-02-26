@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════════════
 // GAME STATE
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -469,6 +469,7 @@ function syncFromRoom() {
     renderPlayerStatusArea();
     renderDiscardBrowsing();
     renderCombatArea();
+    if (G.specialMode === 'trick-counter') updateSpecialDisplay();
   }
   
   // Update other players view
@@ -2964,6 +2965,18 @@ function initSpecialAbility(dk) {
     return;
   }
 
+  if (sa.mode === 'trick-counter') {
+    G.specialDeck = [];
+    G.specialDiscard = [];
+    G.specialCurrent = null;
+    document.getElementById('special-section').style.display = 'block';
+    document.getElementById('special-label').textContent = sa.label || 'Trick Tracker';
+    document.getElementById('special-action-btn').style.display = 'none';
+    document.getElementById('special-browse-discard-btn').style.display = 'none';
+    updateSpecialDisplay();
+    return;
+  }
+
   G.specialDeck = shuffle([...sa.deck]);
   G.specialDiscard = [];
   G.specialCurrent = G.specialDeck.shift() || null;
@@ -2992,6 +3005,30 @@ function updateSpecialDisplay() {
   if (G.specialMode === 'voyage-counter') {
     const vcCount = G.discard.filter(c => /voyage/i.test(c.image || '')).length;
     display.innerHTML = `<div class="voyage-counter-display"><span class="voyage-counter-num">${vcCount}</span><span class="voyage-counter-label">in discard</span></div>`;
+    count.textContent = '';
+    return;
+  }
+
+  if (G.specialMode === 'trick-counter') {
+    const roomData = getRoomData();
+    const players = (roomData && roomData.players) ? roomData.players : {};
+    let total = 0;
+    let rows = '';
+    Object.entries(players).forEach(([pid, player]) => {
+      if (pid === G.playerId) return;
+      const tricks = (player.handCards || []).filter(c => /trick/i.test(c.image || '')).length;
+      total += tricks;
+      const pname = player.name || 'Opponent';
+      rows += `<div class="trick-row"><span class="trick-row-name">${pname}</span><span class="trick-row-num">${tricks}</span></div>`;
+    });
+    if (!rows) rows = '<div class="trick-row-empty">No opponents in room yet</div>';
+    display.innerHTML = `<div class="trick-counter-display">
+      <div class="trick-total-row">
+        <span class="voyage-counter-num">${total}</span>
+        <span class="voyage-counter-label">TRICKS IN OPPONENT HANDS</span>
+      </div>
+      <div class="trick-rows">${rows}</div>
+    </div>`;
     count.textContent = '';
     return;
   }

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -692,6 +692,28 @@ body {
   letter-spacing: 0.07em; font-weight: 600;
 }
 
+/* TRICK COUNTER (Loki special ability) */
+.trick-counter-display {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 14px; width: 100%;
+}
+.trick-total-row {
+  display: flex; flex-direction: column; align-items: center;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.trick-rows { display: flex; flex-direction: column; gap: 4px; }
+.trick-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 8px; border-radius: var(--r-sm);
+  background: var(--surface2); font-size: 0.8rem;
+}
+.trick-row-name { color: var(--text); font-weight: 600; flex: 1; }
+.trick-row-num {
+  font-size: 1.2rem; font-weight: 800; color: var(--accent);
+  min-width: 28px; text-align: right;
+}
+.trick-row-empty { font-size: 0.72rem; color: var(--muted); padding: 4px 8px; }
+
 .hp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
 .hp-widget {
   display: flex; align-items: center; gap: 10px;
@@ -1094,2752 +1116,777 @@ body {
 </head>
 <body>
 
-<script>
-
-const EDITIONS = [
-
+<script>const EDITIONS = [
   { id: "vol1", image: "EDITION Battle-of-Legends vol1.png", infoImage: "vol1_info.png", decks: ["kingarthur", "alice", "sinbad", "medusa"] },
-
   { id: "vol2", image: "EDITION RobinHood-vs-Bigfoot.png", infoImage: "vol2_info.png", decks: ["robinhood", "bigfoot"] },
-
   { id: "vol3", image: "EDITION sling&arrows.png", infoImage: "vol2_info.png", decks: ["shakespeare", "titania", "hamlet", "sisters"] },
-
   { id: "vol4", image: "EDITION brains&brawn.png", infoImage: "vol2_info.png", decks: ["spiderman", "shehulk", "drstrange"] },
-
-  { id: "vol5", image: "EDITION Redemption Row.png", infoImage: "vol2_info.png", decks: ["ghostrider", "lukecage", "moonknight"] }
-
+  { id: "vol5", image: "EDITION Redemption Row.png", infoImage: "vol2_info.png", decks: ["ghostrider", "lukecage", "moonknight"] },
+  { id: "vol6", image: "EDITION Jurassic Park Vol1.png", infoImage: "vol2_info.png", decks: ["trex", "drsattler"] },
+  { id: "vol7", image: "EDITION Battle-of-Legends vol1.png", infoImage: "vol2_info.png", decks: ["loki", "chupacabra", "blackbeard", "pandora"] }
 ];
-
-  
-
 const DECKS = { 
-
 medusa: {
-
-  
-
             name: "MEDUSA",
-
-  
-
             image: "medusa_back.png",
-
-  
-
             infoImage: "medusa_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "Medusa", startValue: 16, color: "#4A7837", size: "large" },
-
-  
-
       { label: "Harpies alive", startValue: 3, color: "#68A84D", size: "small" }],
-
-  
-
       intermediateZone: null,
-
-  
-
             cards: [
-
-  
-
               { id: 1, image: "medusa_2 x A Momentary Glance.png" },
-
-  
-
               { id: 2, image: "medusa_2 x A Momentary Glance.png" },
-
-  
-
               { id: 3, image: "medusa_2 x The Hounds of Mighty Zeus.png" },
-
-  
-
               { id: 4, image: "medusa_2 x The Hounds of Mighty Zeus.png" },
-
-  
-
               { id: 5, image: "medusa_2 x Winged Frenzy.png" },
-
-  
-
               { id: 6, image: "medusa_2 x Winged Frenzy.png" },
-
-  
-
               { id: 7, image: "medusa_3 x Clutching Claws.png" },
-
-  
-
               { id: 8, image: "medusa_3 x Clutching Claws.png" },
-
-  
-
               { id: 9, image: "medusa_3 x Clutching Claws.png" },
-
-  
-
               { id: 10, image: "medusa_3 x Dash.png" },
-
-  
-
               { id: 11, image: "medusa_3 x Dash.png" },
-
-  
-
               { id: 12, image: "medusa_3 x Dash.png" },
-
-  
-
               { id: 13, image: "medusa_3 x Feint.png" },
-
-  
-
               { id: 14, image: "medusa_3 x Feint.png" },
-
-  
-
               { id: 15, image: "medusa_3 x Feint.png" },
-
-  
-
               { id: 16, image: "medusa_3 x Gaze of Stone.png" },
-
-  
-
               { id: 17, image: "medusa_3 x Gaze of Stone.png" },
-
-  
-
               { id: 18, image: "medusa_3 x Gaze of Stone.png" },
-
-  
-
               { id: 19, image: "medusa_3 x Hiss and Slither.png" },
-
-  
-
               { id: 20, image: "medusa_3 x Hiss and Slither.png" },
-
-  
-
               { id: 21, image: "medusa_3 x Hiss and Slither.png" },
-
-  
-
               { id: 22, image: "medusa_3 x Regroup.png" },
-
-  
-
               { id: 23, image: "medusa_3 x Regroup.png" },
-
-  
-
               { id: 24, image: "medusa_3 x Regroup.png" },
-
-  
-
               { id: 25, image: "medusa_3 x Second Shot.png" },
-
-  
-
               { id: 26, image: "medusa_3 x Second Shot.png" },
-
-  
-
               { id: 27, image: "medusa_3 x Second Shot.png" },
-
-  
-
               { id: 28, image: "medusa_3 x Snipe.png" },
-
-  
-
               { id: 29, image: "medusa_3 x Snipe.png" },
-
-  
-
               { id: 30, image: "medusa_3 x Snipe.png" },
-
-  
-
               ]
-
-  
-
   },
-
-  
-
 kingarthur: {
-
-  
-
             name: "KING ARTHUR",
-
-  
-
             image: "king_arthur_back.png",
-
-  
-
             infoImage: "king_arthur_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "Arthur", startValue: 18, color: "#890606", size: "large" },
-
-  
-
       { label: "Merlin", startValue: 7, color: "#D70909", size: "medium" }],
-
-  
-
       intermediateZone: null,
-
-  
-
             cards: [
-
-  
-
-  
-
               { id: 1, image: "king_arthur_1 x Aid the Chosen One.png" },
-
-  
-
               { id: 2, image: "king_arthur_1 x Excalibur.png" },
-
-  
-
               { id: 3, image: "king_arthur_1 x Prophecy.png" },
-
-  
-
               { id: 4, image: "king_arthur_1 x Restless Spirits.png" },
-
-  
-
               { id: 5, image: "king_arthur_1 x The Aid of Morgana.png" },
-
-  
-
               { id: 6, image: "king_arthur_1 x The Holy Grail.png" },
-
-  
-
               { id: 7, image: "king_arthur_1 x The Lady of the Lake.png" },
-
-  
-
               { id: 8, image: "king_arthur_2 x Bewilderment.png" },
-
-  
-
               { id: 9, image: "king_arthur_2 x Bewilderment.png" },
-
-  
-
               { id: 10, image: "king_arthur_2 x Command the Storms.png" },
-
-  
-
               { id: 11, image: "king_arthur_2 x Command the Storms.png" },
-
-  
-
               { id: 12, image: "king_arthur_2 x Divine Intervention.png" },
-
-  
-
               { id: 13, image: "king_arthur_2 x Divine Intervention.png" },
-
-  
-
               { id: 14, image: "king_arthur_2 x Swift Strike.png" },
-
-  
-
               { id: 15, image: "king_arthur_2 x Swift Strike.png" },
-
-  
-
               { id: 16, image: "king_arthur_3 x Feint.png" },
-
-  
-
               { id: 17, image: "king_arthur_3 x Feint.png" },
-
-  
-
               { id: 18, image: "king_arthur_3 x Feint.png" },
-
-  
-
               { id: 19, image: "king_arthur_3 x Momentous Shift.png" },
-
-  
-
               { id: 20, image: "king_arthur_3 x Momentous Shift.png" },
-
-  
-
               { id: 21, image: "king_arthur_3 x Momentous Shift.png" },
-
-  
-
               { id: 22, image: "king_arthur_3 x Noble Sacrifice.png" },
-
-  
-
               { id: 23, image: "king_arthur_3 x Noble Sacrifice.png" },
-
-  
-
               { id: 24, image: "king_arthur_3 x Noble Sacrifice.png" },
-
-  
-
               { id: 25, image: "king_arthur_3 x Regroup.png" },
-
-  
-
               { id: 26, image: "king_arthur_3 x Regroup.png" },
-
-  
-
               { id: 27, image: "king_arthur_3 x Regroup.png" },
-
-  
-
               { id: 28, image: "king_arthur_3 x Skirmish.png" },
-
-  
-
               { id: 29, image: "king_arthur_3 x Skirmish.png" },
-
-  
-
               { id: 30, image: "king_arthur_3 x Skirmish.png" },
-
-  
-
               ]
-
-  
-
   },
-
-  
-
 sinbad: {
-
-  
-
             name: "SINBAD",
-
-  
-
             image: "sinbad_back.png",
-
-  
-
             infoImage: "sinbad_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "Sinbad", startValue: 15, color: "#F8AD7E", size: "large" },
-
-  
-
       { label: "The Porter", startValue: 5, color: "#A8D5E2", size: "medium" }],
-
-  
-
       intermediateZone: null,
-
-  
-
             cards: [
-
-  
-
               { id: 1, image: "sinbad_1 x Voyage to the Island That Was a Whale.png" },
-
-  
-
               { id: 2, image: "sinbad_1 x Voyage to the City of the Man-Eating Apes.png" },
-
-  
-
               { id: 3, image: "sinbad_1 x Voyage Home.png" },
-
-  
-
               { id: 4, image: "sinbad_1 x Commanding Impact.png" },
-
-  
-
               { id: 5, image: "sinbad_1 x Voyage to the Valley of the Giant Snakes.png" },
-
-  
-
               { id: 6, image: "sinbad_1 x Voyage to the City of the King of Serendib.png" },
-
-  
-
               { id: 7, image: "sinbad_1 x Voyage to the Creature With Eyes Like Coals of Fire.png" },
-
-  
-
               { id: 8, image: "sinbad_1 x Voyage to the Cannibals With the Root of Madness.png" },
-
-  
-
               { id: 9, image: "sinbad_2 x Riches Beyond Compare.png" },
-
-  
-
               { id: 10, image: "sinbad_2 x Riches Beyond Compare.png" },
-
-  
-
               { id: 11, image: "sinbad_2 x Leap Away.png" },
-
-  
-
               { id: 12, image: "sinbad_2 x Leap Away.png" },
-
-  
-
               { id: 13, image: "sinbad_2 x Exploit.png" },
-
-  
-
               { id: 14, image: "sinbad_2 x Exploit.png" },
-
-  
-
               { id: 15, image: "sinbad_3 x By Fortune and Fate.png" },
-
-  
-
               { id: 16, image: "sinbad_3 x By Fortune and Fate.png" },
-
-  
-
               { id: 17, image: "sinbad_3 x By Fortune and Fate.png" },
-
-  
-
               { id: 18, image: "sinbad_3 x Regroup.png" },
-
-  
-
               { id: 19, image: "sinbad_3 x Regroup.png" },
-
-  
-
               { id: 20, image: "sinbad_3 x Regroup.png" },
-
-  
-
               { id: 21, image: "sinbad_3 x Momentous Shift.png" },
-
-  
-
               { id: 22, image: "sinbad_3 x Momentous Shift.png" },
-
-  
-
               { id: 23, image: "sinbad_3 x Momentous Shift.png" },
-
-  
-
               { id: 24, image: "sinbad_3 x Feint.png" },
-
-  
-
               { id: 25, image: "sinbad_3 x Feint.png" },
-
-  
-
               { id: 26, image: "sinbad_3 x Feint.png" },
-
-  
-
               { id: 27, image: "sinbad_4 x Toil and Danger.png" },
-
-  
-
               { id: 28, image: "sinbad_4 x Toil and Danger.png" },
-
-  
-
               { id: 29, image: "sinbad_4 x Toil and Danger.png" },
-
-  
-
               { id: 30, image: "sinbad_4 x Toil and Danger.png" },
-
-  
-
               ],
-
-  
-
       specialAbility: {
         enabled: true,
         label: 'Voyages Used',
         mode: 'voyage-counter'
       }
-
-  
-
   },
-
-  
-
 alice: {
-
-  
-
             name: "ALICE",
-
-  
-
             image: "alice_back.png",
-
-  
-
             infoImage: "alice_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "Alice", startValue: 13, color: "#DA4A6B", size: "large" },
-
-  
-
       { label: "The Jabberwock", startValue: 8, color: "#79A2D1", size: "medium" }],
-
-  
-
       intermediateZone: null,
-
     specialAbility: {
-
       enabled: true,
-
       label: "Size",
-
       buttonText: "Change Size",
-
       mode: "swap",  // swap between two images
-
       deck: [
-
         { id: 1, image: "Alice_AbilityBIG.png" },
-
         { id: 2, image: "Alice_AbilitySMALL.png" }
-
       ]
-
     },
-
-  
-
             cards: [
-
-  
-
               { id: 1, image: "alice_1 x O Frabjous Day!.png" },
-
-  
-
               { id: 2, image: "alice_1 x Snicker-Snack.png" },
-
-  
-
               { id: 3, image: "alice_1 x The Other Side of the Mushroom.png" },
-
-  
-
               { id: 4, image: "alice_2 x Claws That Catch.png" },
-
-  
-
               { id: 5, image: "alice_2 x Claws That Catch.png" },
-
-  
-
               { id: 6, image: "alice_2 x Drink Me.png" },
-
-  
-
               { id: 7, image: "alice_2 x Drink Me.png" },
-
-  
-
               { id: 8, image: "alice_2 x Eat Me.png" },
-
-  
-
               { id: 9, image: "alice_2 x Eat Me.png" },
-
-  
-
               { id: 10, image: "alice_2 x Jaws That Bite.png" },
-
-  
-
               { id: 11, image: "alice_2 x Jaws That Bite.png" },
-
-  
-
               { id: 12, image: "alice_2 x Looking Glass.png" },
-
-  
-
               { id: 13, image: "alice_2 x Looking Glass.png" },
-
-  
-
               { id: 14, image: "alice_2 x Mad as a Hatter.png" },
-
-  
-
               { id: 15, image: "alice_2 x Mad as a Hatter.png" },
-
-  
-
               { id: 16, image: "alice_2 x Manxome Foe.png" },
-
-  
-
               { id: 17, image: "alice_2 x Manxome Foe.png" },
-
-  
-
               { id: 18, image: "alice_2 x Momentous Shift.png" },
-
-  
-
               { id: 19, image: "alice_2 x Momentous Shift.png" },
-
-  
-
               { id: 20, image: "alice_2 x Skirmish.png" },
-
-  
-
               { id: 21, image: "alice_2 x Skirmish.png" },
-
-  
-
               { id: 22, image: "alice_3 x Feint.png" },
-
-  
-
               { id: 23, image: "alice_3 x Feint.png" },
-
-  
-
               { id: 24, image: "alice_3 x Feint.png" },
-
-  
-
               { id: 25, image: "alice_3 x I'm Late, I'm Late.png" },
-
-  
-
               { id: 26, image: "alice_3 x I'm Late, I'm Late.png" },
-
-  
-
               { id: 27, image: "alice_3 x I'm Late, I'm Late.png" },
-
-  
-
               { id: 28, image: "alice_3 x Regroup.png" },
-
-  
-
               { id: 29, image: "alice_3 x Regroup.png" },
-
-  
-
               { id: 30, image: "alice_3 x Regroup.png" },
-
-  
-
             ]
-
-  
-
           },
-
-  
-
 bigfoot: {
-
-  
-
             name: "BIGFOOT",
-
-  
-
             image: "bigfoot_back.jpg",
-
-  
-
             infoImage: "bigfoot_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "Bigfoot", startValue: 16, color: "#754634", size: "large" },
-
-  
-
       { label: "The Jackalope", startValue: 6, color: "#DA8164", size: "medium" }],
-
-  
-
       intermediateZone: null,
-
-  
-
             cards: [
-
-  
-
               { id: 1, image: "bigfoot_2 x It's Just Your Imagination.png" },
-
-  
-
               { id: 2, image: "bigfoot_2 x It's Just Your Imagination.png" },
-
-  
-
               { id: 3, image: "bigfoot_2 x Crash Through the Trees.png" },
-
-  
-
               { id: 4, image: "bigfoot_2 x Crash Through the Trees.png" },
-
-  
-
               { id: 5, image: "bigfoot_2 x Disengage.png" },
-
-  
-
               { id: 6, image: "bigfoot_2 x Disengage.png" },
-
-  
-
               { id: 7, image: "bigfoot_3 x Savagery.png" },
-
-  
-
               { id: 8, image: "bigfoot_3 x Savagery.png" },
-
-  
-
               { id: 9, image: "bigfoot_3 x Savagery.png" },
-
-  
-
               { id: 10, image: "bigfoot_3 x Feint.png" },
-
-  
-
               { id: 11, image: "bigfoot_3 x Feint.png" },
-
-  
-
               { id: 12, image: "bigfoot_3 x Feint.png" },
-
-  
-
               { id: 13, image: "bigfoot_3 x Momentous Shift.png" },
-
-  
-
               { id: 14, image: "bigfoot_3 x Momentous Shift.png" },
-
-  
-
               { id: 15, image: "bigfoot_3 x Momentous Shift.png" },
-
-  
-
               { id: 16, image: "bigfoot_3 x Jackalope Horns.png" },
-
-  
-
               { id: 17, image: "bigfoot_3 x Jackalope Horns.png" },
-
-  
-
               { id: 18, image: "bigfoot_3 x Jackalope Horns.png" },
-
-  
-
               { id: 19, image: "bigfoot_3 x Hoax.png" },
-
-  
-
               { id: 20, image: "bigfoot_3 x Hoax.png" },
-
-  
-
               { id: 21, image: "bigfoot_3 x Hoax.png" },
-
-  
-
               { id: 22, image: "bigfoot_3 x Skirmish.png" },
-
-  
-
               { id: 23, image: "bigfoot_3 x Skirmish.png" },
-
-  
-
               { id: 24, image: "bigfoot_3 x Skirmish.png" },
-
-  
-
               { id: 25, image: "bigfoot_3 x Larger Than Life.png" },
-
-  
-
               { id: 26, image: "bigfoot_3 x Larger Than Life.png" },
-
-  
-
               { id: 27, image: "bigfoot_3 x Larger Than Life.png" },
-
-  
-
               { id: 28, image: "bigfoot_3 x Regroup.png" },
-
-  
-
               { id: 29, image: "bigfoot_3 x Regroup.png" },
-
-  
-
               { id: 30, image: "bigfoot_3 x Regroup.png" },
-
-  
-
             ]
-
-  
-
           },
-
-  
-
 robinhood: {
-
-  
-
             name: "ROBIN HOOD",
-
-  
-
             image: "robinhood_back.jpg",
-
-  
-
             infoImage: "robinhood_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "Robin Hood", startValue: 13, color: "#5CBE8A", size: "large" },
-
-  
-
       { label: "Outlaws alive", startValue: 4, color: "#D14C44", size: "small" }],
-
-  
-
       intermediateZone: null,
-
-  
-
             cards: [
-
-  
-
               { id: 1, image: "robinhood_3 x A Hunter's Eye.png" },
-
-  
-
               { id: 2, image: "robinhood_3 x A Hunter's Eye.png" },
-
-  
-
               { id: 3, image: "robinhood_3 x A Hunter's Eye.png" },
-
-  
-
               { id: 4, image: "robinhood_2 x Disarming Shot.png" },
-
-  
-
               { id: 5, image: "robinhood_2 x Disarming Shot.png" },
-
-  
-
               { id: 6, image: "robinhood_4 x Highway Robbery.png" },
-
-  
-
               { id: 7, image: "robinhood_4 x Highway Robbery.png" },
-
-  
-
               { id: 8, image: "robinhood_4 x Highway Robbery.png" },
-
-  
-
               { id: 9, image: "robinhood_4 x Highway Robbery.png" },
-
-  
-
               { id: 10, image: "robinhood_2 x Ambush.png" },
-
-  
-
               { id: 11, image: "robinhood_2 x Ambush.png" },
-
-  
-
               { id: 12, image: "robinhood_2 x Piercing Shot.png" },
-
-  
-
               { id: 13, image: "robinhood_2 x Piercing Shot.png" },
-
-  
-
               { id: 14, image: "robinhood_3 x Snark.png" },
-
-  
-
               { id: 15, image: "robinhood_3 x Snark.png" },
-
-  
-
               { id: 16, image: "robinhood_3 x Snark.png" },
-
-  
-
               { id: 17, image: "robinhood_3 x Wily Fighting.png" },
-
-  
-
               { id: 18, image: "robinhood_3 x Wily Fighting.png" },
-
-  
-
               { id: 19, image: "robinhood_3 x Wily Fighting.png" },
-
-  
-
               { id: 20, image: "robinhood_3 x Feint.png" },
-
-  
-
               { id: 21, image: "robinhood_3 x Feint.png" },
-
-  
-
               { id: 22, image: "robinhood_3 x Feint.png" },
-
-  
-
               { id: 23, image: "robinhood_3 x Steal From the Rich.png" },
-
-  
-
               { id: 24, image: "robinhood_3 x Steal From the Rich.png" },
-
-  
-
               { id: 25, image: "robinhood_3 x Steal From the Rich.png" },
-
-  
-
               { id: 26, image: "robinhood_2 x Defenders of Sherwood.png" },
-
-  
-
               { id: 27, image: "robinhood_2 x Defenders of Sherwood.png" },
-
-  
-
               { id: 28, image: "robinhood_3 x Regroup.png" },
-
-  
-
               { id: 29, image: "robinhood_3 x Regroup.png" },
-
-  
-
               { id: 30, image: "robinhood_3 x Regroup.png" },
-
-  
-
             ]
-
-  
-
           },
-
-  
-
 hamlet: {
-
-  
-
             name: "HAMLET",
-
-  
-
             image: "hamlet_back.png",
-
-  
-
             infoImage: "hamlet_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "Hamlet", startValue: 15, color: "#C5242D", size: "large" },
-
-  
-
       { label: "Rosencrantz & Guildenstern", startValue: 6, color: "#545960", size: "medium" }],
-
-  
-
       intermediateZone: null,
-
-  
-
     specialAbility: {
-
       enabled: true,
-
       label: "Question",
-
       buttonText: "Ponder the Question",
-
       mode: "swap",  // swap between two images
-
       deck: [
-
         { id: 1, image: "hamlet_Ability_NotToBe.png" },
-
         { id: 2, image: "hamlet_Ability_ToBe.png" }
-
       ]
-
     },
-
-  
-
             cards: [
-
-  
-
               { id: 1, image: "hamlet_3 x To Sleep, Perchance To Dream.png" },
-
-  
-
               { id: 2, image: "hamlet_3 x To Sleep, Perchance To Dream.png" },
-
-  
-
               { id: 3, image: "hamlet_3 x To Sleep, Perchance To Dream.png" },
-
-  
-
               { id: 4, image: "hamlet_3 x Blood Will Have Blood.png" },
-
-  
-
               { id: 5, image: "hamlet_3 x Blood Will Have Blood.png" },
-
-  
-
               { id: 6, image: "hamlet_3 x Blood Will Have Blood.png" },
-
-  
-
               { id: 7, image: "hamlet_3 x Nothing Either Good Or Bad.png" },
-
-  
-
               { id: 8, image: "hamlet_3 x Nothing Either Good Or Bad.png" },
-
-  
-
               { id: 9, image: "hamlet_3 x Nothing Either Good Or Bad.png" },
-
-  
-
               { id: 10, image: "hamlet_3 x The Play's The Thing.png" },
-
-  
-
               { id: 11, image: "hamlet_3 x The Play's The Thing.png" },
-
-  
-
               { id: 12, image: "hamlet_3 x The Play's The Thing.png" },
-
-  
-
               { id: 13, image: "hamlet_3 x Uncertain Doom.png" },
-
-  
-
               { id: 14, image: "hamlet_3 x Uncertain Doom.png" },
-
-  
-
               { id: 15, image: "hamlet_3 x Uncertain Doom.png" },
-
-  
-
               { id: 16, image: "hamlet_3 x Method In The Madness.png" },
-
-  
-
               { id: 17, image: "hamlet_3 x Method In The Madness.png" },
-
-  
-
               { id: 18, image: "hamlet_3 x Method In The Madness.png" },
-
-  
-
               { id: 19, image: "hamlet_2 x The Ghost.png" },
-
-  
-
               { id: 20, image: "hamlet_2 x The Ghost.png" },
-
-  
-
               { id: 21, image: "hamlet_2 x The Readiness Is All.png" },
-
-  
-
               { id: 22, image: "hamlet_2 x The Readiness Is All.png" },
-
-  
-
               { id: 23, image: "hamlet_2 x Maddening Insight.png" },
-
-  
-
               { id: 24, image: "hamlet_2 x Maddening Insight.png" },
-
-  
-
               { id: 25, image: "hamlet_2 x Outrageous Fortune.png" },
-
-  
-
               { id: 26, image: "hamlet_2 x Outrageous Fortune.png" },
-
-  
-
               { id: 27, image: "hamlet_2 x The Rest Is Silence.png" },
-
-  
-
               { id: 28, image: "hamlet_2 x The Rest Is Silence.png" },
-
-  
-
               { id: 29, image: "hamlet_2 x Cruel To Be Kind.png" },
-
-  
-
               { id: 30, image: "hamlet_2 x Cruel To Be Kind.png" },
-
-  
-
             ]
-
-  
-
           },
-
-  
-
 titania: {
-
-  
-
             name: "TITANIA",
-
-  
-
             image: "titania_back.png",
-
-  
-
             infoImage: "titania_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "Titania", startValue: 12, color: "#7B449A", size: "large" },
-
-  
-
       { label: "Oberon", startValue: 6, color: "#827BB4", size: "medium" }],
-
-  
-
       intermediateZone: null,
-
 	specialAbility: {
-
       enabled: true,
-
       label: "Glamour",
-
       buttonText: "Change Glamour",
-
       mode: "discard",  // swap between two images
-
       deck: [
-
         { id: 1, image: "titania_ability1.png" },
-
         { id: 2, image: "titania_ability2.png" },
-
         { id: 3, image: "titania_ability3.png" },
-
         { id: 4, image: "titania_ability4.png" },
-
         { id: 5, image: "titania_ability5.png" },
-
         { id: 6, image: "titania_ability6.png" }
-
       ]
-
     },
-
-  
-
             cards: [
-
-  
-
               { id: 1, image: "titania_3 x As Wise As Beautiful.png" },
-
-  
-
               { id: 2, image: "titania_3 x As Wise As Beautiful.png" },
-
-  
-
               { id: 3, image: "titania_3 x As Wise As Beautiful.png" },
-
-  
-
               { id: 4, image: "titania_3 x Met By Moonlight.png" },
-
-  
-
               { id: 5, image: "titania_3 x Met By Moonlight.png" },
-
-  
-
               { id: 6, image: "titania_3 x Met By Moonlight.png" },
-
-  
-
               { id: 7, image: "titania_3 x Protection Of The Fairy Woods.png" },
-
-  
-
               { id: 8, image: "titania_3 x Protection Of The Fairy Woods.png" },
-
-  
-
               { id: 9, image: "titania_3 x Protection Of The Fairy Woods.png" },
-
-  
-
               { id: 10, image: "titania_3 x Fairy Song.png" },
-
-  
-
               { id: 11, image: "titania_3 x Fairy Song.png" },
-
-  
-
               { id: 12, image: "titania_3 x Fairy Song.png" },
-
-  
-
               { id: 13, image: "titania_3 x Gift Of The Fair Folk.png" },
-
-  
-
               { id: 14, image: "titania_3 x Gift Of The Fair Folk.png" },
-
-  
-
               { id: 15, image: "titania_3 x Gift Of The Fair Folk.png" },
-
-  
-
               { id: 16, image: "titania_3 x Whisked Away.png" },
-
-  
-
               { id: 17, image: "titania_3 x Whisked Away.png" },
-
-  
-
               { id: 18, image: "titania_3 x Whisked Away.png" },
-
-  
-
               { id: 19, image: "titania_2 x The Moon Looks Down.png" },
-
-  
-
               { id: 20, image: "titania_2 x The Moon Looks Down.png" },
-
-  
-
               { id: 21, image: "titania_2 x What Fools These Mortals Be.png" },
-
-  
-
               { id: 22, image: "titania_2 x What Fools These Mortals Be.png" },
-
-  
-
               { id: 23, image: "titania_2 x A Momentary Glance.png" },
-
-  
-
               { id: 24, image: "titania_2 x A Momentary Glance.png" },
-
-  
-
               { id: 25, image: "titania_2 x But A Dream.png" },
-
-  
-
               { id: 26, image: "titania_2 x But A Dream.png" },
-
-  
-
               { id: 27, image: "titania_2 x Parting Gift.png" },
-
-  
-
               { id: 28, image: "titania_2 x Parting Gift.png" },
-
-  
-
               { id: 29, image: "titania_2 x Queen Of The Fairies.png" },
-
-  
-
               { id: 30, image: "titania_2 x Queen Of The Fairies.png" },
-
-  
-
             ]
-
-  
-
           },
-
-  
-
 shakespeare: {
-
-  
-
             name: "SHAKESPEARE",
-
-  
-
             image: "shakespeare_back.png",
-
-  
-
             infoImage: "shakespeare_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "Shakespeare", startValue: 13, color: "#947F5D", size: "large" },
-
-  
-
       { label: "Actors alive", startValue: 3, color: "#EDE8C4", size: "small" }],
-
-  
-
       intermediateZone: { enabled: true, name: "Shakespeare's line" },
-
-  
-
             cards: [
-
-  
-
               { id: 1, image: "shakespeare_3 x Deceive.png" },
-
-  
-
               { id: 2, image: "shakespeare_3 x Deceive.png" },
-
-  
-
               { id: 3, image: "shakespeare_3 x Deceive.png" },
-
-  
-
               { id: 4, image: "shakespeare_3 x My Kingdom For a Horse.png" },
-
-  
-
               { id: 5, image: "shakespeare_3 x My Kingdom For a Horse.png" },
-
-  
-
               { id: 6, image: "shakespeare_3 x My Kingdom For a Horse.png" },
-
-  
-
               { id: 7, image: "shakespeare_3 x Again.png" },
-
-  
-
               { id: 8, image: "shakespeare_3 x Again.png" },
-
-  
-
               { id: 9, image: "shakespeare_3 x Again.png" },
-
-  
-
               { id: 10, image: "shakespeare_2 x Once More Unto The Breach.png" },
-
-  
-
               { id: 11, image: "shakespeare_2 x Once More Unto The Breach.png" },
-
-  
-
               { id: 12, image: "shakespeare_2 x Revise.png" },
-
-  
-
               { id: 13, image: "shakespeare_2 x Revise.png" },
-
-  
-
               { id: 14, image: "shakespeare_2 x Alas.png" },
-
-  
-
               { id: 15, image: "shakespeare_2 x Alas.png" },
-
-  
-
               { id: 16, image: "shakespeare_2 x Places, Places!.png" },
-
-  
-
               { id: 17, image: "shakespeare_2 x Places, Places!.png" },
-
-  
-
               { id: 18, image: "shakespeare_2 x The Ides Of March.png" },
-
-  
-
               { id: 19, image: "shakespeare_2 x The Ides Of March.png" },
-
-  
-
               { id: 20, image: "shakespeare_2 x All Are Punished.png" },
-
-  
-
               { id: 21, image: "shakespeare_2 x All Are Punished.png" },
-
-  
-
               { id: 22, image: "shakespeare_2 x Et Tu, Brute.png" },
-
-  
-
               { id: 23, image: "shakespeare_2 x Et Tu, Brute.png" },
-
-  
-
               { id: 24, image: "shakespeare_2 x Such Sweet Sorrow.png" },
-
-  
-
               { id: 25, image: "shakespeare_2 x Such Sweet Sorrow.png" },
-
-  
-
               { id: 26, image: "shakespeare_1 x Horror1.png" },
-
-  
-
               { id: 27, image: "shakespeare_1 x Horror2.png" },
-
-  
-
               { id: 28, image: "shakespeare_1 x Horror3.png" },
-
-  
-
               { id: 29, image: "shakespeare_1 x Horror4.png" },
-
-  
-
               { id: 30, image: "shakespeare_1 x Horror5.png" },
-
-  
-
             ]
-
-  
-
           },
-
-  
-
 sisters: {
-
-  
-
             name: "THE WAYWARD SISTERS",
-
-  
-
             image: "sisters_back.png",
-
-  
-
             infoImage: "sisters_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "Sceptre", startValue: 6, color: "#BADA6D", size: "medium" },
-
-  
-
       { label: "Book", startValue: 6, color: "#99C563", size: "medium" },
-
-  
-
       { label: "Aargh", startValue: 6, color: "#78B058", size: "medium" }],
-
-  
-
       intermediateZone: { enabled: true, name: "Sisters' Cauldron" },
-
 	specialAbility: {
-
       enabled: true,
-
       label: "Cauldron",
-
       buttonText: "This does nothing lol",
-
       mode: "swap",  // swap between two images
-
       deck: [
-
         { id: 1, image: "sisters_Ability.png" }
-
       ]
-
     },
-
-  
-
             cards: [
-
-  
-
               { id: 1, image: "sisters_3 x Fire Burn And Cauldron Bubble.png" },
-
-  
-
               { id: 2, image: "sisters_3 x Fire Burn And Cauldron Bubble.png" },
-
-  
-
               { id: 3, image: "sisters_3 x Fire Burn And Cauldron Bubble.png" },
-
-  
-
               { id: 4, image: "sisters_3 x Ward.png" },
-
-  
-
               { id: 5, image: "sisters_3 x Ward.png" },
-
-  
-
               { id: 6, image: "sisters_3 x Ward.png" },
-
-  
-
               { id: 7, image: "sisters_3 x Toil And Trouble.png" },
-
-  
-
               { id: 8, image: "sisters_3 x Toil And Trouble.png" },
-
-  
-
               { id: 9, image: "sisters_3 x Toil And Trouble.png" },
-
-  
-
               { id: 10, image: "sisters_3 x Double, Double.png" },
-
-  
-
               { id: 11, image: "sisters_3 x Double, Double.png" },
-
-  
-
               { id: 12, image: "sisters_3 x Double, Double.png" },
-
-  
-
               { id: 13, image: "sisters_3 x Hurly-Burly.png" },
-
-  
-
               { id: 14, image: "sisters_3 x Hurly-Burly.png" },
-
-  
-
               { id: 15, image: "sisters_3 x Hurly-Burly.png" },
-
-  
-
               { id: 16, image: "sisters_3 x The Stars Align.png" },
-
-  
-
               { id: 17, image: "sisters_3 x The Stars Align.png" },
-
-  
-
               { id: 18, image: "sisters_3 x The Stars Align.png" },
-
-  
-
               { id: 19, image: "sisters_2 x Something Wicked This Way Comes.png" },
-
-  
-
               { id: 20, image: "sisters_2 x Something Wicked This Way Comes.png" },
-
-  
-
               { id: 21, image: "sisters_2 x Curious Familiar.png" },
-
-  
-
               { id: 22, image: "sisters_2 x Curious Familiar.png" },
-
-  
-
               { id: 23, image: "sisters_2 x Pricking Of My Thumbs.png" },
-
-  
-
               { id: 24, image: "sisters_2 x Pricking Of My Thumbs.png" },
-
-  
-
               { id: 25, image: "sisters_2 x Prophecy.png" },
-
-  
-
               { id: 26, image: "sisters_2 x Prophecy.png" },
-
-  
-
               { id: 27, image: "sisters_2 x Unnatural Remedy.png" },
-
-  
-
               { id: 28, image: "sisters_2 x Unnatural Remedy.png" },
-
-  
-
               { id: 29, image: "sisters_2 x All-Seeing Familiar.png" },
-
-  
-
               { id: 30, image: "sisters_2 x All-Seeing Familiar.png" },
-
-  
-
             ]
-
-  
-
           },
-
-  
-
 spiderman: {
-
-  
-
             name: "SPIDERMAN",
-
-  
-
             image: "spiderman_back.png",
-
-  
-
             infoImage: "spiderman_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "spiderman", startValue: 15, color: "#E92824", size: "large" }],
-
-  
-
       intermediateZone: null,
-
-  
-
             cards: [
-
-  
-
               { id: 1, image: "spiderman_3 x Spider-Sense Tingling!.png" },
-
-  
-
               { id: 2, image: "spiderman_3 x Spider-Sense Tingling!.png" },
-
-  
-
               { id: 3, image: "spiderman_3 x Spider-Sense Tingling!.png" },
-
-  
-
               { id: 4, image: "spiderman_3 x Thwip!.png" },
-
-  
-
               { id: 5, image: "spiderman_3 x Thwip!.png" },
-
-  
-
               { id: 6, image: "spiderman_3 x Thwip!.png" },
-
-  
-
               { id: 7, image: "spiderman_3 x Counter-Attack.png" },
-
-  
-
               { id: 8, image: "spiderman_3 x Counter-Attack.png" },
-
-  
-
               { id: 9, image: "spiderman_3 x Counter-Attack.png" },
-
-  
-
               { id: 10, image: "spiderman_3 x Momentous Shift.png" },
-
-  
-
               { id: 11, image: "spiderman_3 x Momentous Shift.png" },
-
-  
-
               { id: 12, image: "spiderman_3 x Momentous Shift.png" },
-
-  
-
               { id: 13, image: "spiderman_3 x Swinging Kick.png" },
-
-  
-
               { id: 14, image: "spiderman_3 x Swinging Kick.png" },
-
-  
-
               { id: 15, image: "spiderman_3 x Swinging Kick.png" },
-
-  
-
               { id: 16, image: "spiderman_3 x Web Shooters.png" },
-
-  
-
               { id: 17, image: "spiderman_3 x Web Shooters.png" },
-
-  
-
               { id: 18, image: "spiderman_3 x Web Shooters.png" },
-
-  
-
               { id: 19, image: "spiderman_2 x Friendly Neighborhood Spider-Man.png" },
-
-  
-
               { id: 20, image: "spiderman_2 x Friendly Neighborhood Spider-Man.png" },
-
-  
-
               { id: 21, image: "spiderman_2 x Disarming Shot.png" },
-
-  
-
               { id: 22, image: "spiderman_2 x Disarming Shot.png" },
-
-  
-
               { id: 23, image: "spiderman_2 x Snark.png" },
-
-  
-
               { id: 24, image: "spiderman_2 x Snark.png" },
-
-  
-
               { id: 25, image: "spiderman_2 x Wall Crawler.png" },
-
-  
-
               { id: 26, image: "spiderman_2 x Wall Crawler.png" },
-
-  
-
               { id: 27, image: "spiderman_2 x With Great Power.png" },
-
-  
-
               { id: 28, image: "spiderman_2 x With Great Power.png" },
-
-  
-
               { id: 29, image: "spiderman_2 x Right in the Face!.png" },
-
-  
-
               { id: 30, image: "spiderman_2 x Right in the Face!.png" },
-
-  
-
             ]
-
-  
-
           },
-
-  
-
 drstrange: {
-
-  
-
             name: "DR.STRANGE",
-
-  
-
             image: "drstrange_back.png",
-
-  
-
             infoImage: "drstrange_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "Dr.Strange", startValue: 14, color: "#C82026", size: "large" },
-
-  
-
       { label: "Wong", startValue: 6, color: "#F1EC21", size: "medium" }],
-
-  
-
   intermediateZone: null,
-
             cards: [
-
-  
-
               { id: 1, image: "drstrange_4 x Bolts of Balthakk.png" },
-
-  
-
               { id: 2, image: "drstrange_4 x Bolts of Balthakk.png" },
-
-  
-
               { id: 3, image: "drstrange_4 x Bolts of Balthakk.png" },
-
-  
-
               { id: 4, image: "drstrange_4 x Bolts of Balthakk.png" },
-
-  
-
               { id: 5, image: "drstrange_3 x The Mists of Munnopor.png" },
-
-  
-
               { id: 6, image: "drstrange_3 x The Mists of Munnopor.png" },
-
-  
-
               { id: 7, image: "drstrange_3 x The Mists of Munnopor.png" },
-
-  
-
               { id: 8, image: "drstrange_3 x Seven Suns of Cinnibus.png" },
-
-  
-
               { id: 9, image: "drstrange_3 x Seven Suns of Cinnibus.png" },
-
-  
-
               { id: 10, image: "drstrange_3 x Seven Suns of Cinnibus.png" },
-
-  
-
               { id: 11, image: "drstrange_3 x Steadfast Disciple.png" },
-
-  
-
               { id: 12, image: "drstrange_3 x Steadfast Disciple.png" },
-
-  
-
               { id: 13, image: "drstrange_3 x Steadfast Disciple.png" },
-
-  
-
               { id: 14, image: "drstrange_3 x The Winds of Watoomb.png" },
-
-  
-
               { id: 15, image: "drstrange_3 x The Winds of Watoomb.png" },
-
-  
-
               { id: 16, image: "drstrange_3 x The Winds of Watoomb.png" },
-
-  
-
               { id: 17, image: "drstrange_3 x Master of Kamar-Taj.png" },
-
-  
-
               { id: 18, image: "drstrange_3 x Master of Kamar-Taj.png" },
-
-  
-
               { id: 19, image: "drstrange_3 x Master of Kamar-Taj.png" },
-
-  
-
               { id: 20, image: "drstrange_3 x The Rings of Raggadorr.png" },
-
-  
-
               { id: 21, image: "drstrange_3 x The Rings of Raggadorr.png" },
-
-  
-
               { id: 22, image: "drstrange_3 x The Rings of Raggadorr.png" },
-
-  
-
               { id: 23, image: "drstrange_2 x Feint.png" },
-
-  
-
               { id: 24, image: "drstrange_2 x Feint.png" },
-
-  
-
               { id: 25, image: "drstrange_2 x Eye of Agamotto.png" },
-
-  
-
               { id: 26, image: "drstrange_2 x Eye of Agamotto.png" },
-
-  
-
               { id: 27, image: "drstrange_2 x Cloak of Levitation.png" },
-
-  
-
               { id: 28, image: "drstrange_2 x Cloak of Levitation.png" },
-
-  
-
               { id: 29, image: "drstrange_2 x No Really, I'm a Doctor.png" },
-
-  
-
               { id: 30, image: "drstrange_2 x No Really, I'm a Doctor.png" },
-
-  
-
             ]
-
-  
-
           },
-
-  
-
 shehulk: {
-
-  
-
             name: "SHEHULK",
-
-  
-
             image: "shehulk_back.png",
-
-  
-
             infoImage: "shehulk_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "She Hulk", startValue: 20, color: "#78B058", size: "large" }],
-
-  
-
   intermediateZone: null,
-
             cards: [
-
-  
-
               { id: 1, image: "shehulk_3 x Nerve Cluster Strike.png" },
-
-  
-
               { id: 2, image: "shehulk_3 x Nerve Cluster Strike.png" },
-
-  
-
               { id: 3, image: "shehulk_3 x Nerve Cluster Strike.png" },
-
-  
-
               { id: 4, image: "shehulk_3 x Lady Justice.png" },
-
-  
-
               { id: 5, image: "shehulk_3 x Lady Justice.png" },
-
-  
-
               { id: 6, image: "shehulk_3 x Lady Justice.png" },
-
-  
-
               { id: 7, image: "shehulk_3 x Sensational.png" },
-
-  
-
               { id: 8, image: "shehulk_3 x Sensational.png" },
-
-  
-
               { id: 9, image: "shehulk_3 x Sensational.png" },
-
-  
-
               { id: 10, image: "shehulk_3 x Cease and Desist.png" },
-
-  
-
               { id: 11, image: "shehulk_3 x Cease and Desist.png" },
-
-  
-
               { id: 12, image: "shehulk_3 x Cease and Desist.png" },
-
-  
-
               { id: 13, image: "shehulk_3 x Green Energy.png" },
-
-  
-
               { id: 14, image: "shehulk_3 x Green Energy.png" },
-
-  
-
               { id: 15, image: "shehulk_3 x Green Energy.png" },
-
-  
-
               { id: 16, image: "shehulk_3 x Legalese.png" },
-
-  
-
               { id: 17, image: "shehulk_3 x Legalese.png" },
-
-  
-
               { id: 18, image: "shehulk_3 x Legalese.png" },
-
-  
-
               { id: 19, image: "shehulk_2 x Jennifer Walters, Esq.png" },
-
-  
-
               { id: 20, image: "shehulk_2 x Jennifer Walters, Esq.png" },
-
-  
-
               { id: 21, image: "shehulk_2 x Leap Toward.png" },
-
-  
-
               { id: 22, image: "shehulk_2 x Leap Toward.png" },
-
-  
-
               { id: 23, image: "shehulk_2 x Omega-Level Threat.png" },
-
-  
-
               { id: 24, image: "shehulk_2 x Omega-Level Threat.png" },
-
-  
-
               { id: 25, image: "shehulk_2 x Double Jeopardy.png" },
-
-  
-
               { id: 26, image: "shehulk_2 x Double Jeopardy.png" },
-
-  
-
               { id: 27, image: "shehulk_2 x The Defense Rests.png" },
-
-  
-
               { id: 28, image: "shehulk_2 x The Defense Rests.png" },
-
-  
-
               { id: 29, image: "shehulk_2 x The Savage She-Hulk.png" },
-
-  
-
               { id: 30, image: "shehulk_2 x The Savage She-Hulk.png" },
-
-  
-
             ]
-
-  
-
           },
-          
-
 ghostrider: {
-
-  
-
             name: "GHOST RIDER",
-
-  
-
             image: "ghostrider_back.png",
-
-  
-
             infoImage: "ghostrider_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "Ghost Rider", startValue: 17, color: "#EE5D2A", size: "large" },
-
-  
-
       { label: "Hellfires", startValue: 5, color: "#FFF6A9", size: "small" }],
-
-  
-
 	  intermediateZone: null,
-
            cards: 
             [
-
-  
-
               { id: 1, image: "ghostrider_3 x Control The Demon.png" },
-
-  
-
               { id: 2, image: "ghostrider_3 x Control The Demon.png" },
-
-  
-
               { id: 3, image: "ghostrider_3 x Control The Demon.png" },
-
-  
-
               { id: 4, image: "ghostrider_3 x I Brought The Devil With Me.png" },
-
-  
-
               { id: 5, image: "ghostrider_3 x I Brought The Devil With Me.png" },
-
-  
-
               { id: 6, image: "ghostrider_3 x I Brought The Devil With Me.png" },
-
-  
-
               { id: 7, image: "ghostrider_3 x Spirit Of Vengeance.png" },
-
-  
-
               { id: 8, image: "ghostrider_3 x Spirit Of Vengeance.png" },
-
-  
-
               { id: 9, image: "ghostrider_3 x Spirit Of Vengeance.png" },
-
-  
-
               { id: 10, image: "ghostrider_3 x I Finally Escaped Hell.png" },
-
-  
-
               { id: 11, image: "ghostrider_3 x I Finally Escaped Hell.png" },
-
-  
-
               { id: 12, image: "ghostrider_3 x I Finally Escaped Hell.png" },
-
-  
-
               { id: 13, image: "ghostrider_3 x Stoke The Flames.png" },
-
-  
-
               { id: 14, image: "ghostrider_3 x Stoke The Flames.png" },
-
-  
-
               { id: 15, image: "ghostrider_3 x Stoke The Flames.png" },
-
-  
-
               { id: 16, image: "ghostrider_3 x The Wicked Will Burn.png" },
-
-  
-
               { id: 17, image: "ghostrider_3 x The Wicked Will Burn.png" },
-
-  
-
               { id: 18, image: "ghostrider_3 x The Wicked Will Burn.png" },
-
-  
-
               { id: 19, image: "ghostrider_2 x Penance Stare.png" },
-
-  
-
               { id: 20, image: "ghostrider_2 x Penance Stare.png" },
-
-  
-
               { id: 21, image: "ghostrider_2 x Deal With The Devil.png" },
-
-  
-
               { id: 22, image: "ghostrider_2 x Deal With The Devil.png" },
-
-  
-
               { id: 23, image: "ghostrider_2 x Hell Rides With Me.png" },
-
-  
-
               { id: 24, image: "ghostrider_2 x Hell Rides With Me.png" },
-
-  
-
               { id: 25, image: "ghostrider_2 x Blaze of Glory.png" },
-
-  
-
               { id: 26, image: "ghostrider_2 x Blaze of Glory.png" },
-
-  
-
               { id: 27, image: "ghostrider_2 x Chains of Hellfire.png" },
-
-  
-
               { id: 28, image: "ghostrider_2 x Chains of Hellfire.png" },
-
-  
-
               { id: 29, image: "ghostrider_2 x Feint.png" },
-
-  
-
               { id: 30, image: "ghostrider_2 x Feint.png" },
-
-  
-
             ]
-
-  
-
           },
-
-
 moonknight: {
-
-  
-
             name: "MOON KNIGHT",
-
-  
-
             image: "moonknight_back.png",
-
-  
-
             infoImage: "moonknight_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "MOON KNIGHT", startValue: 16, color: "#A3BCBA", size: "large" }],
-
-  
-
       intermediateZone: null,
-
 	    specialAbility: {
-
       enabled: true,
-
       label: "Personality Disorder",
-
       buttonText: "Go crazy",
-
       mode: "swap",  // swap between two images
-
      deck: [
-
         { id: 1, image: "moonknightAbility.png" },
-
         { id: 2, image: "konshuAbility.png" },
-
         { id: 3, image: "mrknightAbility.png" }
-
       ]
-
 	    },
-
-  
 	 cards: 
            [
-
-  
-
               { id: 1, image: "moonknight_3 x We're All In This Together.png" },
-
-  
-
               { id: 2, image: "moonknight_3 x We're All In This Together.png" },
-
-  
-
               { id: 3, image: "moonknight_3 x We're All In This Together.png" },
-
-  
-
               { id: 4, image: "moonknight_3 x I'm Not Real.png" },
-
-  
-
               { id: 5, image: "moonknight_3 x I'm Not Real.png" },
-
-  
-
               { id: 6, image: "moonknight_3 x I'm Not Real.png" },
-
-  
-
               { id: 7, image: "moonknight_3 x That's Why I Always Win.png" },
-
-  
-
               { id: 8, image: "moonknight_3 x That's Why I Always Win.png" },
-
-  
-
               { id: 9, image: "moonknight_3 x That's Why I Always Win.png" },
-
-  
-
               { id: 10, image: "moonknight_3 x A Totally Sane Thing To Do.png" },
-
-  
-
               { id: 11, image: "moonknight_3 x A Totally Sane Thing To Do.png" },
-
-  
-
               { id: 12, image: "moonknight_3 x A Totally Sane Thing To Do.png" },
-
-  
-
               { id: 13, image: "moonknight_3 x Past and Present Intermingle.png" },
-
-  
-
               { id: 14, image: "moonknight_3 x Past and Present Intermingle.png" },
-
-  
-
               { id: 15, image: "moonknight_3 x Past and Present Intermingle.png" },
-
-  
-
               { id: 16, image: "moonknight_3 x Feint.png" },
-
-  
-
               { id: 17, image: "moonknight_3 x Feint.png" },
-
-  
-
               { id: 18, image: "moonknight_3 x Feint.png" },
-
-  
-
               { id: 19, image: "moonknight_2 x Let Your Insanity Guide You.png" },
-
-  
-
               { id: 20, image: "moonknight_2 x Let Your Insanity Guide You.png" },
-
-  
-
               { id: 21, image: "moonknight_2 x Travelers of The Night.png" },
-
-  
-
               { id: 22, image: "moonknight_2 x Travelers of The Night.png" },
-
-  
-
               { id: 23, image: "moonknight_2 x That's The Part I Like.png" },
-
-  
-
               { id: 24, image: "moonknight_2 x That's The Part I Like.png" },
-
-  
-
               { id: 25, image: "moonknight_2 x Madness Will Keep You Alive.png" },
-
-  
-
               { id: 26, image: "moonknight_2 x Madness Will Keep You Alive.png" },
-
-  
-
               { id: 27, image: "moonknight_2 x Fist of Khonshu.png" },
-
-  
-
               { id: 28, image: "moonknight_2 x Fist of Khonshu.png" },
-
-  
-
               { id: 29, image: "moonknight_2 x Good Enough For Us.png" },
-
-  
-
               { id: 30, image: "moonknight_2 x Good Enough For Us.png" },
-
-  
-
             ]
-
-  
-
           },
-
-
   lukecage: {
-
-  
-
             name: "LUKE CAGE",
-
-  
-
             image: "lukecage_back.png",
-
-  
-
             infoImage: "lukecage_info.png",
-
-  
-
             healthBars: [
-
-  
-
       { label: "LUKE CAGE", startValue: 13, color: "#FFD640", size: "large" },
       { label: "MISTY KNIGHT", startValue: 6, color: "#C57C0D", size: "medium" }],
-
-  
-
 	  intermediateZone: null,
-
             cards: [
-
-  
-
               { id: 1, image: "lukecage_3 x Regroup.png" },
-
-  
-
               { id: 2, image: "lukecage_3 x Regroup.png" },
-
-  
-
               { id: 3, image: "lukecage_3 x Regroup.png" },
-
-  
-
               { id: 4, image: "lukecage_3 x Trash Talk.png" },
-
-  
-
               { id: 5, image: "lukecage_3 x Trash Talk.png" },
-
-  
-
               { id: 6, image: "lukecage_3 x Trash Talk.png" },
-
-  
-
               { id: 7, image: "lukecage_3 x Commanding Impact.png" },
-
-  
-
               { id: 8, image: "lukecage_3 x Commanding Impact.png" },
-
-  
-
               { id: 9, image: "lukecage_3 x Commanding Impact.png" },
-
-  
-
               { id: 10, image: "lukecage_3 x Hero For Hire.png" },
-
-  
-
               { id: 11, image: "lukecage_3 x Hero For Hire.png" },
-
-  
-
               { id: 12, image: "lukecage_3 x Hero For Hire.png" },
-
-  
-
               { id: 13, image: "lukecage_2 x Pushback.png" },
-
-  
-
               { id: 14, image: "lukecage_2 x Pushback.png" },
-
-  
-
               { id: 15, image: "lukecage_2 x Skin Like Titanium.png" },
-
-  
-
               { id: 16, image: "lukecage_2 x Skin Like Titanium.png" },
-
-  
-
               { id: 17, image: "lukecage_2 x Where's My Money.png" },
-
-  
-
               { id: 18, image: "lukecage_2 x Where's My Money.png" },
-
-  
-
               { id: 19, image: "lukecage_2 x Got My Back.png" },
-
-  
-
               { id: 20, image: "lukecage_2 x Got My Back.png" },
-
-  
-
               { id: 21, image: "lukecage_2 x Daughter of the Dragon.png" },
-
-  
-
               { id: 22, image: "lukecage_2 x Daughter of the Dragon.png" },
-
-  
-
               { id: 23, image: "lukecage_2 x Get Paid.png" },
-
-  
-
               { id: 24, image: "lukecage_2 x Get Paid.png" },
-
-  
-
               { id: 25, image: "lukecage_2 x Sweet Christmas!.png" },
-
-  
-
               { id: 26, image: "lukecage_2 x Sweet Christmas!.png" },
-
-  
-
               { id: 27, image: "lukecage_2 x Power Man.png" },
-
-  
-
               { id: 28, image: "lukecage_2 x Power Man.png" },
-
-  
-
               { id: 29, image: "lukecage_2 x Still Standing.png" },
-
-  
-
               { id: 30, image: "lukecage_2 x Still Standing.png" },
-
-  
-
             ]
-
-  
-
-          }
-          
-
-
-};
-
-</script>
+          },
+loki: {
+            name: "LOKI",
+            image: "loki_back.png",
+            infoImage: "loki_info.png",
+            healthBars: [
+      { label: "LOKI", startValue: 16, color: "#687F5A", size: "large" }],
+    intermediateZone: null,
+    specialAbility: {
+      enabled: true,
+      label: "Trick Tracker",
+      mode: "trick-counter"
+    },
+    cards:      [
+              { id: 1, image: "loki_4 x Shapershifter.png" },
+              { id: 2, image: "loki_4 x Shapershifter.png" },
+              { id: 3, image: "loki_4 x Shapershifter.png" },
+              { id: 4, image: "loki_4 x Shapershifter.png" },
+              { id: 5, image: "loki_3 x TRICK, Baldr's downfall.png" },
+              { id: 6, image: "loki_3 x TRICK, Baldr's downfall.png" },
+              { id: 7, image: "loki_3 x TRICK, Baldr's downfall.png" },
+              { id: 8, image: "loki_3 x GOD OF MISCHIEF.png" },
+              { id: 9, image: "loki_3 x GOD OF MISCHIEF.png" },
+              { id: 10, image: "loki_3 x GOD OF MISCHIEF.png" },
+              { id: 11, image: "loki_3 x LAEVATEINN.png" },
+              { id: 12, image: "loki_3 x LAEVATEINN.png" },
+              { id: 13, image: "loki_3 x LAEVATEINN.png" },
+              { id: 14, image: "loki_3 x Looking for trouble.png" },
+              { id: 15, image: "loki_3 x Looking for trouble.png" },
+              { id: 16, image: "loki_3 x Looking for trouble.png" },
+              { id: 17, image: "loki_3 x MALICIOUS FLYTING.png" },
+              { id: 18, image: "loki_3 x MALICIOUS FLYTING.png" },
+              { id: 19, image: "loki_3 x MALICIOUS FLYTING.png" },
+              { id: 20, image: "loki_3 x UNDERHANDED.png" },
+              { id: 21, image: "loki_3 x UNDERHANDED.png" },
+              { id: 22, image: "loki_3 x UNDERHANDED.png" },
+              { id: 23, image: "loki_2 x TRICK, FREYJA'S RESCUE.png" },
+              { id: 24, image: "loki_2 x TRICK, FREYJA'S RESCUE.png" },
+              { id: 25, image: "loki_2 x RAGNARÖK.png" },
+              { id: 26, image: "loki_2 x RAGNARÖK.png" },
+              { id: 27, image: "loki_2 x TRICK, SINDRI'S BET.png" },
+              { id: 28, image: "loki_2 x TRICK, SINDRI'S BET.png" },
+              { id: 29, image: "loki_2 x TRICK, SVADILFARI'S LURE.png" },
+              { id: 30, image: "loki_2 x TRICK, SVADILFARI'S LURE.png" },
+            ]
+    }
+};</script>
 
 <!-- WELCOME SCREEN -->
 <div id="s-welcome" class="screen active">
