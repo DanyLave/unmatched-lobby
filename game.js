@@ -1173,6 +1173,8 @@ function showPlayerDeckInfo(pid) {
   const dk = DECKS[player.deckKey];
   if (!dk) return;
   
+  document.getElementById('info-sheet-img').src = dk.infoImage || '';
+  
   // Show special ability if present
   const specialInfo = document.getElementById('player-special-info');
   if (dk.specialAbility && dk.specialAbility.enabled) {
@@ -1855,6 +1857,14 @@ document.querySelectorAll('.sheet-overlay').forEach(el => {
   });
 });
 
+function openDeckInfo(key, e) {
+  if (e) e.stopPropagation();
+  const dk = DECKS[key];
+  if (!dk || !dk.infoImage) return;
+  document.getElementById('info-sheet-img').src = dk.infoImage;
+  document.getElementById('sh-info').classList.add('open');
+}
+
 function buildEditionGrid() {
   const grid = document.getElementById('edition-grid');
   grid.innerHTML = '';
@@ -1876,7 +1886,8 @@ function selectEdition(ed) {
     if (!dk) return;
     const div = document.createElement('div');
     div.className = 'deck-item';
-    div.innerHTML = `<img src="${dk.image}" alt="" onerror="this.style.opacity='.25'">`;
+    div.innerHTML = `<img src="${dk.image}" alt="" onerror="this.style.opacity='.25'">
+      <div class="info-btn" onclick="openDeckInfo('${key}',event)">i</div>`;
     div.onclick = () => selectDeck(key);
     grid.appendChild(div);
   });
