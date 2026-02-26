@@ -663,20 +663,6 @@ function checkNewReveals(roomData) {
           : n + ' took \u201c' + (r.cardName || 'a card') + '\u201d from ' + (r.victimName || 'someone') + "'s hand";
         type = 'other';
         break;
-      case 'peeked-deck':
-        text = r.count === -1
-          ? n + ' looked at their whole deck'
-          : n + ' looked at their top ' + r.count + ' card' + (r.count === 1 ? '' : 's');
-        type = 'other';
-        break;
-      case 'moved-in-deck':
-        text = n + ' reordered cards in their deck';
-        type = 'other';
-        break;
-      case 'drew-from-deck-position':
-        text = n + ' took card #' + r.pos + ' from their deck to hand';
-        type = 'other';
-        break;
       case 'hand-share-request':
         if (r.victimId === G.playerId) {
           _pendingHandShare = { requesterId: r.playerId, requesterName: r.playerName };
@@ -695,6 +681,10 @@ function checkNewReveals(roomData) {
         }
         text = n + ' shared their hand';
         type = 'other';
+        break;
+      case 'log-broadcast':
+        text = r.text || (n + ' performed an action');
+        type = r.type || 'other';
         break;
       default:
         text = n + ' performed an action';
@@ -1173,7 +1163,7 @@ function showPlayerDeckInfo(pid) {
   const dk = DECKS[player.deckKey];
   if (!dk) return;
   
-  document.getElementById('info-sheet-img').src = dk.infoImage || '';
+  document.getElementById('info-sheet-img').src = dk.infoImage;
   
   // Show special ability if present
   const specialInfo = document.getElementById('player-special-info');
@@ -1849,16 +1839,35 @@ function openSheet(id) {
 
 function closeSheet(id) {
   document.getElementById(id).classList.remove('open');
+  if (id === 'sh-draw-browse') _drawBrowseN = null;
 }
 
 document.querySelectorAll('.sheet-overlay').forEach(el => {
   el.addEventListener('click', e => {
-    if (e.target === el) el.classList.remove('open');
+    if (e.target === el) {
+      el.classList.remove('open');
+      if (el.id === 'sh-draw-browse') _drawBrowseN = null;
+    }
   });
 });
 
+function openInfo(key) {
+  const dk = DECKS[key];
+  if (!dk || !dk.infoImage) return;
+  document.getElementById('info-sheet-img').src = dk.infoImage;
+  document.getElementById('sh-info').classList.add('open');
+}
+
+function openEditionInfo(edId, e) {
+  e.stopPropagation();
+  const ed = EDITIONS.find(x => x.id === edId);
+  if (!ed || !ed.infoImage) return;
+  document.getElementById('info-sheet-img').src = ed.infoImage;
+  document.getElementById('sh-info').classList.add('open');
+}
+
 function openDeckInfo(key, e) {
-  if (e) e.stopPropagation();
+  e.stopPropagation();
   const dk = DECKS[key];
   if (!dk || !dk.infoImage) return;
   document.getElementById('info-sheet-img').src = dk.infoImage;
@@ -1871,7 +1880,8 @@ function buildEditionGrid() {
   EDITIONS.forEach(ed => {
     const div = document.createElement('div');
     div.className = 'edition-item';
-    div.innerHTML = `<img src="${ed.image}" alt="" onerror="this.style.opacity='.25'">`;
+    div.innerHTML = `<img src="${ed.image}" alt="" onerror="this.style.opacity='.25'">
+      <div class="info-btn" onclick="openEditionInfo('${ed.id}',event)">i</div>`;
     div.onclick = () => selectEdition(ed);
     grid.appendChild(div);
   });
@@ -2470,6 +2480,7 @@ function discardAllStaged() {
 // ═══════════════════════════════════════════════════════════════════════
 
 let _actionLog = [];
+let _drawBrowseN = null;
 
 function cardLabel(card) {
   const img = (card && card.image) ? card.image : '';
@@ -2740,14 +2751,18 @@ function renderDiscard() {
 }
 
 function buildDrawBrowse(n) {
+  // Track which N is currently being viewed; use stored N if not provided
+  if (n !== undefined) _drawBrowseN = n;
+  const curN = _drawBrowseN;
+
   const body = document.getElementById('draw-browse-body');
   body.innerHTML = '';
 
   // Update sheet title
   const titleEl = document.querySelector('#sh-draw-browse .sheet-title');
   if (titleEl) {
-    if (n != null) {
-      titleEl.textContent = n === 'all' ? 'Draw Pile (All)' : `Top ${n} Cards`;
+    if (curN != null) {
+      titleEl.textContent = curN === 'all' ? 'Draw Pile (All)' : `Top ${curN} Cards`;
     } else {
       titleEl.textContent = 'Draw Pile';
     }
@@ -2758,8 +2773,8 @@ function buildDrawBrowse(n) {
     return;
   }
 
-  // Only show shuffle buttons in full-browse mode (no n param)
-  if (n == null) {
+  // Only show shuffle buttons in full-browse mode (no n)
+  if (curN == null) {
     const shuffleBtn = document.createElement('button');
     shuffleBtn.className = 'btn btn-ghost btn-sm btn-full';
     shuffleBtn.style.marginBottom = '10px';
@@ -2778,14 +2793,7 @@ function buildDrawBrowse(n) {
     body.appendChild(shuffleInBtn);
   }
 
-  const cards = (n != null && n !== 'all') ? G.draw.slice(0, n) : G.draw;
-
-  // Log when peeking top N
-  if (n != null) {
-    const label = n === 'all' ? 'all' : n;
-    addLogEntry(`You inspected the top ${label} cards of your draw pile`);
-    if (G.isMultiplayer) publishEvent({ action: 'peeked-deck', count: n === 'all' ? -1 : n });
-  }
+  const cards = (curN != null && curN !== 'all') ? G.draw.slice(0, curN) : G.draw;
 
   cards.forEach((card, idx) => {
     const item = document.createElement('div');
@@ -2796,7 +2804,7 @@ function buildDrawBrowse(n) {
     item.appendChild(cardBig);
     const info = document.createElement('div');
     info.className = 'browse-info-text';
-    info.textContent = `#${idx + 1} of ${cards.length}${n != null && n !== 'all' ? ` (of ${G.draw.length} total)` : ''}`;
+    info.textContent = `#${idx + 1} of ${cards.length}${curN != null && curN !== 'all' ? ` (of ${G.draw.length} total)` : ''}`;
     item.appendChild(info);
     const btns = document.createElement('div');
     btns.className = 'browse-btns';
@@ -2811,15 +2819,35 @@ function buildDrawBrowse(n) {
 
 function peekTopN(n) {
   closeSheet('sh-top-n-picker');
+  const label = n === 'all' ? 'all' : n;
+  addLogEntry(`You looked at the top ${label} cards of your draw pile`, 'other');
+  broadcastLogMessage(`${G.playerName} looked at their top ${label} cards`, 'other');
   buildDrawBrowse(n);
   document.getElementById('sh-draw-browse').classList.add('open');
+}
+
+function broadcastLogMessage(text, type) {
+  if (!G.isMultiplayer || !G.roomCode) return;
+  const roomData = getRoomData();
+  if (!roomData) return;
+  if (!roomData.reveals) roomData.reveals = [];
+  roomData.reveals.push({
+    playerId: G.playerId,
+    playerName: G.playerName,
+    action: 'log-broadcast',
+    text: text,
+    type: type || 'other',
+    timestamp: Date.now()
+  });
+  if (roomData.reveals.length > 20) roomData.reveals = roomData.reveals.slice(-20);
+  setRoomData(roomData);
 }
 
 function moveUp(idx) {
   if (idx === 0) return;
   [G.draw[idx - 1], G.draw[idx]] = [G.draw[idx], G.draw[idx - 1]];
-  addLogEntry('You moved card #' + (idx + 1) + ' up in your deck', 'other');
-  if (G.isMultiplayer) publishEvent({ action: 'moved-in-deck', dir: 'up', pos: idx + 1 });
+  addLogEntry('You swapped card positions in your draw pile', 'other');
+  broadcastLogMessage(G.playerName + ' swapped card positions in their draw pile', 'other');
   buildDrawBrowse();
   updateAll();
 }
@@ -2827,8 +2855,8 @@ function moveUp(idx) {
 function moveDown(idx) {
   if (idx >= G.draw.length - 1) return;
   [G.draw[idx], G.draw[idx + 1]] = [G.draw[idx + 1], G.draw[idx]];
-  addLogEntry('You moved card #' + (idx + 1) + ' down in your deck', 'other');
-  if (G.isMultiplayer) publishEvent({ action: 'moved-in-deck', dir: 'down', pos: idx + 1 });
+  addLogEntry('You swapped card positions in your draw pile', 'other');
+  broadcastLogMessage(G.playerName + ' swapped card positions in their draw pile', 'other');
   buildDrawBrowse();
   updateAll();
 }
@@ -2836,11 +2864,10 @@ function moveDown(idx) {
 function drawSpecific(idx) {
   const [card] = G.draw.splice(idx, 1);
   G.hand.push(card);
-  addLogEntry('You took card #' + (idx + 1) + ' from your draw pile to hand', 'other');
-  if (G.isMultiplayer) {
-    syncMyHand();
-    publishEvent({ action: 'drew-from-deck-position', pos: idx + 1 });
-  }
+  const pos = idx + 1;
+  addLogEntry(`You took card #${pos} from your draw pile to hand`, 'draw');
+  broadcastLogMessage(`${G.playerName} took card #${pos} from their draw pile to hand`, 'draw');
+  if (G.isMultiplayer) syncMyHand();
   updateAll();
   buildDrawBrowse();
   toast('Added to hand');
