@@ -663,6 +663,20 @@ function checkNewReveals(roomData) {
           : n + ' took \u201c' + (r.cardName || 'a card') + '\u201d from ' + (r.victimName || 'someone') + "'s hand";
         type = 'other';
         break;
+      case 'peeked-deck':
+        text = r.count === -1
+          ? n + ' looked at their whole deck'
+          : n + ' looked at their top ' + r.count + ' card' + (r.count === 1 ? '' : 's');
+        type = 'other';
+        break;
+      case 'moved-in-deck':
+        text = n + ' reordered cards in their deck';
+        type = 'other';
+        break;
+      case 'drew-from-deck-position':
+        text = n + ' took card #' + r.pos + ' from their deck to hand';
+        type = 'other';
+        break;
       case 'hand-share-request':
         if (r.victimId === G.playerId) {
           _pendingHandShare = { requesterId: r.playerId, requesterName: r.playerName };
@@ -1158,8 +1172,6 @@ function showPlayerDeckInfo(pid) {
   
   const dk = DECKS[player.deckKey];
   if (!dk) return;
-  
-  document.getElementById('info-sheet-img').src = dk.infoImage;
   
   // Show special ability if present
   const specialInfo = document.getElementById('player-special-info');
@@ -1843,37 +1855,13 @@ document.querySelectorAll('.sheet-overlay').forEach(el => {
   });
 });
 
-function openInfo(key) {
-  const dk = DECKS[key];
-  if (!dk || !dk.infoImage) return;
-  document.getElementById('info-sheet-img').src = dk.infoImage;
-  document.getElementById('sh-info').classList.add('open');
-}
-
-function openEditionInfo(edId, e) {
-  e.stopPropagation();
-  const ed = EDITIONS.find(x => x.id === edId);
-  if (!ed || !ed.infoImage) return;
-  document.getElementById('info-sheet-img').src = ed.infoImage;
-  document.getElementById('sh-info').classList.add('open');
-}
-
-function openDeckInfo(key, e) {
-  e.stopPropagation();
-  const dk = DECKS[key];
-  if (!dk || !dk.infoImage) return;
-  document.getElementById('info-sheet-img').src = dk.infoImage;
-  document.getElementById('sh-info').classList.add('open');
-}
-
 function buildEditionGrid() {
   const grid = document.getElementById('edition-grid');
   grid.innerHTML = '';
   EDITIONS.forEach(ed => {
     const div = document.createElement('div');
     div.className = 'edition-item';
-    div.innerHTML = `<img src="${ed.image}" alt="" onerror="this.style.opacity='.25'">
-      <div class="info-btn" onclick="openEditionInfo('${ed.id}',event)">i</div>`;
+    div.innerHTML = `<img src="${ed.image}" alt="" onerror="this.style.opacity='.25'">`;
     div.onclick = () => selectEdition(ed);
     grid.appendChild(div);
   });
@@ -1888,8 +1876,7 @@ function selectEdition(ed) {
     if (!dk) return;
     const div = document.createElement('div');
     div.className = 'deck-item';
-    div.innerHTML = `<img src="${dk.image}" alt="" onerror="this.style.opacity='.25'">
-      <div class="info-btn" onclick="openDeckInfo('${key}',event)">i</div>`;
+    div.innerHTML = `<img src="${dk.image}" alt="" onerror="this.style.opacity='.25'">`;
     div.onclick = () => selectDeck(key);
     grid.appendChild(div);
   });
@@ -2786,6 +2773,7 @@ function buildDrawBrowse(n) {
   if (n != null) {
     const label = n === 'all' ? 'all' : n;
     addLogEntry(`You inspected the top ${label} cards of your draw pile`);
+    if (G.isMultiplayer) publishEvent({ action: 'peeked-deck', count: n === 'all' ? -1 : n });
   }
 
   cards.forEach((card, idx) => {
@@ -2819,6 +2807,8 @@ function peekTopN(n) {
 function moveUp(idx) {
   if (idx === 0) return;
   [G.draw[idx - 1], G.draw[idx]] = [G.draw[idx], G.draw[idx - 1]];
+  addLogEntry('You moved card #' + (idx + 1) + ' up in your deck', 'other');
+  if (G.isMultiplayer) publishEvent({ action: 'moved-in-deck', dir: 'up', pos: idx + 1 });
   buildDrawBrowse();
   updateAll();
 }
@@ -2826,6 +2816,8 @@ function moveUp(idx) {
 function moveDown(idx) {
   if (idx >= G.draw.length - 1) return;
   [G.draw[idx], G.draw[idx + 1]] = [G.draw[idx + 1], G.draw[idx]];
+  addLogEntry('You moved card #' + (idx + 1) + ' down in your deck', 'other');
+  if (G.isMultiplayer) publishEvent({ action: 'moved-in-deck', dir: 'down', pos: idx + 1 });
   buildDrawBrowse();
   updateAll();
 }
@@ -2833,7 +2825,11 @@ function moveDown(idx) {
 function drawSpecific(idx) {
   const [card] = G.draw.splice(idx, 1);
   G.hand.push(card);
-  if (G.isMultiplayer) syncMyHand();
+  addLogEntry('You took card #' + (idx + 1) + ' from your draw pile to hand', 'other');
+  if (G.isMultiplayer) {
+    syncMyHand();
+    publishEvent({ action: 'drew-from-deck-position', pos: idx + 1 });
+  }
   updateAll();
   buildDrawBrowse();
   toast('Added to hand');
