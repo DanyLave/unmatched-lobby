@@ -871,22 +871,6 @@ body {
 }
 .menu-back-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
-#s-play-screen { background: var(--bg); z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
-.play-screen-label { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 24px; }
-.play-screen-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: 90vw; margin-bottom: 32px; }
-.play-screen-card {
-  width: min(140px, 40vw); aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
-  border: 1.5px solid var(--border2); background: var(--surface);
-  position: relative; transform-style: preserve-3d; transition: transform 0.6s;
-}
-.play-screen-card.flipped { transform: rotateY(180deg); }
-.card-face { position: absolute; inset: 0; backface-visibility: hidden; border-radius: var(--r-hand); overflow: hidden; }
-.card-face-back { background: var(--surface); transform: rotateY(0deg); }
-.card-face-back img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.card-face-front { transform: rotateY(180deg); }
-.card-face-front img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.play-screen-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; }
-
 .sheet-overlay {
   position: fixed; inset: 0; z-index: 80;
   background: rgba(0,0,0,0.72); display: flex; align-items: flex-end;
@@ -1094,7 +1078,8 @@ body {
 </head>
 <body>
 
-<script>const EDITIONS = [
+<script>
+const EDITIONS = [
   { id: "vol1", image: "EDITION Battle-of-Legends vol1.png", infoImage: "vol1_info.png", decks: ["kingarthur", "alice", "sinbad", "medusa"] },
   { id: "vol2", image: "EDITION RobinHood-vs-Bigfoot.png", infoImage: "vol2_info.png", decks: ["robinhood", "bigfoot"] },
   { id: "vol3", image: "EDITION sling&arrows.png", infoImage: "vol2_info.png", decks: ["shakespeare", "titania", "hamlet", "sisters"] },
@@ -1912,6 +1897,7 @@ loki: {
 <!-- LOBBY (HOST) -->
 <div id="s-lobby-host" class="screen">
   <div class="lobby-container">
+    <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-bottom:8px" onclick="leaveLobby()">← Back</button>
     <div class="lobby-code-display">
       <div class="lobby-code-label">Room Code</div>
       <div class="lobby-code-value" id="host-code"></div>
@@ -1934,6 +1920,7 @@ loki: {
 <!-- LOBBY (GUEST) -->
 <div id="s-lobby-guest" class="screen">
   <div class="lobby-container">
+    <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-bottom:8px" onclick="leaveLobby()">← Back</button>
     <div class="lobby-code-display">
       <div class="lobby-code-label">Connected to</div>
       <div class="lobby-code-value" id="guest-code"></div>
@@ -2003,7 +1990,7 @@ loki: {
         <div class="draw-sublabel">tap to draw</div>
         <div class="draw-actions">
           <button class="btn btn-ghost btn-sm" onclick="shuffleDraw()">Shuffle</button>
-          <button class="btn btn-ghost btn-sm" onclick="openSheet('sh-draw-browse')">Browse</button>
+          <button class="btn btn-ghost btn-sm" onclick="openSheet('sh-top-n-picker')">Top Cards</button>
           <button class="btn btn-accent btn-sm" onclick="pickRandom('draw')">🎲 Pick Random</button>
         </div>
       </div>
@@ -2107,15 +2094,6 @@ loki: {
   <div class="play-bottom-pad"></div>
 </div>
 
-<div id="s-play-screen" class="screen">
-  <div class="play-screen-label" id="play-screen-label">Face-Down</div>
-  <div class="play-screen-grid" id="play-screen-grid"></div>
-  <div class="play-screen-actions">
-    <button class="btn btn-accent btn-full" id="reveal-flip-btn" onclick="revealFlip()">Reveal</button>
-    <button class="btn btn-ghost btn-full" onclick="goBack('s-play')">Back</button>
-  </div>
-</div>
-
 <!-- REVEAL NOTIFICATION -->
 <div class="reveal-notification" id="reveal-notification">
   <div class="reveal-notif-title" id="reveal-notif-player">Player revealed cards!</div>
@@ -2152,6 +2130,34 @@ loki: {
       <button class="sheet-close" onclick="closeSheet('sh-draw-browse')">✕</button>
     </div>
     <div class="sheet-body" id="draw-browse-body"></div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sh-top-n-picker">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">How many cards?</span>
+      <button class="sheet-close" onclick="closeSheet('sh-top-n-picker')">✕</button>
+    </div>
+    <div class="sheet-body" style="display:flex;flex-direction:column;gap:10px;padding:16px">
+      <button class="btn btn-surface btn-full" onclick="peekTopN(2)">Top 2 Cards</button>
+      <button class="btn btn-surface btn-full" onclick="peekTopN(3)">Top 3 Cards</button>
+      <button class="btn btn-surface btn-full" onclick="peekTopN(5)">Top 5 Cards</button>
+      <button class="btn btn-surface btn-full" onclick="peekTopN(10)">Top 10 Cards</button>
+      <button class="btn btn-ghost btn-full" onclick="peekTopN('all')">All Cards</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet-overlay" id="sh-reorder-players">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-title">Reorder Players</span>
+      <button class="sheet-close" onclick="closeSheet('sh-reorder-players')">✕</button>
+    </div>
+    <div class="sheet-body" id="reorder-players-body" style="padding:0 16px"></div>
   </div>
 </div>
 

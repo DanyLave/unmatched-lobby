@@ -1208,17 +1208,51 @@ function startGame() {
 
 function reorderPlayers() {
   if (!G.isMultiplayer || !G.isHost || G.gameStarted) return;
-  
-  // Simple reorder - move current player to end
+  buildReorderSheet();
+  openSheet('sh-reorder-players');
+}
+
+function buildReorderSheet() {
   const roomData = getRoomData();
-  if (!roomData || roomData.turnOrder.length < 2) return;
-  
-  const currentIndex = roomData.turnOrder.indexOf(G.playerId);
-  if (currentIndex > 0) {
-    roomData.turnOrder.splice(currentIndex, 1);
-    roomData.turnOrder.push(G.playerId);
-    setRoomData(roomData);
+  if (!roomData) return;
+  const order = roomData.turnOrder || [];
+  const body = document.getElementById('reorder-players-body');
+  body.innerHTML = '';
+  order.forEach((pid, idx) => {
+    const player = roomData.players[pid];
+    if (!player) return;
+    const item = document.createElement('div');
+    item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--surface2)';
+    item.innerHTML = `
+      <div style="flex:1;font-weight:600">${idx + 1}. ${player.name}</div>
+      <button class="btn btn-sm btn-ghost" ${idx === 0 ? 'disabled' : ''} onclick="movePlayerInOrder('${pid}',-1)">↑</button>
+      <button class="btn btn-sm btn-ghost" ${idx === order.length - 1 ? 'disabled' : ''} onclick="movePlayerInOrder('${pid}',1)">↓</button>
+    `;
+    body.appendChild(item);
+  });
+}
+
+function movePlayerInOrder(pid, dir) {
+  const roomData = getRoomData();
+  if (!roomData) return;
+  const order = roomData.turnOrder;
+  const idx = order.indexOf(pid);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= order.length) return;
+  [order[idx], order[newIdx]] = [order[newIdx], order[idx]];
+  roomData.turnOrder = order;
+  setRoomData(roomData);
+  buildReorderSheet();
+}
+
+function leaveLobby() {
+  if (G.isMultiplayer) {
+    stopSync();
+    removeFirebaseListener();
+    G.isMultiplayer = false;
+    G.roomCode = null;
   }
+  goBack('s-mp-select');
 }
 
 function endTurn() {
@@ -1723,7 +1757,6 @@ function goTo(id) {
     cur = id;
     nextEl.classList.add('active');
     
-    if (id === 's-play-screen') buildPlayScreen();
     if (id === 's-play') {
       document.getElementById('s-play').scrollTop = 0;
       // Show/hide multiplayer UI elements
@@ -2401,49 +2434,6 @@ function renderOverlayMenu() {
   }
 }
 
-let _isRevealed = false;
-
-function buildPlayScreen() {
-  _isRevealed = false;
-  const grid = document.getElementById('play-screen-grid');
-  const dk = DECKS[G.deckKey];
-  grid.innerHTML = '';
-
-  G.staged.forEach(card => {
-    const div = document.createElement('div');
-    div.className = 'play-screen-card';
-    div.innerHTML = `
-      <div class="card-face card-face-back"><img src="${dk.image}" alt=""></div>
-      <div class="card-face card-face-front"><img src="${card.image}" alt=""></div>`;
-    grid.appendChild(div);
-  });
-
-  document.getElementById('play-screen-label').textContent = 'Face-Down';
-  document.getElementById('reveal-flip-btn').textContent = 'Reveal';
-  document.getElementById('reveal-flip-btn').onclick = revealFlip;
-}
-
-function revealFlip() {
-  if (_isRevealed) return;
-  _isRevealed = true;
-
-  const cards = document.querySelectorAll('.play-screen-card');
-  cards.forEach((c, i) => {
-    setTimeout(() => c.classList.add('flipped'), i * 150);
-  });
-
-  document.getElementById('play-screen-label').textContent = 'Revealed';
-
-  // Publish reveal to multiplayer
-  if (G.isMultiplayer) {
-    publishReveal(G.staged);
-  }
-
-  setTimeout(() => {
-    document.getElementById('reveal-flip-btn').textContent = 'Discard All';
-    document.getElementById('reveal-flip-btn').onclick = discardAllStaged;
-  }, cards.length * 150 + 600);
-}
 
 function discardAllStaged() {
   const dk = DECKS[G.deckKey];
@@ -2751,32 +2741,54 @@ function renderDiscard() {
   vis.innerHTML = `<img src="${top.image}" alt="" onerror="this.innerHTML='🂠'">`;
 }
 
-function buildDrawBrowse() {
+function buildDrawBrowse(n) {
   const body = document.getElementById('draw-browse-body');
   body.innerHTML = '';
+
+  // Update sheet title
+  const titleEl = document.querySelector('#sh-draw-browse .sheet-title');
+  if (titleEl) {
+    if (n != null) {
+      titleEl.textContent = n === 'all' ? 'Draw Pile (All)' : `Top ${n} Cards`;
+    } else {
+      titleEl.textContent = 'Draw Pile';
+    }
+  }
+
   if (!G.draw.length) {
     body.innerHTML = '<p style="color:var(--muted);text-align:center;padding:32px 0;font-size:.78rem">Draw pile is empty</p>';
     return;
   }
 
-  const shuffleBtn = document.createElement('button');
-  shuffleBtn.className = 'btn btn-ghost btn-sm btn-full';
-  shuffleBtn.style.marginBottom = '10px';
-  shuffleBtn.textContent = 'Shuffle Draw Pile';
-  shuffleBtn.onclick = shuffleDraw;
-  body.appendChild(shuffleBtn);
+  // Only show shuffle buttons in full-browse mode (no n param)
+  if (n == null) {
+    const shuffleBtn = document.createElement('button');
+    shuffleBtn.className = 'btn btn-ghost btn-sm btn-full';
+    shuffleBtn.style.marginBottom = '10px';
+    shuffleBtn.textContent = 'Shuffle Draw Pile';
+    shuffleBtn.onclick = shuffleDraw;
+    body.appendChild(shuffleBtn);
 
-  const shuffleInBtn = document.createElement('button');
-  shuffleInBtn.className = 'btn btn-accent btn-sm btn-full';
-  shuffleInBtn.style.marginBottom = '16px';
-  shuffleInBtn.textContent = 'Shuffle Into Deck';
-  shuffleInBtn.onclick = () => {
-    closeSheet('sh-draw-browse');
-    openSheet('sh-shuffle-options');
-  };
-  body.appendChild(shuffleInBtn);
+    const shuffleInBtn = document.createElement('button');
+    shuffleInBtn.className = 'btn btn-accent btn-sm btn-full';
+    shuffleInBtn.style.marginBottom = '16px';
+    shuffleInBtn.textContent = 'Shuffle Into Deck';
+    shuffleInBtn.onclick = () => {
+      closeSheet('sh-draw-browse');
+      openSheet('sh-shuffle-options');
+    };
+    body.appendChild(shuffleInBtn);
+  }
 
-  G.draw.forEach((card, idx) => {
+  const cards = (n != null && n !== 'all') ? G.draw.slice(0, n) : G.draw;
+
+  // Log when peeking top N
+  if (n != null) {
+    const label = n === 'all' ? 'all' : n;
+    addLogEntry(`You inspected the top ${label} cards of your draw pile`);
+  }
+
+  cards.forEach((card, idx) => {
     const item = document.createElement('div');
     item.className = 'browse-item';
     const cardBig = document.createElement('div');
@@ -2785,17 +2797,23 @@ function buildDrawBrowse() {
     item.appendChild(cardBig);
     const info = document.createElement('div');
     info.className = 'browse-info-text';
-    info.textContent = `#${idx + 1} of ${G.draw.length}`;
+    info.textContent = `#${idx + 1} of ${cards.length}${n != null && n !== 'all' ? ` (of ${G.draw.length} total)` : ''}`;
     item.appendChild(info);
     const btns = document.createElement('div');
     btns.className = 'browse-btns';
     btns.innerHTML = `
       <button class="btn btn-sm btn-surface" onclick="drawSpecific(${idx})">→ Hand</button>
       <button class="btn btn-sm btn-ghost" ${idx === 0 ? 'disabled' : ''} onclick="moveUp(${idx})">↑ Move Up</button>
-      <button class="btn btn-sm btn-ghost" ${idx === G.draw.length - 1 ? 'disabled' : ''} onclick="moveDown(${idx})">↓ Move Down</button>`;
+      <button class="btn btn-sm btn-ghost" ${idx === cards.length - 1 ? 'disabled' : ''} onclick="moveDown(${idx})">↓ Move Down</button>`;
     item.appendChild(btns);
     body.appendChild(item);
   });
+}
+
+function peekTopN(n) {
+  closeSheet('sh-top-n-picker');
+  buildDrawBrowse(n);
+  document.getElementById('sh-draw-browse').classList.add('open');
 }
 
 function moveUp(idx) {
