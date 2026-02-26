@@ -1383,7 +1383,7 @@ function takeFromPlayerDiscard(pid, cardUid) {
   setRoomData(roomData);
   
   // Sync my own state
-  if (G.isMultiplayer) { updateMyCardCounts(); }
+  if (G.isMultiplayer) { updateMyCardCounts(); syncMyHand(); }
   updateAll();
   
   // Refresh the browse sheet
