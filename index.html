@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -211,6 +211,22 @@ body {
 
 .status-special {
   flex: 0 0 auto;
+}
+
+/* Counter badge for numeric special abilities (voyage-counter, trick-counter, resource-counter) */
+.status-special-counter {
+  flex: 0 0 auto;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 46px; padding: 4px 8px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--r-sm);
+}
+.status-counter-num {
+  font-size: 1.3rem; font-weight: 800; line-height: 1; color: var(--accent);
+}
+.status-counter-label {
+  font-size: 0.48rem; color: var(--muted); text-transform: uppercase;
+  letter-spacing: 0.06em; font-weight: 600; text-align: center; margin-top: 2px;
 }
 
 /* Special ability card preview in player status
@@ -1674,9 +1690,17 @@ ghostrider: {
             image: "ghostrider_back.png",
             infoImage: "ghostrider_info.png",
             healthBars: [
-      { label: "Ghost Rider", startValue: 17, color: "#EE5D2A", size: "large" },
-      { label: "Hellfires", startValue: 5, color: "#FFF6A9", size: "small" }],
+      { label: "Ghost Rider", startValue: 17, color: "#EE5D2A", size: "large" }],
 	  intermediateZone: null,
+      specialAbility: {
+        enabled: true,
+        label: "Hellfires",
+        mode: "resource-counter",
+        startValue: 5,
+        minValue: 0,
+        maxValue: 5,
+        color: "#FFF6A9"
+      },
            cards: 
             [
               { id: 1, image: "ghostrider_3 x Control The Demon.png" },
@@ -2623,7 +2647,7 @@ loki: {
     const script = document.createElement('script');
     // Try to detect the base path for GitHub Pages
     const basePath = window.location.pathname.includes('/unmatched-lobby/') ? '/unmatched-lobby/' : './';
-    script.src = basePath + 'game.js?v=20260225k';
+    script.src = basePath + 'game.js?v=20260227a';
     script.onerror = function() {
       console.error('❌ Failed to load game.js from:', basePath + 'game.js');
       console.error('Current URL:', window.location.href);

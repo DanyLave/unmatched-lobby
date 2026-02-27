@@ -20,6 +20,7 @@ const G = {
   specialDiscard: [],
   specialCurrent: null,
   specialMode: null,
+  specialCounter: 0,
   
   // Multiplayer state
   isMultiplayer: false,
@@ -261,6 +262,8 @@ function updateMyPlayer() {
     },
     discardCards: G.discard.map(c => ({ image: c.image, uid: c.uid, deckKey: c.deckKey || G.deckKey })), // Copy of discard pile with origin deck
     specialCurrent: G.specialCurrent || null, // Current active special ability card
+    specialMode: G.specialMode || null,
+    specialCounterValue: G.specialCounter || 0,
     lastUpdate: Date.now()
   };
   
@@ -1071,6 +1074,23 @@ function renderPlayerStatusArea() {
           <img src="${specialCard.image}" alt="Special" class="special-preview" onclick="viewPlayerSpecialCard('${specialCard.image}')">
         </div>
       `;
+    } else if (player.specialMode) {
+      // Counter-based special ability - show numeric badge
+      const playerDk = player.deckKey ? DECKS[player.deckKey] : null;
+      const playerSa = playerDk && playerDk.specialAbility ? playerDk.specialAbility : null;
+      let counterValue = player.specialCounterValue || 0;
+      let counterLabel = (playerSa && playerSa.label) || 'Special';
+      let counterColor = (playerSa && playerSa.color) ? `color:${playerSa.color}` : '';
+      if (player.specialMode === 'voyage-counter') {
+        // Can compute from synced discard
+        counterValue = (player.discardCards || []).filter(c => /voyage/i.test(c.image || '')).length;
+      }
+      specialHTML = `
+        <div class="status-special-counter">
+          <div class="status-counter-num" style="${counterColor}">${counterValue}</div>
+          <div class="status-counter-label">${counterLabel}</div>
+        </div>
+      `;
     }
     
     const turnBadge = isActiveTurn
@@ -1132,6 +1152,10 @@ function updateMyCardCounts() {
     intermediate: G.intermediate.length,
     discard: G.discard.length
   };
+  if (G.specialMode) {
+    roomData.players[G.playerId].specialMode = G.specialMode;
+    roomData.players[G.playerId].specialCounterValue = G.specialCounter || 0;
+  }
   
   setRoomData(roomData);
 }
@@ -1168,10 +1192,18 @@ function showPlayerDeckInfo(pid) {
   // Show special ability if present
   const specialInfo = document.getElementById('player-special-info');
   if (dk.specialAbility && dk.specialAbility.enabled) {
-    const saLabel = dk.specialAbility.label || 'Special Ability';
-    specialInfo.innerHTML = `
-      <div class="special-ability-title">${saLabel}</div>
-    `;
+    const sa = dk.specialAbility;
+    const saLabel = sa.label || 'Special Ability';
+    let saDesc = '';
+    if (sa.mode === 'voyage-counter') saDesc = '<div class="special-ability-desc">Counts voyage cards in your discard pile.</div>';
+    else if (sa.mode === 'trick-counter') saDesc = '<div class="special-ability-desc">Tracks trick cards in opponents\' hands.</div>';
+    else if (sa.mode === 'resource-counter') {
+      const playerRoomData = getRoomData();
+      const playerEntry = playerRoomData && playerRoomData.players ? playerRoomData.players[pid] : null;
+      const curVal = playerEntry && playerEntry.specialCounterValue !== undefined ? playerEntry.specialCounterValue : (sa.startValue || 0);
+      saDesc = `<div class="special-ability-desc">Current value: <strong>${curVal}</strong> / ${sa.maxValue !== undefined ? sa.maxValue : '?'}</div>`;
+    }
+    specialInfo.innerHTML = `<div class="special-ability-title">${saLabel}</div>${saDesc}`;
     specialInfo.style.display = 'block';
   } else {
     specialInfo.style.display = 'none';
@@ -1871,6 +1903,26 @@ function openDeckInfo(key, e) {
   const dk = DECKS[key];
   if (!dk || !dk.infoImage) return;
   document.getElementById('info-sheet-img').src = dk.infoImage;
+  // Show special ability info
+  const specialInfo = document.getElementById('player-special-info');
+  if (dk.specialAbility && dk.specialAbility.enabled) {
+    const sa = dk.specialAbility;
+    const saLabel = sa.label || 'Special Ability';
+    let saDesc = '';
+    if (sa.mode === 'voyage-counter') saDesc = '<div class="special-ability-desc">Counts voyage cards in your discard pile.</div>';
+    else if (sa.mode === 'trick-counter') saDesc = '<div class="special-ability-desc">Tracks trick cards in opponents\' hands.</div>';
+    else if (sa.mode === 'resource-counter') {
+      const curVal = G.deckKey === key ? G.specialCounter : (sa.startValue || 0);
+      saDesc = `<div class="special-ability-desc">Current value: <strong>${curVal}</strong> / ${sa.maxValue !== undefined ? sa.maxValue : '?'}</div>`;
+    } else if (sa.mode === 'swap' || sa.mode === 'discard') {
+      const deckLeft = G.deckKey === key ? G.specialDeck.length : (sa.deck ? sa.deck.length : 0);
+      saDesc = `<div class="special-ability-desc">${deckLeft} card(s) remaining in deck.</div>`;
+    }
+    specialInfo.innerHTML = `<div class="special-ability-title">${saLabel}</div>${saDesc}`;
+    specialInfo.style.display = 'block';
+  } else {
+    specialInfo.style.display = 'none';
+  }
   document.getElementById('sh-info').classList.add('open');
 }
 
@@ -3008,6 +3060,7 @@ function initSpecialAbility(dk) {
     G.specialDeck = [];
     G.specialDiscard = [];
     G.specialCurrent = null;
+    G.specialCounter = 0;
     document.getElementById('special-section').style.display = 'block';
     document.getElementById('special-label').textContent = sa.label || 'Voyages Used';
     document.getElementById('special-action-btn').style.display = 'none';
@@ -3020,8 +3073,22 @@ function initSpecialAbility(dk) {
     G.specialDeck = [];
     G.specialDiscard = [];
     G.specialCurrent = null;
+    G.specialCounter = 0;
     document.getElementById('special-section').style.display = 'block';
     document.getElementById('special-label').textContent = sa.label || 'Trick Tracker';
+    document.getElementById('special-action-btn').style.display = 'none';
+    document.getElementById('special-browse-discard-btn').style.display = 'none';
+    updateSpecialDisplay();
+    return;
+  }
+
+  if (sa.mode === 'resource-counter') {
+    G.specialDeck = [];
+    G.specialDiscard = [];
+    G.specialCurrent = null;
+    G.specialCounter = sa.startValue !== undefined ? sa.startValue : 0;
+    document.getElementById('special-section').style.display = 'block';
+    document.getElementById('special-label').textContent = sa.label || 'Resource';
     document.getElementById('special-action-btn').style.display = 'none';
     document.getElementById('special-browse-discard-btn').style.display = 'none';
     updateSpecialDisplay();
@@ -3055,6 +3122,7 @@ function updateSpecialDisplay() {
 
   if (G.specialMode === 'voyage-counter') {
     const vcCount = G.discard.filter(c => /voyage/i.test(c.image || '')).length;
+    G.specialCounter = vcCount;
     display.innerHTML = `<div class="voyage-counter-display"><span class="voyage-counter-num">${vcCount}</span><span class="voyage-counter-label">in discard</span></div>`;
     count.textContent = '';
     return;
@@ -3066,8 +3134,27 @@ function updateSpecialDisplay() {
     const myPiles = [...G.draw, ...G.hand, ...G.discard, ...G.staged, ...(G.intermediate || [])];
     const inMyPiles = myPiles.filter(c => /trick/i.test(c.image || '')).length;
     const inOppHands = Math.max(0, trickTotal - inMyPiles);
+    G.specialCounter = inOppHands;
     display.innerHTML = `<div class="voyage-counter-display"><span class="voyage-counter-num">${inOppHands}</span><span class="voyage-counter-label">tricks in opp. hands</span></div>`;
     count.textContent = `${inMyPiles} / ${trickTotal} still with you`;
+    return;
+  }
+
+  if (G.specialMode === 'resource-counter') {
+    const dk2 = DECKS[G.deckKey];
+    const sa2 = dk2 && dk2.specialAbility ? dk2.specialAbility : {};
+    const counterColor = sa2.color || 'var(--accent)';
+    const minVal = sa2.minValue !== undefined ? sa2.minValue : 0;
+    const maxVal = sa2.maxValue !== undefined ? sa2.maxValue : 99;
+    display.innerHTML = `<div class="voyage-counter-display">
+      <span class="voyage-counter-num" style="color:${counterColor}">${G.specialCounter}</span>
+      <span class="voyage-counter-label">${sa2.label || 'Resource'}</span>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="hp-btn" onclick="adjustSpecialCounter(-1)" ${G.specialCounter <= minVal ? 'disabled' : ''}>−</button>
+        <button class="hp-btn" onclick="adjustSpecialCounter(1)" ${G.specialCounter >= maxVal ? 'disabled' : ''}>＋</button>
+      </div>
+    </div>`;
+    count.textContent = `${G.specialCounter} / ${maxVal}`;
     return;
   }
 
@@ -3081,6 +3168,23 @@ function updateSpecialDisplay() {
 
   count.textContent = `Deck: ${G.specialDeck.length}`;
   btn.disabled = !G.specialCurrent || (G.specialMode === 'discard' && G.specialDeck.length === 0);
+}
+
+function adjustSpecialCounter(delta) {
+  const dk = DECKS[G.deckKey];
+  const sa = dk && dk.specialAbility ? dk.specialAbility : {};
+  const minVal = sa.minValue !== undefined ? sa.minValue : 0;
+  const maxVal = sa.maxValue !== undefined ? sa.maxValue : 99;
+  G.specialCounter = Math.max(minVal, Math.min(maxVal, G.specialCounter + delta));
+  updateSpecialDisplay();
+  if (G.isMultiplayer) {
+    const roomData = getRoomData();
+    if (roomData && roomData.players && roomData.players[G.playerId]) {
+      roomData.players[G.playerId].specialMode = G.specialMode;
+      roomData.players[G.playerId].specialCounterValue = G.specialCounter;
+      setRoomData(roomData);
+    }
+  }
 }
 
 function useSpecialAbility() {
