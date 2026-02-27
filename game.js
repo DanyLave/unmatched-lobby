@@ -2078,6 +2078,7 @@ function drawCard() {
 function shuffleDraw() {
   G.draw = shuffle(G.draw);
   addLogEntry('You shuffled the draw pile', 'other');
+  broadcastLogMessage(G.playerName + ' shuffled their draw pile', 'other');
   buildDrawBrowse();
   toast('Shuffled');
   updateAll();
@@ -3267,6 +3268,7 @@ function peekSpecialTopN(n) {
   });
 
   addLogEntry('You looked at the top ' + limit + ' card' + (limit === 1 ? '' : 's') + ' of ' + (sa.label || 'special deck'), 'other');
+  broadcastLogMessage(G.playerName + ' looked at the top ' + limit + ' card' + (limit === 1 ? '' : 's') + ' of ' + (sa.label || 'special deck'), 'other');
   document.getElementById('sh-special-deck').classList.add('open');
 }
 
@@ -3284,7 +3286,11 @@ function buildSpecialDeckBrowse() {
   shuffleBtn.style.marginBottom = '16px';
   shuffleBtn.textContent = 'Shuffle Deck';
   shuffleBtn.onclick = () => {
+    const dkShuf = DECKS[G.deckKey];
+    const saShuf = dkShuf && dkShuf.specialAbility ? dkShuf.specialAbility : {};
     G.specialDeck = shuffle(G.specialDeck);
+    addLogEntry('You shuffled ' + (saShuf.label || 'the special deck'), 'other');
+    broadcastLogMessage(G.playerName + ' shuffled ' + (saShuf.label || 'the special deck'), 'other');
     buildSpecialDeckBrowse();
     updateSpecialDisplay();
     toast('Shuffled');
@@ -3345,6 +3351,7 @@ function buildSpecialDiscardBrowse() {
     G.specialDiscard = [];
     G.specialCurrent = saSh.startCard ? saSh.startCard : (G.specialDeck.shift() || null);
     addLogEntry('Shuffled ' + (saSh.label || 'special deck') + ' back into deck', 'other');
+    broadcastLogMessage(G.playerName + ' shuffled ' + (saSh.label || 'special deck') + ' back into deck', 'other');
     updateSpecialDisplay();
     closeSheet('sh-special-discard');
     toast('Shuffled back');
