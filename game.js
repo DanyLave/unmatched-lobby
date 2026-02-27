@@ -1792,7 +1792,9 @@ function goTo(id) {
     
     cur = id;
     nextEl.classList.add('active');
-    
+
+    if (id === 's-editions') buildEditionGrid();
+
     if (id === 's-play') {
       document.getElementById('s-play').scrollTop = 0;
       // Show/hide multiplayer UI elements
