@@ -3064,7 +3064,6 @@ function initSpecialAbility(dk) {
     document.getElementById('special-section').style.display = 'block';
     document.getElementById('special-label').textContent = sa.label || 'Voyages Used';
     document.getElementById('special-action-btn').style.display = 'none';
-    document.getElementById('special-browse-deck-btn').style.display = 'none';
     document.getElementById('special-peek-top-btn').style.display = 'none';
     document.getElementById('special-browse-discard-btn').style.display = 'none';
     updateSpecialDisplay();
@@ -3079,7 +3078,6 @@ function initSpecialAbility(dk) {
     document.getElementById('special-section').style.display = 'block';
     document.getElementById('special-label').textContent = sa.label || 'Trick Tracker';
     document.getElementById('special-action-btn').style.display = 'none';
-    document.getElementById('special-browse-deck-btn').style.display = 'none';
     document.getElementById('special-peek-top-btn').style.display = 'none';
     document.getElementById('special-browse-discard-btn').style.display = 'none';
     updateSpecialDisplay();
@@ -3094,7 +3092,6 @@ function initSpecialAbility(dk) {
     document.getElementById('special-section').style.display = 'block';
     document.getElementById('special-label').textContent = sa.label || 'Resource';
     document.getElementById('special-action-btn').style.display = 'none';
-    document.getElementById('special-browse-deck-btn').style.display = 'none';
     document.getElementById('special-peek-top-btn').style.display = 'none';
     document.getElementById('special-browse-discard-btn').style.display = 'none';
     updateSpecialDisplay();
@@ -3103,7 +3100,7 @@ function initSpecialAbility(dk) {
 
   G.specialDeck = shuffle([...sa.deck]);
   G.specialDiscard = [];
-  G.specialCurrent = G.specialDeck.shift() || null;
+  G.specialCurrent = sa.startCard ? sa.startCard : (G.specialDeck.shift() || null);
 
   document.getElementById('special-section').style.display = 'block';
   document.getElementById('special-label').textContent = sa.label;
@@ -3112,7 +3109,6 @@ function initSpecialAbility(dk) {
   document.getElementById('special-deck-title').textContent = sa.label + ' Deck';
   document.getElementById('special-discard-title').textContent = 'Used ' + sa.label;
   document.getElementById('special-top-n-title').textContent = 'See ' + sa.label;
-  document.getElementById('special-browse-deck-btn').style.display = 'block';
 
   if (sa.mode === 'discard') {
     document.getElementById('special-browse-discard-btn').style.display = 'block';
@@ -3205,10 +3201,12 @@ function useSpecialAbility() {
 
   if (G.specialMode === 'discard') {
     const usedCard = G.specialCurrent;
-    G.specialDiscard.push(usedCard);
+    const isStartCard = sa.startCard && usedCard && usedCard.id === sa.startCard.id;
+    if (!isStartCard) G.specialDiscard.push(usedCard);
     G.specialCurrent = G.specialDeck.shift() || null;
-    addLogEntry('You used ' + saLabel + (usedCard ? ': ' + cardLabel(usedCard) : ''), 'other');
-    if (G.isMultiplayer) publishEvent({ action: 'used-special', saLabel, cardName: cardLabel(usedCard) });
+    const logCard = isStartCard ? null : usedCard;
+    addLogEntry('You used ' + saLabel + (logCard ? ': ' + cardLabel(logCard) : ''), 'other');
+    if (G.isMultiplayer) publishEvent({ action: 'used-special', saLabel, cardName: logCard ? cardLabel(logCard) : '' });
     toast('Special ability used');
   } else if (G.specialMode === 'swap') {
     const currentIdx = G.specialDeck.findIndex(c => c.id === G.specialCurrent.id);
@@ -3268,7 +3266,8 @@ function peekSpecialTopN(n) {
     body.appendChild(item);
   });
 
-  openSheet('sh-special-deck');
+  addLogEntry('You looked at the top ' + limit + ' card' + (limit === 1 ? '' : 's') + ' of ' + (sa.label || 'special deck'), 'other');
+  document.getElementById('sh-special-deck').classList.add('open');
 }
 
 function buildSpecialDeckBrowse() {
@@ -3339,8 +3338,13 @@ function buildSpecialDiscardBrowse() {
   shuffleBtn.style.marginBottom = '16px';
   shuffleBtn.textContent = 'Shuffle Back Into Deck';
   shuffleBtn.onclick = () => {
-    G.specialDeck = shuffle([...G.specialDeck, ...G.specialDiscard]);
+    const dkSh = DECKS[G.deckKey];
+    const saSh = dkSh && dkSh.specialAbility ? dkSh.specialAbility : {};
+    const curIsNormal = G.specialCurrent && (!saSh.startCard || G.specialCurrent.id !== saSh.startCard.id);
+    G.specialDeck = shuffle([...G.specialDeck, ...G.specialDiscard, ...(curIsNormal ? [G.specialCurrent] : [])]);
     G.specialDiscard = [];
+    G.specialCurrent = saSh.startCard ? saSh.startCard : (G.specialDeck.shift() || null);
+    addLogEntry('Shuffled ' + (saSh.label || 'special deck') + ' back into deck', 'other');
     updateSpecialDisplay();
     closeSheet('sh-special-discard');
     toast('Shuffled back');

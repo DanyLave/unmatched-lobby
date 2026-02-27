@@ -1959,6 +1959,7 @@ loki: {
       label: "Pandora's Box",
       buttonText: "Reveal Misery",
       mode: "discard",
+      startCard: { id: 0, image: "pandora's box back.png" },
       deck: [
         { id: 1, image: "pandora's Confusion.png" },
         { id: 2, image: "pandora's Greed.png" },
@@ -2131,7 +2132,6 @@ loki: {
         <div class="special-info">
           <div class="special-pile-count" id="special-pile-count">Deck: 0</div>
           <button class="special-btn" id="special-action-btn" onclick="useSpecialAbility()">Use</button>
-          <button class="btn btn-ghost btn-sm btn-full" id="special-browse-deck-btn" onclick="openSheet('sh-special-deck')" style="display:none">Browse Deck</button>
           <button class="btn btn-ghost btn-sm btn-full" id="special-peek-top-btn" onclick="openSheet('sh-special-top-n-picker')" style="display:none">See Top N</button>
           <button class="btn btn-ghost btn-sm btn-full" id="special-browse-discard-btn" onclick="openSheet('sh-special-discard')" style="display:none">Browse Used</button>
         </div>
@@ -2720,7 +2720,7 @@ loki: {
     const script = document.createElement('script');
     // Try to detect the base path for GitHub Pages
     const basePath = window.location.pathname.includes('/unmatched-lobby/') ? '/unmatched-lobby/' : './';
-    script.src = basePath + 'game.js?v=20260227e';
+    script.src = basePath + 'game.js?v=20260227f';
     script.onerror = function() {
       console.error('❌ Failed to load game.js from:', basePath + 'game.js');
       console.error('Current URL:', window.location.href);
