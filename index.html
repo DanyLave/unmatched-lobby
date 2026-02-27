@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -380,7 +380,7 @@ body {
 .discard-card-item:active { transform: scale(0.95); }
 .discard-card-item img { width: 100%; height: 100%; object-fit: cover; }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* -----------------------------------------------------------------------
    COMBAT SYSTEM - SIMULTANEOUS COMBAT BETWEEN TWO PLAYERS
    Features:
    - Attacker and Defender add cards face-down
@@ -390,7 +390,7 @@ body {
      - .combat-area padding: space inside combat container
      - .combat-cards min-height: minimum height for card display area
      - .combat-card width: individual card preview size
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   -----------------------------------------------------------------------
 */
 .combat-area {
   background: var(--surface); border: 1px solid var(--border);
@@ -1019,7 +1019,7 @@ body {
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* â”€â”€ Card exit animation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Card exit animation ------------------------------------ */
 @keyframes card-exit {
   0%   { transform: scale(1) translateY(0); opacity: 1; }
   100% { transform: scale(0.7) translateY(-38px); opacity: 0; }
@@ -1029,7 +1029,7 @@ body {
   pointer-events: none;
 }
 
-/* â”€â”€ Active turn highlight â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Active turn highlight ---------------------------------- */
 .player-status-row.active-turn {
   border-left: 3px solid var(--accent);
   background: rgba(228, 200, 74, 0.07);
@@ -1044,13 +1044,13 @@ body {
 .turn-badge.my-turn   { background: var(--accent); color: var(--accent-text); }
 .turn-badge.their-turn { background: var(--surface2); color: var(--muted); border: 1px solid var(--border2); }
 
-/* â”€â”€ Turn control bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Turn control bar --------------------------------------- */
 #turn-control { padding: 0 14px; }
 
-/* â”€â”€ Collapsible play sections â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Collapsible play sections ------------------------------ */
 .sec-label.collapsible { cursor: pointer; user-select: none; }
 .sec-label.collapsible::before {
-  content: 'â–¾';
+  content: '?';
   margin-right: 6px;
   display: inline-block;
   transition: transform .2s;
@@ -1064,7 +1064,7 @@ body {
   display: none !important;
 }
 
-/* â”€â”€ Action log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* -- Action log --------------------------------------------- */
 .action-log {
   max-height: 170px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 3px;
@@ -1095,603 +1095,603 @@ body {
 <body>
 
 <script>
-const EDITIONS = [
-Â  { id: "vol1", image: "EDITION Battle-of-Legends vol1.png", infoImage: "vol1_info.png", decks: ["kingarthur", "alice", "sinbad", "medusa"] },
-Â  { id: "vol2", image: "EDITION RobinHood-vs-Bigfoot.png", infoImage: "vol2_info.png", decks: ["robinhood", "bigfoot"] },
-Â  { id: "vol3", image: "EDITION sling&arrows.png", infoImage: "vol2_info.png", decks: ["shakespeare", "titania", "hamlet", "sisters"] },
-Â  { id: "vol4", image: "EDITION brains&brawn.png", infoImage: "vol2_info.png", decks: ["spiderman", "shehulk", "drstrange"] },
-Â  { id: "vol5", image: "EDITION Redemption Row.png", infoImage: "vol2_info.png", decks: ["ghostrider", "lukecage", "moonknight"] },
-Â  { id: "vol6", image: "EDITION Jurassic Park Vol1.png", infoImage: "vol2_info.png", decks: ["trex", "drsattler"] },
-Â  { id: "vol7", image: "EDITION Battle-of-Legends vol1.png", infoImage: "vol2_info.png", decks: ["loki", "chupacabra", "blackbeard", "pandora"] }
+var EDITIONS = [
+  { id: "vol1", image: "EDITION Battle-of-Legends vol1.png", infoImage: "vol1_info.png", decks: ["kingarthur", "alice", "sinbad", "medusa"] },
+  { id: "vol2", image: "EDITION RobinHood-vs-Bigfoot.png", infoImage: "vol2_info.png", decks: ["robinhood", "bigfoot"] },
+  { id: "vol3", image: "EDITION sling&arrows.png", infoImage: "vol2_info.png", decks: ["shakespeare", "titania", "hamlet", "sisters"] },
+  { id: "vol4", image: "EDITION brains&brawn.png", infoImage: "vol2_info.png", decks: ["spiderman", "shehulk", "drstrange"] },
+  { id: "vol5", image: "EDITION Redemption Row.png", infoImage: "vol2_info.png", decks: ["ghostrider", "lukecage", "moonknight"] },
+  { id: "vol6", image: "EDITION Jurassic Park Vol1.png", infoImage: "vol2_info.png", decks: ["trex", "drsattler"] },
+  { id: "vol7", image: "EDITION Battle-of-Legends vol1.png", infoImage: "vol2_info.png", decks: ["loki", "chupacabra", "blackbeard", "pandora"] }
 ];
-const DECKS = {Â 
+const DECKS = { 
 medusa: {
-Â  Â  Â  Â  Â  Â  name: "MEDUSA",
-Â  Â  Â  Â  Â  Â  image: "medusa_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "medusa_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "Medusa", startValue: 16, color: "#4A7837", size: "large" },
-Â  Â  Â  { label: "Harpies alive", startValue: 3, color: "#68A84D", size: "small" }],
-Â  Â  Â  intermediateZone: null,
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "medusa_2 x A Momentary Glance.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "medusa_2 x A Momentary Glance.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "medusa_2 x The Hounds of Mighty Zeus.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "medusa_2 x The Hounds of Mighty Zeus.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "medusa_2 x Winged Frenzy.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "medusa_2 x Winged Frenzy.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "medusa_3 x Clutching Claws.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "medusa_3 x Clutching Claws.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "medusa_3 x Clutching Claws.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "medusa_3 x Dash.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "medusa_3 x Dash.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "medusa_3 x Dash.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "medusa_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "medusa_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "medusa_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "medusa_3 x Gaze of Stone.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "medusa_3 x Gaze of Stone.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "medusa_3 x Gaze of Stone.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "medusa_3 x Hiss and Slither.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "medusa_3 x Hiss and Slither.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "medusa_3 x Hiss and Slither.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "medusa_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "medusa_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "medusa_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "medusa_3 x Second Shot.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "medusa_3 x Second Shot.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "medusa_3 x Second Shot.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "medusa_3 x Snipe.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "medusa_3 x Snipe.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "medusa_3 x Snipe.png" },
-Â  Â  Â  Â  Â  Â  Â  ]
-Â  },
+            name: "MEDUSA",
+            image: "medusa_back.png",
+            infoImage: "medusa_info.png",
+            healthBars: [
+      { label: "Medusa", startValue: 16, color: "#4A7837", size: "large" },
+      { label: "Harpies alive", startValue: 3, color: "#68A84D", size: "small" }],
+      intermediateZone: null,
+            cards: [
+              { id: 1, image: "medusa_2 x A Momentary Glance.png" },
+              { id: 2, image: "medusa_2 x A Momentary Glance.png" },
+              { id: 3, image: "medusa_2 x The Hounds of Mighty Zeus.png" },
+              { id: 4, image: "medusa_2 x The Hounds of Mighty Zeus.png" },
+              { id: 5, image: "medusa_2 x Winged Frenzy.png" },
+              { id: 6, image: "medusa_2 x Winged Frenzy.png" },
+              { id: 7, image: "medusa_3 x Clutching Claws.png" },
+              { id: 8, image: "medusa_3 x Clutching Claws.png" },
+              { id: 9, image: "medusa_3 x Clutching Claws.png" },
+              { id: 10, image: "medusa_3 x Dash.png" },
+              { id: 11, image: "medusa_3 x Dash.png" },
+              { id: 12, image: "medusa_3 x Dash.png" },
+              { id: 13, image: "medusa_3 x Feint.png" },
+              { id: 14, image: "medusa_3 x Feint.png" },
+              { id: 15, image: "medusa_3 x Feint.png" },
+              { id: 16, image: "medusa_3 x Gaze of Stone.png" },
+              { id: 17, image: "medusa_3 x Gaze of Stone.png" },
+              { id: 18, image: "medusa_3 x Gaze of Stone.png" },
+              { id: 19, image: "medusa_3 x Hiss and Slither.png" },
+              { id: 20, image: "medusa_3 x Hiss and Slither.png" },
+              { id: 21, image: "medusa_3 x Hiss and Slither.png" },
+              { id: 22, image: "medusa_3 x Regroup.png" },
+              { id: 23, image: "medusa_3 x Regroup.png" },
+              { id: 24, image: "medusa_3 x Regroup.png" },
+              { id: 25, image: "medusa_3 x Second Shot.png" },
+              { id: 26, image: "medusa_3 x Second Shot.png" },
+              { id: 27, image: "medusa_3 x Second Shot.png" },
+              { id: 28, image: "medusa_3 x Snipe.png" },
+              { id: 29, image: "medusa_3 x Snipe.png" },
+              { id: 30, image: "medusa_3 x Snipe.png" },
+              ]
+  },
 kingarthur: {
-Â  Â  Â  Â  Â  Â  name: "KING ARTHUR",
-Â  Â  Â  Â  Â  Â  image: "king_arthur_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "king_arthur_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "Arthur", startValue: 18, color: "#890606", size: "large" },
-Â  Â  Â  { label: "Merlin", startValue: 7, color: "#D70909", size: "medium" }],
-Â  Â  Â  intermediateZone: null,
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "king_arthur_1 x Aid the Chosen One.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "king_arthur_1 x Excalibur.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "king_arthur_1 x Prophecy.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "king_arthur_1 x Restless Spirits.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "king_arthur_1 x The Aid of Morgana.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "king_arthur_1 x The Holy Grail.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "king_arthur_1 x The Lady of the Lake.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "king_arthur_2 x Bewilderment.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "king_arthur_2 x Bewilderment.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "king_arthur_2 x Command the Storms.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "king_arthur_2 x Command the Storms.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "king_arthur_2 x Divine Intervention.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "king_arthur_2 x Divine Intervention.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "king_arthur_2 x Swift Strike.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "king_arthur_2 x Swift Strike.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "king_arthur_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "king_arthur_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "king_arthur_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "king_arthur_3 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "king_arthur_3 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "king_arthur_3 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "king_arthur_3 x Noble Sacrifice.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "king_arthur_3 x Noble Sacrifice.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "king_arthur_3 x Noble Sacrifice.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "king_arthur_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "king_arthur_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "king_arthur_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "king_arthur_3 x Skirmish.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "king_arthur_3 x Skirmish.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "king_arthur_3 x Skirmish.png" },
-Â  Â  Â  Â  Â  Â  Â  ]
-Â  },
+            name: "KING ARTHUR",
+            image: "king_arthur_back.png",
+            infoImage: "king_arthur_info.png",
+            healthBars: [
+      { label: "Arthur", startValue: 18, color: "#890606", size: "large" },
+      { label: "Merlin", startValue: 7, color: "#D70909", size: "medium" }],
+      intermediateZone: null,
+            cards: [
+              { id: 1, image: "king_arthur_1 x Aid the Chosen One.png" },
+              { id: 2, image: "king_arthur_1 x Excalibur.png" },
+              { id: 3, image: "king_arthur_1 x Prophecy.png" },
+              { id: 4, image: "king_arthur_1 x Restless Spirits.png" },
+              { id: 5, image: "king_arthur_1 x The Aid of Morgana.png" },
+              { id: 6, image: "king_arthur_1 x The Holy Grail.png" },
+              { id: 7, image: "king_arthur_1 x The Lady of the Lake.png" },
+              { id: 8, image: "king_arthur_2 x Bewilderment.png" },
+              { id: 9, image: "king_arthur_2 x Bewilderment.png" },
+              { id: 10, image: "king_arthur_2 x Command the Storms.png" },
+              { id: 11, image: "king_arthur_2 x Command the Storms.png" },
+              { id: 12, image: "king_arthur_2 x Divine Intervention.png" },
+              { id: 13, image: "king_arthur_2 x Divine Intervention.png" },
+              { id: 14, image: "king_arthur_2 x Swift Strike.png" },
+              { id: 15, image: "king_arthur_2 x Swift Strike.png" },
+              { id: 16, image: "king_arthur_3 x Feint.png" },
+              { id: 17, image: "king_arthur_3 x Feint.png" },
+              { id: 18, image: "king_arthur_3 x Feint.png" },
+              { id: 19, image: "king_arthur_3 x Momentous Shift.png" },
+              { id: 20, image: "king_arthur_3 x Momentous Shift.png" },
+              { id: 21, image: "king_arthur_3 x Momentous Shift.png" },
+              { id: 22, image: "king_arthur_3 x Noble Sacrifice.png" },
+              { id: 23, image: "king_arthur_3 x Noble Sacrifice.png" },
+              { id: 24, image: "king_arthur_3 x Noble Sacrifice.png" },
+              { id: 25, image: "king_arthur_3 x Regroup.png" },
+              { id: 26, image: "king_arthur_3 x Regroup.png" },
+              { id: 27, image: "king_arthur_3 x Regroup.png" },
+              { id: 28, image: "king_arthur_3 x Skirmish.png" },
+              { id: 29, image: "king_arthur_3 x Skirmish.png" },
+              { id: 30, image: "king_arthur_3 x Skirmish.png" },
+              ]
+  },
 sinbad: {
-Â  Â  Â  Â  Â  Â  name: "SINBAD",
-Â  Â  Â  Â  Â  Â  image: "sinbad_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "sinbad_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "Sinbad", startValue: 15, color: "#F8AD7E", size: "large" },
-Â  Â  Â  { label: "The Porter", startValue: 5, color: "#A8D5E2", size: "medium" }],
-Â  Â  Â  intermediateZone: null,
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "sinbad_1 x Voyage to the Island That Was a Whale.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "sinbad_1 x Voyage to the City of the Man-Eating Apes.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "sinbad_1 x Voyage Home.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "sinbad_1 x Commanding Impact.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "sinbad_1 x Voyage to the Valley of the Giant Snakes.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "sinbad_1 x Voyage to the City of the King of Serendib.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "sinbad_1 x Voyage to the Creature With Eyes Like Coals of Fire.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "sinbad_1 x Voyage to the Cannibals With the Root of Madness.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "sinbad_2 x Riches Beyond Compare.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "sinbad_2 x Riches Beyond Compare.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "sinbad_2 x Leap Away.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "sinbad_2 x Leap Away.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "sinbad_2 x Exploit.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "sinbad_2 x Exploit.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "sinbad_3 x By Fortune and Fate.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "sinbad_3 x By Fortune and Fate.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "sinbad_3 x By Fortune and Fate.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "sinbad_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "sinbad_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "sinbad_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "sinbad_3 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "sinbad_3 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "sinbad_3 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "sinbad_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "sinbad_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "sinbad_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "sinbad_4 x Toil and Danger.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "sinbad_4 x Toil and Danger.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "sinbad_4 x Toil and Danger.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "sinbad_4 x Toil and Danger.png" },
-Â  Â  Â  Â  Â  Â  Â  ],
+            name: "SINBAD",
+            image: "sinbad_back.png",
+            infoImage: "sinbad_info.png",
+            healthBars: [
+      { label: "Sinbad", startValue: 15, color: "#F8AD7E", size: "large" },
+      { label: "The Porter", startValue: 5, color: "#A8D5E2", size: "medium" }],
+      intermediateZone: null,
+            cards: [
+              { id: 1, image: "sinbad_1 x Voyage to the Island That Was a Whale.png" },
+              { id: 2, image: "sinbad_1 x Voyage to the City of the Man-Eating Apes.png" },
+              { id: 3, image: "sinbad_1 x Voyage Home.png" },
+              { id: 4, image: "sinbad_1 x Commanding Impact.png" },
+              { id: 5, image: "sinbad_1 x Voyage to the Valley of the Giant Snakes.png" },
+              { id: 6, image: "sinbad_1 x Voyage to the City of the King of Serendib.png" },
+              { id: 7, image: "sinbad_1 x Voyage to the Creature With Eyes Like Coals of Fire.png" },
+              { id: 8, image: "sinbad_1 x Voyage to the Cannibals With the Root of Madness.png" },
+              { id: 9, image: "sinbad_2 x Riches Beyond Compare.png" },
+              { id: 10, image: "sinbad_2 x Riches Beyond Compare.png" },
+              { id: 11, image: "sinbad_2 x Leap Away.png" },
+              { id: 12, image: "sinbad_2 x Leap Away.png" },
+              { id: 13, image: "sinbad_2 x Exploit.png" },
+              { id: 14, image: "sinbad_2 x Exploit.png" },
+              { id: 15, image: "sinbad_3 x By Fortune and Fate.png" },
+              { id: 16, image: "sinbad_3 x By Fortune and Fate.png" },
+              { id: 17, image: "sinbad_3 x By Fortune and Fate.png" },
+              { id: 18, image: "sinbad_3 x Regroup.png" },
+              { id: 19, image: "sinbad_3 x Regroup.png" },
+              { id: 20, image: "sinbad_3 x Regroup.png" },
+              { id: 21, image: "sinbad_3 x Momentous Shift.png" },
+              { id: 22, image: "sinbad_3 x Momentous Shift.png" },
+              { id: 23, image: "sinbad_3 x Momentous Shift.png" },
+              { id: 24, image: "sinbad_3 x Feint.png" },
+              { id: 25, image: "sinbad_3 x Feint.png" },
+              { id: 26, image: "sinbad_3 x Feint.png" },
+              { id: 27, image: "sinbad_4 x Toil and Danger.png" },
+              { id: 28, image: "sinbad_4 x Toil and Danger.png" },
+              { id: 29, image: "sinbad_4 x Toil and Danger.png" },
+              { id: 30, image: "sinbad_4 x Toil and Danger.png" },
+              ],
       specialAbility: {
         enabled: true,
         label: 'Voyages Used',
         mode: 'voyage-counter'
       }
-Â  },
+  },
 alice: {
-Â  Â  Â  Â  Â  Â  name: "ALICE",
-Â  Â  Â  Â  Â  Â  image: "alice_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "alice_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "Alice", startValue: 13, color: "#DA4A6B", size: "large" },
-Â  Â  Â  { label: "The Jabberwock", startValue: 8, color: "#79A2D1", size: "medium" }],
-Â  Â  Â  intermediateZone: null,
-Â  Â  specialAbility: {
-Â  Â  Â  enabled: true,
-Â  Â  Â  label: "Size",
-Â  Â  Â  buttonText: "Change Size",
-Â  Â  Â  mode: "swap", Â // swap between two images
-Â  Â  Â  deck: [
-Â  Â  Â  Â  { id: 1, image: "Alice_AbilityBIG.png" },
-Â  Â  Â  Â  { id: 2, image: "Alice_AbilitySMALL.png" }
-Â  Â  Â  ]
-Â  Â  },
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "alice_1 x O Frabjous Day!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "alice_1 x Snicker-Snack.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "alice_1 x The Other Side of the Mushroom.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "alice_2 x Claws That Catch.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "alice_2 x Claws That Catch.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "alice_2 x Drink Me.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "alice_2 x Drink Me.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "alice_2 x Eat Me.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "alice_2 x Eat Me.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "alice_2 x Jaws That Bite.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "alice_2 x Jaws That Bite.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "alice_2 x Looking Glass.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "alice_2 x Looking Glass.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "alice_2 x Mad as a Hatter.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "alice_2 x Mad as a Hatter.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "alice_2 x Manxome Foe.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "alice_2 x Manxome Foe.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "alice_2 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "alice_2 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "alice_2 x Skirmish.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "alice_2 x Skirmish.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "alice_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "alice_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "alice_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "alice_3 x I'm Late, I'm Late.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "alice_3 x I'm Late, I'm Late.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "alice_3 x I'm Late, I'm Late.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "alice_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "alice_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "alice_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  ]
-Â  Â  Â  Â  Â  },
+            name: "ALICE",
+            image: "alice_back.png",
+            infoImage: "alice_info.png",
+            healthBars: [
+      { label: "Alice", startValue: 13, color: "#DA4A6B", size: "large" },
+      { label: "The Jabberwock", startValue: 8, color: "#79A2D1", size: "medium" }],
+      intermediateZone: null,
+    specialAbility: {
+      enabled: true,
+      label: "Size",
+      buttonText: "Change Size",
+      mode: "swap",  // swap between two images
+      deck: [
+        { id: 1, image: "Alice_AbilityBIG.png" },
+        { id: 2, image: "Alice_AbilitySMALL.png" }
+      ]
+    },
+            cards: [
+              { id: 1, image: "alice_1 x O Frabjous Day!.png" },
+              { id: 2, image: "alice_1 x Snicker-Snack.png" },
+              { id: 3, image: "alice_1 x The Other Side of the Mushroom.png" },
+              { id: 4, image: "alice_2 x Claws That Catch.png" },
+              { id: 5, image: "alice_2 x Claws That Catch.png" },
+              { id: 6, image: "alice_2 x Drink Me.png" },
+              { id: 7, image: "alice_2 x Drink Me.png" },
+              { id: 8, image: "alice_2 x Eat Me.png" },
+              { id: 9, image: "alice_2 x Eat Me.png" },
+              { id: 10, image: "alice_2 x Jaws That Bite.png" },
+              { id: 11, image: "alice_2 x Jaws That Bite.png" },
+              { id: 12, image: "alice_2 x Looking Glass.png" },
+              { id: 13, image: "alice_2 x Looking Glass.png" },
+              { id: 14, image: "alice_2 x Mad as a Hatter.png" },
+              { id: 15, image: "alice_2 x Mad as a Hatter.png" },
+              { id: 16, image: "alice_2 x Manxome Foe.png" },
+              { id: 17, image: "alice_2 x Manxome Foe.png" },
+              { id: 18, image: "alice_2 x Momentous Shift.png" },
+              { id: 19, image: "alice_2 x Momentous Shift.png" },
+              { id: 20, image: "alice_2 x Skirmish.png" },
+              { id: 21, image: "alice_2 x Skirmish.png" },
+              { id: 22, image: "alice_3 x Feint.png" },
+              { id: 23, image: "alice_3 x Feint.png" },
+              { id: 24, image: "alice_3 x Feint.png" },
+              { id: 25, image: "alice_3 x I'm Late, I'm Late.png" },
+              { id: 26, image: "alice_3 x I'm Late, I'm Late.png" },
+              { id: 27, image: "alice_3 x I'm Late, I'm Late.png" },
+              { id: 28, image: "alice_3 x Regroup.png" },
+              { id: 29, image: "alice_3 x Regroup.png" },
+              { id: 30, image: "alice_3 x Regroup.png" },
+            ]
+          },
 bigfoot: {
-Â  Â  Â  Â  Â  Â  name: "BIGFOOT",
-Â  Â  Â  Â  Â  Â  image: "bigfoot_back.jpg",
-Â  Â  Â  Â  Â  Â  infoImage: "bigfoot_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "Bigfoot", startValue: 16, color: "#754634", size: "large" },
-Â  Â  Â  { label: "The Jackalope", startValue: 6, color: "#DA8164", size: "medium" }],
-Â  Â  Â  intermediateZone: null,
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "bigfoot_2 x It's Just Your Imagination.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "bigfoot_2 x It's Just Your Imagination.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "bigfoot_2 x Crash Through the Trees.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "bigfoot_2 x Crash Through the Trees.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "bigfoot_2 x Disengage.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "bigfoot_2 x Disengage.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "bigfoot_3 x Savagery.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "bigfoot_3 x Savagery.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "bigfoot_3 x Savagery.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "bigfoot_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "bigfoot_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "bigfoot_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "bigfoot_3 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "bigfoot_3 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "bigfoot_3 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "bigfoot_3 x Jackalope Horns.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "bigfoot_3 x Jackalope Horns.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "bigfoot_3 x Jackalope Horns.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "bigfoot_3 x Hoax.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "bigfoot_3 x Hoax.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "bigfoot_3 x Hoax.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "bigfoot_3 x Skirmish.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "bigfoot_3 x Skirmish.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "bigfoot_3 x Skirmish.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "bigfoot_3 x Larger Than Life.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "bigfoot_3 x Larger Than Life.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "bigfoot_3 x Larger Than Life.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "bigfoot_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "bigfoot_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "bigfoot_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  ]
-Â  Â  Â  Â  Â  },
+            name: "BIGFOOT",
+            image: "bigfoot_back.jpg",
+            infoImage: "bigfoot_info.png",
+            healthBars: [
+      { label: "Bigfoot", startValue: 16, color: "#754634", size: "large" },
+      { label: "The Jackalope", startValue: 6, color: "#DA8164", size: "medium" }],
+      intermediateZone: null,
+            cards: [
+              { id: 1, image: "bigfoot_2 x It's Just Your Imagination.png" },
+              { id: 2, image: "bigfoot_2 x It's Just Your Imagination.png" },
+              { id: 3, image: "bigfoot_2 x Crash Through the Trees.png" },
+              { id: 4, image: "bigfoot_2 x Crash Through the Trees.png" },
+              { id: 5, image: "bigfoot_2 x Disengage.png" },
+              { id: 6, image: "bigfoot_2 x Disengage.png" },
+              { id: 7, image: "bigfoot_3 x Savagery.png" },
+              { id: 8, image: "bigfoot_3 x Savagery.png" },
+              { id: 9, image: "bigfoot_3 x Savagery.png" },
+              { id: 10, image: "bigfoot_3 x Feint.png" },
+              { id: 11, image: "bigfoot_3 x Feint.png" },
+              { id: 12, image: "bigfoot_3 x Feint.png" },
+              { id: 13, image: "bigfoot_3 x Momentous Shift.png" },
+              { id: 14, image: "bigfoot_3 x Momentous Shift.png" },
+              { id: 15, image: "bigfoot_3 x Momentous Shift.png" },
+              { id: 16, image: "bigfoot_3 x Jackalope Horns.png" },
+              { id: 17, image: "bigfoot_3 x Jackalope Horns.png" },
+              { id: 18, image: "bigfoot_3 x Jackalope Horns.png" },
+              { id: 19, image: "bigfoot_3 x Hoax.png" },
+              { id: 20, image: "bigfoot_3 x Hoax.png" },
+              { id: 21, image: "bigfoot_3 x Hoax.png" },
+              { id: 22, image: "bigfoot_3 x Skirmish.png" },
+              { id: 23, image: "bigfoot_3 x Skirmish.png" },
+              { id: 24, image: "bigfoot_3 x Skirmish.png" },
+              { id: 25, image: "bigfoot_3 x Larger Than Life.png" },
+              { id: 26, image: "bigfoot_3 x Larger Than Life.png" },
+              { id: 27, image: "bigfoot_3 x Larger Than Life.png" },
+              { id: 28, image: "bigfoot_3 x Regroup.png" },
+              { id: 29, image: "bigfoot_3 x Regroup.png" },
+              { id: 30, image: "bigfoot_3 x Regroup.png" },
+            ]
+          },
 robinhood: {
-Â  Â  Â  Â  Â  Â  name: "ROBIN HOOD",
-Â  Â  Â  Â  Â  Â  image: "robinhood_back.jpg",
-Â  Â  Â  Â  Â  Â  infoImage: "robinhood_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "Robin Hood", startValue: 13, color: "#5CBE8A", size: "large" },
-Â  Â  Â  { label: "Outlaws alive", startValue: 4, color: "#D14C44", size: "small" }],
-Â  Â  Â  intermediateZone: null,
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "robinhood_3 x A Hunter's Eye.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "robinhood_3 x A Hunter's Eye.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "robinhood_3 x A Hunter's Eye.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "robinhood_2 x Disarming Shot.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "robinhood_2 x Disarming Shot.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "robinhood_4 x Highway Robbery.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "robinhood_4 x Highway Robbery.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "robinhood_4 x Highway Robbery.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "robinhood_4 x Highway Robbery.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "robinhood_2 x Ambush.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "robinhood_2 x Ambush.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "robinhood_2 x Piercing Shot.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "robinhood_2 x Piercing Shot.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "robinhood_3 x Snark.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "robinhood_3 x Snark.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "robinhood_3 x Snark.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "robinhood_3 x Wily Fighting.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "robinhood_3 x Wily Fighting.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "robinhood_3 x Wily Fighting.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "robinhood_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "robinhood_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "robinhood_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "robinhood_3 x Steal From the Rich.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "robinhood_3 x Steal From the Rich.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "robinhood_3 x Steal From the Rich.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "robinhood_2 x Defenders of Sherwood.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "robinhood_2 x Defenders of Sherwood.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "robinhood_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "robinhood_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "robinhood_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  ]
-Â  Â  Â  Â  Â  },
+            name: "ROBIN HOOD",
+            image: "robinhood_back.jpg",
+            infoImage: "robinhood_info.png",
+            healthBars: [
+      { label: "Robin Hood", startValue: 13, color: "#5CBE8A", size: "large" },
+      { label: "Outlaws alive", startValue: 4, color: "#D14C44", size: "small" }],
+      intermediateZone: null,
+            cards: [
+              { id: 1, image: "robinhood_3 x A Hunter's Eye.png" },
+              { id: 2, image: "robinhood_3 x A Hunter's Eye.png" },
+              { id: 3, image: "robinhood_3 x A Hunter's Eye.png" },
+              { id: 4, image: "robinhood_2 x Disarming Shot.png" },
+              { id: 5, image: "robinhood_2 x Disarming Shot.png" },
+              { id: 6, image: "robinhood_4 x Highway Robbery.png" },
+              { id: 7, image: "robinhood_4 x Highway Robbery.png" },
+              { id: 8, image: "robinhood_4 x Highway Robbery.png" },
+              { id: 9, image: "robinhood_4 x Highway Robbery.png" },
+              { id: 10, image: "robinhood_2 x Ambush.png" },
+              { id: 11, image: "robinhood_2 x Ambush.png" },
+              { id: 12, image: "robinhood_2 x Piercing Shot.png" },
+              { id: 13, image: "robinhood_2 x Piercing Shot.png" },
+              { id: 14, image: "robinhood_3 x Snark.png" },
+              { id: 15, image: "robinhood_3 x Snark.png" },
+              { id: 16, image: "robinhood_3 x Snark.png" },
+              { id: 17, image: "robinhood_3 x Wily Fighting.png" },
+              { id: 18, image: "robinhood_3 x Wily Fighting.png" },
+              { id: 19, image: "robinhood_3 x Wily Fighting.png" },
+              { id: 20, image: "robinhood_3 x Feint.png" },
+              { id: 21, image: "robinhood_3 x Feint.png" },
+              { id: 22, image: "robinhood_3 x Feint.png" },
+              { id: 23, image: "robinhood_3 x Steal From the Rich.png" },
+              { id: 24, image: "robinhood_3 x Steal From the Rich.png" },
+              { id: 25, image: "robinhood_3 x Steal From the Rich.png" },
+              { id: 26, image: "robinhood_2 x Defenders of Sherwood.png" },
+              { id: 27, image: "robinhood_2 x Defenders of Sherwood.png" },
+              { id: 28, image: "robinhood_3 x Regroup.png" },
+              { id: 29, image: "robinhood_3 x Regroup.png" },
+              { id: 30, image: "robinhood_3 x Regroup.png" },
+            ]
+          },
 hamlet: {
-Â  Â  Â  Â  Â  Â  name: "HAMLET",
-Â  Â  Â  Â  Â  Â  image: "hamlet_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "hamlet_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "Hamlet", startValue: 15, color: "#C5242D", size: "large" },
-Â  Â  Â  { label: "Rosencrantz & Guildenstern", startValue: 6, color: "#545960", size: "medium" }],
-Â  Â  Â  intermediateZone: null,
-Â  Â  specialAbility: {
-Â  Â  Â  enabled: true,
-Â  Â  Â  label: "Question",
-Â  Â  Â  buttonText: "Ponder the Question",
-Â  Â  Â  mode: "swap", Â // swap between two images
-Â  Â  Â  deck: [
-Â  Â  Â  Â  { id: 1, image: "hamlet_Ability_NotToBe.png" },
-Â  Â  Â  Â  { id: 2, image: "hamlet_Ability_ToBe.png" }
-Â  Â  Â  ]
-Â  Â  },
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "hamlet_3 x To Sleep, Perchance To Dream.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "hamlet_3 x To Sleep, Perchance To Dream.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "hamlet_3 x To Sleep, Perchance To Dream.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "hamlet_3 x Blood Will Have Blood.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "hamlet_3 x Blood Will Have Blood.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "hamlet_3 x Blood Will Have Blood.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "hamlet_3 x Nothing Either Good Or Bad.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "hamlet_3 x Nothing Either Good Or Bad.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "hamlet_3 x Nothing Either Good Or Bad.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "hamlet_3 x The Play's The Thing.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "hamlet_3 x The Play's The Thing.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "hamlet_3 x The Play's The Thing.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "hamlet_3 x Uncertain Doom.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "hamlet_3 x Uncertain Doom.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "hamlet_3 x Uncertain Doom.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "hamlet_3 x Method In The Madness.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "hamlet_3 x Method In The Madness.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "hamlet_3 x Method In The Madness.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "hamlet_2 x The Ghost.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "hamlet_2 x The Ghost.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "hamlet_2 x The Readiness Is All.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "hamlet_2 x The Readiness Is All.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "hamlet_2 x Maddening Insight.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "hamlet_2 x Maddening Insight.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "hamlet_2 x Outrageous Fortune.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "hamlet_2 x Outrageous Fortune.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "hamlet_2 x The Rest Is Silence.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "hamlet_2 x The Rest Is Silence.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "hamlet_2 x Cruel To Be Kind.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "hamlet_2 x Cruel To Be Kind.png" },
-Â  Â  Â  Â  Â  Â  ]
-Â  Â  Â  Â  Â  },
+            name: "HAMLET",
+            image: "hamlet_back.png",
+            infoImage: "hamlet_info.png",
+            healthBars: [
+      { label: "Hamlet", startValue: 15, color: "#C5242D", size: "large" },
+      { label: "Rosencrantz & Guildenstern", startValue: 6, color: "#545960", size: "medium" }],
+      intermediateZone: null,
+    specialAbility: {
+      enabled: true,
+      label: "Question",
+      buttonText: "Ponder the Question",
+      mode: "swap",  // swap between two images
+      deck: [
+        { id: 1, image: "hamlet_Ability_NotToBe.png" },
+        { id: 2, image: "hamlet_Ability_ToBe.png" }
+      ]
+    },
+            cards: [
+              { id: 1, image: "hamlet_3 x To Sleep, Perchance To Dream.png" },
+              { id: 2, image: "hamlet_3 x To Sleep, Perchance To Dream.png" },
+              { id: 3, image: "hamlet_3 x To Sleep, Perchance To Dream.png" },
+              { id: 4, image: "hamlet_3 x Blood Will Have Blood.png" },
+              { id: 5, image: "hamlet_3 x Blood Will Have Blood.png" },
+              { id: 6, image: "hamlet_3 x Blood Will Have Blood.png" },
+              { id: 7, image: "hamlet_3 x Nothing Either Good Or Bad.png" },
+              { id: 8, image: "hamlet_3 x Nothing Either Good Or Bad.png" },
+              { id: 9, image: "hamlet_3 x Nothing Either Good Or Bad.png" },
+              { id: 10, image: "hamlet_3 x The Play's The Thing.png" },
+              { id: 11, image: "hamlet_3 x The Play's The Thing.png" },
+              { id: 12, image: "hamlet_3 x The Play's The Thing.png" },
+              { id: 13, image: "hamlet_3 x Uncertain Doom.png" },
+              { id: 14, image: "hamlet_3 x Uncertain Doom.png" },
+              { id: 15, image: "hamlet_3 x Uncertain Doom.png" },
+              { id: 16, image: "hamlet_3 x Method In The Madness.png" },
+              { id: 17, image: "hamlet_3 x Method In The Madness.png" },
+              { id: 18, image: "hamlet_3 x Method In The Madness.png" },
+              { id: 19, image: "hamlet_2 x The Ghost.png" },
+              { id: 20, image: "hamlet_2 x The Ghost.png" },
+              { id: 21, image: "hamlet_2 x The Readiness Is All.png" },
+              { id: 22, image: "hamlet_2 x The Readiness Is All.png" },
+              { id: 23, image: "hamlet_2 x Maddening Insight.png" },
+              { id: 24, image: "hamlet_2 x Maddening Insight.png" },
+              { id: 25, image: "hamlet_2 x Outrageous Fortune.png" },
+              { id: 26, image: "hamlet_2 x Outrageous Fortune.png" },
+              { id: 27, image: "hamlet_2 x The Rest Is Silence.png" },
+              { id: 28, image: "hamlet_2 x The Rest Is Silence.png" },
+              { id: 29, image: "hamlet_2 x Cruel To Be Kind.png" },
+              { id: 30, image: "hamlet_2 x Cruel To Be Kind.png" },
+            ]
+          },
 titania: {
-Â  Â  Â  Â  Â  Â  name: "TITANIA",
-Â  Â  Â  Â  Â  Â  image: "titania_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "titania_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "Titania", startValue: 12, color: "#7B449A", size: "large" },
-Â  Â  Â  { label: "Oberon", startValue: 6, color: "#827BB4", size: "medium" }],
-Â  Â  Â  intermediateZone: null,
+            name: "TITANIA",
+            image: "titania_back.png",
+            infoImage: "titania_info.png",
+            healthBars: [
+      { label: "Titania", startValue: 12, color: "#7B449A", size: "large" },
+      { label: "Oberon", startValue: 6, color: "#827BB4", size: "medium" }],
+      intermediateZone: null,
 	specialAbility: {
-Â  Â  Â  enabled: true,
-Â  Â  Â  label: "Glamour",
-Â  Â  Â  buttonText: "Change Glamour",
-Â  Â  Â  mode: "discard", Â // swap between two images
-Â  Â  Â  deck: [
-Â  Â  Â  Â  { id: 1, image: "titania_ability1.png" },
-Â  Â  Â  Â  { id: 2, image: "titania_ability2.png" },
-Â  Â  Â  Â  { id: 3, image: "titania_ability3.png" },
-Â  Â  Â  Â  { id: 4, image: "titania_ability4.png" },
-Â  Â  Â  Â  { id: 5, image: "titania_ability5.png" },
-Â  Â  Â  Â  { id: 6, image: "titania_ability6.png" }
-Â  Â  Â  ]
-Â  Â  },
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "titania_3 x As Wise As Beautiful.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "titania_3 x As Wise As Beautiful.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "titania_3 x As Wise As Beautiful.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "titania_3 x Met By Moonlight.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "titania_3 x Met By Moonlight.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "titania_3 x Met By Moonlight.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "titania_3 x Protection Of The Fairy Woods.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "titania_3 x Protection Of The Fairy Woods.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "titania_3 x Protection Of The Fairy Woods.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "titania_3 x Fairy Song.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "titania_3 x Fairy Song.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "titania_3 x Fairy Song.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "titania_3 x Gift Of The Fair Folk.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "titania_3 x Gift Of The Fair Folk.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "titania_3 x Gift Of The Fair Folk.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "titania_3 x Whisked Away.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "titania_3 x Whisked Away.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "titania_3 x Whisked Away.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "titania_2 x The Moon Looks Down.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "titania_2 x The Moon Looks Down.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "titania_2 x What Fools These Mortals Be.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "titania_2 x What Fools These Mortals Be.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "titania_2 x A Momentary Glance.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "titania_2 x A Momentary Glance.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "titania_2 x But A Dream.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "titania_2 x But A Dream.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "titania_2 x Parting Gift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "titania_2 x Parting Gift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "titania_2 x Queen Of The Fairies.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "titania_2 x Queen Of The Fairies.png" },
-Â  Â  Â  Â  Â  Â  ]
-Â  Â  Â  Â  Â  },
+      enabled: true,
+      label: "Glamour",
+      buttonText: "Change Glamour",
+      mode: "discard",  // swap between two images
+      deck: [
+        { id: 1, image: "titania_ability1.png" },
+        { id: 2, image: "titania_ability2.png" },
+        { id: 3, image: "titania_ability3.png" },
+        { id: 4, image: "titania_ability4.png" },
+        { id: 5, image: "titania_ability5.png" },
+        { id: 6, image: "titania_ability6.png" }
+      ]
+    },
+            cards: [
+              { id: 1, image: "titania_3 x As Wise As Beautiful.png" },
+              { id: 2, image: "titania_3 x As Wise As Beautiful.png" },
+              { id: 3, image: "titania_3 x As Wise As Beautiful.png" },
+              { id: 4, image: "titania_3 x Met By Moonlight.png" },
+              { id: 5, image: "titania_3 x Met By Moonlight.png" },
+              { id: 6, image: "titania_3 x Met By Moonlight.png" },
+              { id: 7, image: "titania_3 x Protection Of The Fairy Woods.png" },
+              { id: 8, image: "titania_3 x Protection Of The Fairy Woods.png" },
+              { id: 9, image: "titania_3 x Protection Of The Fairy Woods.png" },
+              { id: 10, image: "titania_3 x Fairy Song.png" },
+              { id: 11, image: "titania_3 x Fairy Song.png" },
+              { id: 12, image: "titania_3 x Fairy Song.png" },
+              { id: 13, image: "titania_3 x Gift Of The Fair Folk.png" },
+              { id: 14, image: "titania_3 x Gift Of The Fair Folk.png" },
+              { id: 15, image: "titania_3 x Gift Of The Fair Folk.png" },
+              { id: 16, image: "titania_3 x Whisked Away.png" },
+              { id: 17, image: "titania_3 x Whisked Away.png" },
+              { id: 18, image: "titania_3 x Whisked Away.png" },
+              { id: 19, image: "titania_2 x The Moon Looks Down.png" },
+              { id: 20, image: "titania_2 x The Moon Looks Down.png" },
+              { id: 21, image: "titania_2 x What Fools These Mortals Be.png" },
+              { id: 22, image: "titania_2 x What Fools These Mortals Be.png" },
+              { id: 23, image: "titania_2 x A Momentary Glance.png" },
+              { id: 24, image: "titania_2 x A Momentary Glance.png" },
+              { id: 25, image: "titania_2 x But A Dream.png" },
+              { id: 26, image: "titania_2 x But A Dream.png" },
+              { id: 27, image: "titania_2 x Parting Gift.png" },
+              { id: 28, image: "titania_2 x Parting Gift.png" },
+              { id: 29, image: "titania_2 x Queen Of The Fairies.png" },
+              { id: 30, image: "titania_2 x Queen Of The Fairies.png" },
+            ]
+          },
 shakespeare: {
-Â  Â  Â  Â  Â  Â  name: "SHAKESPEARE",
-Â  Â  Â  Â  Â  Â  image: "shakespeare_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "shakespeare_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "Shakespeare", startValue: 13, color: "#947F5D", size: "large" },
-Â  Â  Â  { label: "Actors alive", startValue: 3, color: "#EDE8C4", size: "small" }],
-Â  Â  Â  intermediateZone: { enabled: true, name: "Shakespeare's line" },
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "shakespeare_3 x Deceive.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "shakespeare_3 x Deceive.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "shakespeare_3 x Deceive.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "shakespeare_3 x My Kingdom For a Horse.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "shakespeare_3 x My Kingdom For a Horse.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "shakespeare_3 x My Kingdom For a Horse.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "shakespeare_3 x Again.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "shakespeare_3 x Again.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "shakespeare_3 x Again.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "shakespeare_2 x Once More Unto The Breach.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "shakespeare_2 x Once More Unto The Breach.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "shakespeare_2 x Revise.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "shakespeare_2 x Revise.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "shakespeare_2 x Alas.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "shakespeare_2 x Alas.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "shakespeare_2 x Places, Places!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "shakespeare_2 x Places, Places!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "shakespeare_2 x The Ides Of March.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "shakespeare_2 x The Ides Of March.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "shakespeare_2 x All Are Punished.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "shakespeare_2 x All Are Punished.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "shakespeare_2 x Et Tu, Brute.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "shakespeare_2 x Et Tu, Brute.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "shakespeare_2 x Such Sweet Sorrow.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "shakespeare_2 x Such Sweet Sorrow.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "shakespeare_1 x Horror1.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "shakespeare_1 x Horror2.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "shakespeare_1 x Horror3.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "shakespeare_1 x Horror4.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "shakespeare_1 x Horror5.png" },
-Â  Â  Â  Â  Â  Â  ]
-Â  Â  Â  Â  Â  },
+            name: "SHAKESPEARE",
+            image: "shakespeare_back.png",
+            infoImage: "shakespeare_info.png",
+            healthBars: [
+      { label: "Shakespeare", startValue: 13, color: "#947F5D", size: "large" },
+      { label: "Actors alive", startValue: 3, color: "#EDE8C4", size: "small" }],
+      intermediateZone: { enabled: true, name: "Shakespeare's line" },
+            cards: [
+              { id: 1, image: "shakespeare_3 x Deceive.png" },
+              { id: 2, image: "shakespeare_3 x Deceive.png" },
+              { id: 3, image: "shakespeare_3 x Deceive.png" },
+              { id: 4, image: "shakespeare_3 x My Kingdom For a Horse.png" },
+              { id: 5, image: "shakespeare_3 x My Kingdom For a Horse.png" },
+              { id: 6, image: "shakespeare_3 x My Kingdom For a Horse.png" },
+              { id: 7, image: "shakespeare_3 x Again.png" },
+              { id: 8, image: "shakespeare_3 x Again.png" },
+              { id: 9, image: "shakespeare_3 x Again.png" },
+              { id: 10, image: "shakespeare_2 x Once More Unto The Breach.png" },
+              { id: 11, image: "shakespeare_2 x Once More Unto The Breach.png" },
+              { id: 12, image: "shakespeare_2 x Revise.png" },
+              { id: 13, image: "shakespeare_2 x Revise.png" },
+              { id: 14, image: "shakespeare_2 x Alas.png" },
+              { id: 15, image: "shakespeare_2 x Alas.png" },
+              { id: 16, image: "shakespeare_2 x Places, Places!.png" },
+              { id: 17, image: "shakespeare_2 x Places, Places!.png" },
+              { id: 18, image: "shakespeare_2 x The Ides Of March.png" },
+              { id: 19, image: "shakespeare_2 x The Ides Of March.png" },
+              { id: 20, image: "shakespeare_2 x All Are Punished.png" },
+              { id: 21, image: "shakespeare_2 x All Are Punished.png" },
+              { id: 22, image: "shakespeare_2 x Et Tu, Brute.png" },
+              { id: 23, image: "shakespeare_2 x Et Tu, Brute.png" },
+              { id: 24, image: "shakespeare_2 x Such Sweet Sorrow.png" },
+              { id: 25, image: "shakespeare_2 x Such Sweet Sorrow.png" },
+              { id: 26, image: "shakespeare_1 x Horror1.png" },
+              { id: 27, image: "shakespeare_1 x Horror2.png" },
+              { id: 28, image: "shakespeare_1 x Horror3.png" },
+              { id: 29, image: "shakespeare_1 x Horror4.png" },
+              { id: 30, image: "shakespeare_1 x Horror5.png" },
+            ]
+          },
 sisters: {
-Â  Â  Â  Â  Â  Â  name: "THE WAYWARD SISTERS",
-Â  Â  Â  Â  Â  Â  image: "sisters_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "sisters_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "Sceptre", startValue: 6, color: "#BADA6D", size: "medium" },
-Â  Â  Â  { label: "Book", startValue: 6, color: "#99C563", size: "medium" },
-Â  Â  Â  { label: "Aargh", startValue: 6, color: "#78B058", size: "medium" }],
-Â  Â  Â  intermediateZone: { enabled: true, name: "Sisters' Cauldron" },
+            name: "THE WAYWARD SISTERS",
+            image: "sisters_back.png",
+            infoImage: "sisters_info.png",
+            healthBars: [
+      { label: "Sceptre", startValue: 6, color: "#BADA6D", size: "medium" },
+      { label: "Book", startValue: 6, color: "#99C563", size: "medium" },
+      { label: "Aargh", startValue: 6, color: "#78B058", size: "medium" }],
+      intermediateZone: { enabled: true, name: "Sisters' Cauldron" },
 	specialAbility: {
-Â  Â  Â  enabled: true,
-Â  Â  Â  label: "Cauldron",
-Â  Â  Â  buttonText: "This does nothing lol",
-Â  Â  Â  mode: "swap", Â // swap between two images
-Â  Â  Â  deck: [
-Â  Â  Â  Â  { id: 1, image: "sisters_Ability.png" }
-Â  Â  Â  ]
-Â  Â  },
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "sisters_3 x Fire Burn And Cauldron Bubble.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "sisters_3 x Fire Burn And Cauldron Bubble.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "sisters_3 x Fire Burn And Cauldron Bubble.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "sisters_3 x Ward.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "sisters_3 x Ward.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "sisters_3 x Ward.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "sisters_3 x Toil And Trouble.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "sisters_3 x Toil And Trouble.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "sisters_3 x Toil And Trouble.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "sisters_3 x Double, Double.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "sisters_3 x Double, Double.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "sisters_3 x Double, Double.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "sisters_3 x Hurly-Burly.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "sisters_3 x Hurly-Burly.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "sisters_3 x Hurly-Burly.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "sisters_3 x The Stars Align.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "sisters_3 x The Stars Align.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "sisters_3 x The Stars Align.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "sisters_2 x Something Wicked This Way Comes.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "sisters_2 x Something Wicked This Way Comes.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "sisters_2 x Curious Familiar.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "sisters_2 x Curious Familiar.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "sisters_2 x Pricking Of My Thumbs.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "sisters_2 x Pricking Of My Thumbs.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "sisters_2 x Prophecy.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "sisters_2 x Prophecy.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "sisters_2 x Unnatural Remedy.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "sisters_2 x Unnatural Remedy.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "sisters_2 x All-Seeing Familiar.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "sisters_2 x All-Seeing Familiar.png" },
-Â  Â  Â  Â  Â  Â  ]
-Â  Â  Â  Â  Â  },
+      enabled: true,
+      label: "Cauldron",
+      buttonText: "This does nothing lol",
+      mode: "swap",  // swap between two images
+      deck: [
+        { id: 1, image: "sisters_Ability.png" }
+      ]
+    },
+            cards: [
+              { id: 1, image: "sisters_3 x Fire Burn And Cauldron Bubble.png" },
+              { id: 2, image: "sisters_3 x Fire Burn And Cauldron Bubble.png" },
+              { id: 3, image: "sisters_3 x Fire Burn And Cauldron Bubble.png" },
+              { id: 4, image: "sisters_3 x Ward.png" },
+              { id: 5, image: "sisters_3 x Ward.png" },
+              { id: 6, image: "sisters_3 x Ward.png" },
+              { id: 7, image: "sisters_3 x Toil And Trouble.png" },
+              { id: 8, image: "sisters_3 x Toil And Trouble.png" },
+              { id: 9, image: "sisters_3 x Toil And Trouble.png" },
+              { id: 10, image: "sisters_3 x Double, Double.png" },
+              { id: 11, image: "sisters_3 x Double, Double.png" },
+              { id: 12, image: "sisters_3 x Double, Double.png" },
+              { id: 13, image: "sisters_3 x Hurly-Burly.png" },
+              { id: 14, image: "sisters_3 x Hurly-Burly.png" },
+              { id: 15, image: "sisters_3 x Hurly-Burly.png" },
+              { id: 16, image: "sisters_3 x The Stars Align.png" },
+              { id: 17, image: "sisters_3 x The Stars Align.png" },
+              { id: 18, image: "sisters_3 x The Stars Align.png" },
+              { id: 19, image: "sisters_2 x Something Wicked This Way Comes.png" },
+              { id: 20, image: "sisters_2 x Something Wicked This Way Comes.png" },
+              { id: 21, image: "sisters_2 x Curious Familiar.png" },
+              { id: 22, image: "sisters_2 x Curious Familiar.png" },
+              { id: 23, image: "sisters_2 x Pricking Of My Thumbs.png" },
+              { id: 24, image: "sisters_2 x Pricking Of My Thumbs.png" },
+              { id: 25, image: "sisters_2 x Prophecy.png" },
+              { id: 26, image: "sisters_2 x Prophecy.png" },
+              { id: 27, image: "sisters_2 x Unnatural Remedy.png" },
+              { id: 28, image: "sisters_2 x Unnatural Remedy.png" },
+              { id: 29, image: "sisters_2 x All-Seeing Familiar.png" },
+              { id: 30, image: "sisters_2 x All-Seeing Familiar.png" },
+            ]
+          },
 spiderman: {
-Â  Â  Â  Â  Â  Â  name: "SPIDERMAN",
-Â  Â  Â  Â  Â  Â  image: "spiderman_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "spiderman_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "spiderman", startValue: 15, color: "#E92824", size: "large" }],
-Â  Â  Â  intermediateZone: null,
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "spiderman_3 x Spider-Sense Tingling!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "spiderman_3 x Spider-Sense Tingling!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "spiderman_3 x Spider-Sense Tingling!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "spiderman_3 x Thwip!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "spiderman_3 x Thwip!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "spiderman_3 x Thwip!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "spiderman_3 x Counter-Attack.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "spiderman_3 x Counter-Attack.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "spiderman_3 x Counter-Attack.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "spiderman_3 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "spiderman_3 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "spiderman_3 x Momentous Shift.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "spiderman_3 x Swinging Kick.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "spiderman_3 x Swinging Kick.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "spiderman_3 x Swinging Kick.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "spiderman_3 x Web Shooters.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "spiderman_3 x Web Shooters.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "spiderman_3 x Web Shooters.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "spiderman_2 x Friendly Neighborhood Spider-Man.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "spiderman_2 x Friendly Neighborhood Spider-Man.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "spiderman_2 x Disarming Shot.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "spiderman_2 x Disarming Shot.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "spiderman_2 x Snark.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "spiderman_2 x Snark.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "spiderman_2 x Wall Crawler.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "spiderman_2 x Wall Crawler.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "spiderman_2 x With Great Power.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "spiderman_2 x With Great Power.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "spiderman_2 x Right in the Face!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "spiderman_2 x Right in the Face!.png" },
-Â  Â  Â  Â  Â  Â  ]
-Â  Â  Â  Â  Â  },
+            name: "SPIDERMAN",
+            image: "spiderman_back.png",
+            infoImage: "spiderman_info.png",
+            healthBars: [
+      { label: "spiderman", startValue: 15, color: "#E92824", size: "large" }],
+      intermediateZone: null,
+            cards: [
+              { id: 1, image: "spiderman_3 x Spider-Sense Tingling!.png" },
+              { id: 2, image: "spiderman_3 x Spider-Sense Tingling!.png" },
+              { id: 3, image: "spiderman_3 x Spider-Sense Tingling!.png" },
+              { id: 4, image: "spiderman_3 x Thwip!.png" },
+              { id: 5, image: "spiderman_3 x Thwip!.png" },
+              { id: 6, image: "spiderman_3 x Thwip!.png" },
+              { id: 7, image: "spiderman_3 x Counter-Attack.png" },
+              { id: 8, image: "spiderman_3 x Counter-Attack.png" },
+              { id: 9, image: "spiderman_3 x Counter-Attack.png" },
+              { id: 10, image: "spiderman_3 x Momentous Shift.png" },
+              { id: 11, image: "spiderman_3 x Momentous Shift.png" },
+              { id: 12, image: "spiderman_3 x Momentous Shift.png" },
+              { id: 13, image: "spiderman_3 x Swinging Kick.png" },
+              { id: 14, image: "spiderman_3 x Swinging Kick.png" },
+              { id: 15, image: "spiderman_3 x Swinging Kick.png" },
+              { id: 16, image: "spiderman_3 x Web Shooters.png" },
+              { id: 17, image: "spiderman_3 x Web Shooters.png" },
+              { id: 18, image: "spiderman_3 x Web Shooters.png" },
+              { id: 19, image: "spiderman_2 x Friendly Neighborhood Spider-Man.png" },
+              { id: 20, image: "spiderman_2 x Friendly Neighborhood Spider-Man.png" },
+              { id: 21, image: "spiderman_2 x Disarming Shot.png" },
+              { id: 22, image: "spiderman_2 x Disarming Shot.png" },
+              { id: 23, image: "spiderman_2 x Snark.png" },
+              { id: 24, image: "spiderman_2 x Snark.png" },
+              { id: 25, image: "spiderman_2 x Wall Crawler.png" },
+              { id: 26, image: "spiderman_2 x Wall Crawler.png" },
+              { id: 27, image: "spiderman_2 x With Great Power.png" },
+              { id: 28, image: "spiderman_2 x With Great Power.png" },
+              { id: 29, image: "spiderman_2 x Right in the Face!.png" },
+              { id: 30, image: "spiderman_2 x Right in the Face!.png" },
+            ]
+          },
 drstrange: {
-Â  Â  Â  Â  Â  Â  name: "DR.STRANGE",
-Â  Â  Â  Â  Â  Â  image: "drstrange_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "drstrange_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "Dr.Strange", startValue: 14, color: "#C82026", size: "large" },
-Â  Â  Â  { label: "Wong", startValue: 6, color: "#F1EC21", size: "medium" }],
-Â  intermediateZone: null,
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "drstrange_4 x Bolts of Balthakk.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "drstrange_4 x Bolts of Balthakk.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "drstrange_4 x Bolts of Balthakk.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "drstrange_4 x Bolts of Balthakk.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "drstrange_3 x The Mists of Munnopor.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "drstrange_3 x The Mists of Munnopor.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "drstrange_3 x The Mists of Munnopor.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "drstrange_3 x Seven Suns of Cinnibus.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "drstrange_3 x Seven Suns of Cinnibus.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "drstrange_3 x Seven Suns of Cinnibus.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "drstrange_3 x Steadfast Disciple.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "drstrange_3 x Steadfast Disciple.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "drstrange_3 x Steadfast Disciple.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "drstrange_3 x The Winds of Watoomb.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "drstrange_3 x The Winds of Watoomb.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "drstrange_3 x The Winds of Watoomb.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "drstrange_3 x Master of Kamar-Taj.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "drstrange_3 x Master of Kamar-Taj.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "drstrange_3 x Master of Kamar-Taj.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "drstrange_3 x The Rings of Raggadorr.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "drstrange_3 x The Rings of Raggadorr.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "drstrange_3 x The Rings of Raggadorr.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "drstrange_2 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "drstrange_2 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "drstrange_2 x Eye of Agamotto.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "drstrange_2 x Eye of Agamotto.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "drstrange_2 x Cloak of Levitation.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "drstrange_2 x Cloak of Levitation.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "drstrange_2 x No Really, I'm a Doctor.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "drstrange_2 x No Really, I'm a Doctor.png" },
-Â  Â  Â  Â  Â  Â  ]
-Â  Â  Â  Â  Â  },
+            name: "DR.STRANGE",
+            image: "drstrange_back.png",
+            infoImage: "drstrange_info.png",
+            healthBars: [
+      { label: "Dr.Strange", startValue: 14, color: "#C82026", size: "large" },
+      { label: "Wong", startValue: 6, color: "#F1EC21", size: "medium" }],
+  intermediateZone: null,
+            cards: [
+              { id: 1, image: "drstrange_4 x Bolts of Balthakk.png" },
+              { id: 2, image: "drstrange_4 x Bolts of Balthakk.png" },
+              { id: 3, image: "drstrange_4 x Bolts of Balthakk.png" },
+              { id: 4, image: "drstrange_4 x Bolts of Balthakk.png" },
+              { id: 5, image: "drstrange_3 x The Mists of Munnopor.png" },
+              { id: 6, image: "drstrange_3 x The Mists of Munnopor.png" },
+              { id: 7, image: "drstrange_3 x The Mists of Munnopor.png" },
+              { id: 8, image: "drstrange_3 x Seven Suns of Cinnibus.png" },
+              { id: 9, image: "drstrange_3 x Seven Suns of Cinnibus.png" },
+              { id: 10, image: "drstrange_3 x Seven Suns of Cinnibus.png" },
+              { id: 11, image: "drstrange_3 x Steadfast Disciple.png" },
+              { id: 12, image: "drstrange_3 x Steadfast Disciple.png" },
+              { id: 13, image: "drstrange_3 x Steadfast Disciple.png" },
+              { id: 14, image: "drstrange_3 x The Winds of Watoomb.png" },
+              { id: 15, image: "drstrange_3 x The Winds of Watoomb.png" },
+              { id: 16, image: "drstrange_3 x The Winds of Watoomb.png" },
+              { id: 17, image: "drstrange_3 x Master of Kamar-Taj.png" },
+              { id: 18, image: "drstrange_3 x Master of Kamar-Taj.png" },
+              { id: 19, image: "drstrange_3 x Master of Kamar-Taj.png" },
+              { id: 20, image: "drstrange_3 x The Rings of Raggadorr.png" },
+              { id: 21, image: "drstrange_3 x The Rings of Raggadorr.png" },
+              { id: 22, image: "drstrange_3 x The Rings of Raggadorr.png" },
+              { id: 23, image: "drstrange_2 x Feint.png" },
+              { id: 24, image: "drstrange_2 x Feint.png" },
+              { id: 25, image: "drstrange_2 x Eye of Agamotto.png" },
+              { id: 26, image: "drstrange_2 x Eye of Agamotto.png" },
+              { id: 27, image: "drstrange_2 x Cloak of Levitation.png" },
+              { id: 28, image: "drstrange_2 x Cloak of Levitation.png" },
+              { id: 29, image: "drstrange_2 x No Really, I'm a Doctor.png" },
+              { id: 30, image: "drstrange_2 x No Really, I'm a Doctor.png" },
+            ]
+          },
 shehulk: {
-Â  Â  Â  Â  Â  Â  name: "SHEHULK",
-Â  Â  Â  Â  Â  Â  image: "shehulk_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "shehulk_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "She Hulk", startValue: 20, color: "#78B058", size: "large" }],
-Â  intermediateZone: null,
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "shehulk_3 x Nerve Cluster Strike.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "shehulk_3 x Nerve Cluster Strike.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "shehulk_3 x Nerve Cluster Strike.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "shehulk_3 x Lady Justice.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "shehulk_3 x Lady Justice.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "shehulk_3 x Lady Justice.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "shehulk_3 x Sensational.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "shehulk_3 x Sensational.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "shehulk_3 x Sensational.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "shehulk_3 x Cease and Desist.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "shehulk_3 x Cease and Desist.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "shehulk_3 x Cease and Desist.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "shehulk_3 x Green Energy.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "shehulk_3 x Green Energy.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "shehulk_3 x Green Energy.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "shehulk_3 x Legalese.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "shehulk_3 x Legalese.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "shehulk_3 x Legalese.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "shehulk_2 x Jennifer Walters, Esq.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "shehulk_2 x Jennifer Walters, Esq.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "shehulk_2 x Leap Toward.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "shehulk_2 x Leap Toward.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "shehulk_2 x Omega-Level Threat.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "shehulk_2 x Omega-Level Threat.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "shehulk_2 x Double Jeopardy.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "shehulk_2 x Double Jeopardy.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "shehulk_2 x The Defense Rests.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "shehulk_2 x The Defense Rests.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "shehulk_2 x The Savage She-Hulk.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "shehulk_2 x The Savage She-Hulk.png" },
-Â  Â  Â  Â  Â  Â  ]
-Â  Â  Â  Â  Â  },
+            name: "SHEHULK",
+            image: "shehulk_back.png",
+            infoImage: "shehulk_info.png",
+            healthBars: [
+      { label: "She Hulk", startValue: 20, color: "#78B058", size: "large" }],
+  intermediateZone: null,
+            cards: [
+              { id: 1, image: "shehulk_3 x Nerve Cluster Strike.png" },
+              { id: 2, image: "shehulk_3 x Nerve Cluster Strike.png" },
+              { id: 3, image: "shehulk_3 x Nerve Cluster Strike.png" },
+              { id: 4, image: "shehulk_3 x Lady Justice.png" },
+              { id: 5, image: "shehulk_3 x Lady Justice.png" },
+              { id: 6, image: "shehulk_3 x Lady Justice.png" },
+              { id: 7, image: "shehulk_3 x Sensational.png" },
+              { id: 8, image: "shehulk_3 x Sensational.png" },
+              { id: 9, image: "shehulk_3 x Sensational.png" },
+              { id: 10, image: "shehulk_3 x Cease and Desist.png" },
+              { id: 11, image: "shehulk_3 x Cease and Desist.png" },
+              { id: 12, image: "shehulk_3 x Cease and Desist.png" },
+              { id: 13, image: "shehulk_3 x Green Energy.png" },
+              { id: 14, image: "shehulk_3 x Green Energy.png" },
+              { id: 15, image: "shehulk_3 x Green Energy.png" },
+              { id: 16, image: "shehulk_3 x Legalese.png" },
+              { id: 17, image: "shehulk_3 x Legalese.png" },
+              { id: 18, image: "shehulk_3 x Legalese.png" },
+              { id: 19, image: "shehulk_2 x Jennifer Walters, Esq.png" },
+              { id: 20, image: "shehulk_2 x Jennifer Walters, Esq.png" },
+              { id: 21, image: "shehulk_2 x Leap Toward.png" },
+              { id: 22, image: "shehulk_2 x Leap Toward.png" },
+              { id: 23, image: "shehulk_2 x Omega-Level Threat.png" },
+              { id: 24, image: "shehulk_2 x Omega-Level Threat.png" },
+              { id: 25, image: "shehulk_2 x Double Jeopardy.png" },
+              { id: 26, image: "shehulk_2 x Double Jeopardy.png" },
+              { id: 27, image: "shehulk_2 x The Defense Rests.png" },
+              { id: 28, image: "shehulk_2 x The Defense Rests.png" },
+              { id: 29, image: "shehulk_2 x The Savage She-Hulk.png" },
+              { id: 30, image: "shehulk_2 x The Savage She-Hulk.png" },
+            ]
+          },
 ghostrider: {
-Â  Â  Â  Â  Â  Â  name: "GHOST RIDER",
-Â  Â  Â  Â  Â  Â  image: "ghostrider_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "ghostrider_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "Ghost Rider", startValue: 17, color: "#EE5D2A", size: "large" }],
-	Â  intermediateZone: null,
+            name: "GHOST RIDER",
+            image: "ghostrider_back.png",
+            infoImage: "ghostrider_info.png",
+            healthBars: [
+      { label: "Ghost Rider", startValue: 17, color: "#EE5D2A", size: "large" }],
+	  intermediateZone: null,
       specialAbility: {
         enabled: true,
         label: "Hellfires",
@@ -1701,177 +1701,177 @@ ghostrider: {
         maxValue: 5,
         color: "#FFF6A9"
       },
-Â  Â  Â  Â  Â  Â cards: 
-Â  Â  Â  Â  Â  Â  [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "ghostrider_3 x Control The Demon.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "ghostrider_3 x Control The Demon.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "ghostrider_3 x Control The Demon.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "ghostrider_3 x I Brought The Devil With Me.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "ghostrider_3 x I Brought The Devil With Me.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "ghostrider_3 x I Brought The Devil With Me.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "ghostrider_3 x Spirit Of Vengeance.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "ghostrider_3 x Spirit Of Vengeance.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "ghostrider_3 x Spirit Of Vengeance.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "ghostrider_3 x I Finally Escaped Hell.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "ghostrider_3 x I Finally Escaped Hell.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "ghostrider_3 x I Finally Escaped Hell.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "ghostrider_3 x Stoke The Flames.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "ghostrider_3 x Stoke The Flames.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "ghostrider_3 x Stoke The Flames.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "ghostrider_3 x The Wicked Will Burn.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "ghostrider_3 x The Wicked Will Burn.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "ghostrider_3 x The Wicked Will Burn.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "ghostrider_2 x Penance Stare.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "ghostrider_2 x Penance Stare.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "ghostrider_2 x Deal With The Devil.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "ghostrider_2 x Deal With The Devil.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "ghostrider_2 x Hell Rides With Me.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "ghostrider_2 x Hell Rides With Me.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "ghostrider_2 x Blaze of Glory.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "ghostrider_2 x Blaze of Glory.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "ghostrider_2 x Chains of Hellfire.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "ghostrider_2 x Chains of Hellfire.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "ghostrider_2 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "ghostrider_2 x Feint.png" },
-Â  Â  Â  Â  Â  Â  ]
-Â  Â  Â  Â  Â  },
+           cards: 
+            [
+              { id: 1, image: "ghostrider_3 x Control The Demon.png" },
+              { id: 2, image: "ghostrider_3 x Control The Demon.png" },
+              { id: 3, image: "ghostrider_3 x Control The Demon.png" },
+              { id: 4, image: "ghostrider_3 x I Brought The Devil With Me.png" },
+              { id: 5, image: "ghostrider_3 x I Brought The Devil With Me.png" },
+              { id: 6, image: "ghostrider_3 x I Brought The Devil With Me.png" },
+              { id: 7, image: "ghostrider_3 x Spirit Of Vengeance.png" },
+              { id: 8, image: "ghostrider_3 x Spirit Of Vengeance.png" },
+              { id: 9, image: "ghostrider_3 x Spirit Of Vengeance.png" },
+              { id: 10, image: "ghostrider_3 x I Finally Escaped Hell.png" },
+              { id: 11, image: "ghostrider_3 x I Finally Escaped Hell.png" },
+              { id: 12, image: "ghostrider_3 x I Finally Escaped Hell.png" },
+              { id: 13, image: "ghostrider_3 x Stoke The Flames.png" },
+              { id: 14, image: "ghostrider_3 x Stoke The Flames.png" },
+              { id: 15, image: "ghostrider_3 x Stoke The Flames.png" },
+              { id: 16, image: "ghostrider_3 x The Wicked Will Burn.png" },
+              { id: 17, image: "ghostrider_3 x The Wicked Will Burn.png" },
+              { id: 18, image: "ghostrider_3 x The Wicked Will Burn.png" },
+              { id: 19, image: "ghostrider_2 x Penance Stare.png" },
+              { id: 20, image: "ghostrider_2 x Penance Stare.png" },
+              { id: 21, image: "ghostrider_2 x Deal With The Devil.png" },
+              { id: 22, image: "ghostrider_2 x Deal With The Devil.png" },
+              { id: 23, image: "ghostrider_2 x Hell Rides With Me.png" },
+              { id: 24, image: "ghostrider_2 x Hell Rides With Me.png" },
+              { id: 25, image: "ghostrider_2 x Blaze of Glory.png" },
+              { id: 26, image: "ghostrider_2 x Blaze of Glory.png" },
+              { id: 27, image: "ghostrider_2 x Chains of Hellfire.png" },
+              { id: 28, image: "ghostrider_2 x Chains of Hellfire.png" },
+              { id: 29, image: "ghostrider_2 x Feint.png" },
+              { id: 30, image: "ghostrider_2 x Feint.png" },
+            ]
+          },
 moonknight: {
-Â  Â  Â  Â  Â  Â  name: "MOON KNIGHT",
-Â  Â  Â  Â  Â  Â  image: "moonknight_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "moonknight_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "MOON KNIGHT", startValue: 16, color: "#A3BCBA", size: "large" }],
-Â  Â  Â  intermediateZone: null,
-	Â  Â  specialAbility: {
-Â  Â  Â  enabled: true,
-Â  Â  Â  label: "Personality Disorder",
-Â  Â  Â  buttonText: "Go crazy",
-Â  Â  Â  mode: "swap", Â // swap between two images
- Â  Â  deck: [
-Â  Â  Â  Â  { id: 1, image: "moonknightAbility.png" },
-Â  Â  Â  Â  { id: 2, image: "konshuAbility.png" },
-Â  Â  Â  Â  { id: 3, image: "mrknightAbility.png" }
-Â  Â  Â  ]
-	Â  Â  },
+            name: "MOON KNIGHT",
+            image: "moonknight_back.png",
+            infoImage: "moonknight_info.png",
+            healthBars: [
+      { label: "MOON KNIGHT", startValue: 16, color: "#A3BCBA", size: "large" }],
+      intermediateZone: null,
+	    specialAbility: {
+      enabled: true,
+      label: "Personality Disorder",
+      buttonText: "Go crazy",
+      mode: "swap",  // swap between two images
+     deck: [
+        { id: 1, image: "moonknightAbility.png" },
+        { id: 2, image: "konshuAbility.png" },
+        { id: 3, image: "mrknightAbility.png" }
+      ]
+	    },
 	 cards: 
-Â  Â  Â  Â  Â  Â [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "moonknight_3 x We're All In This Together.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "moonknight_3 x We're All In This Together.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "moonknight_3 x We're All In This Together.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "moonknight_3 x I'm Not Real.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "moonknight_3 x I'm Not Real.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "moonknight_3 x I'm Not Real.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "moonknight_3 x That's Why I Always Win.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "moonknight_3 x That's Why I Always Win.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "moonknight_3 x That's Why I Always Win.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "moonknight_3 x A Totally Sane Thing To Do.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "moonknight_3 x A Totally Sane Thing To Do.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "moonknight_3 x A Totally Sane Thing To Do.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "moonknight_3 x Past and Present Intermingle.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "moonknight_3 x Past and Present Intermingle.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "moonknight_3 x Past and Present Intermingle.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "moonknight_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "moonknight_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "moonknight_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "moonknight_2 x Let Your Insanity Guide You.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "moonknight_2 x Let Your Insanity Guide You.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "moonknight_2 x Travelers of The Night.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "moonknight_2 x Travelers of The Night.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "moonknight_2 x That's The Part I Like.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "moonknight_2 x That's The Part I Like.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "moonknight_2 x Madness Will Keep You Alive.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "moonknight_2 x Madness Will Keep You Alive.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "moonknight_2 x Fist of Khonshu.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "moonknight_2 x Fist of Khonshu.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "moonknight_2 x Good Enough For Us.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "moonknight_2 x Good Enough For Us.png" },
-Â  Â  Â  Â  Â  Â  ]
-Â  Â  Â  Â  Â  },
+           [
+              { id: 1, image: "moonknight_3 x We're All In This Together.png" },
+              { id: 2, image: "moonknight_3 x We're All In This Together.png" },
+              { id: 3, image: "moonknight_3 x We're All In This Together.png" },
+              { id: 4, image: "moonknight_3 x I'm Not Real.png" },
+              { id: 5, image: "moonknight_3 x I'm Not Real.png" },
+              { id: 6, image: "moonknight_3 x I'm Not Real.png" },
+              { id: 7, image: "moonknight_3 x That's Why I Always Win.png" },
+              { id: 8, image: "moonknight_3 x That's Why I Always Win.png" },
+              { id: 9, image: "moonknight_3 x That's Why I Always Win.png" },
+              { id: 10, image: "moonknight_3 x A Totally Sane Thing To Do.png" },
+              { id: 11, image: "moonknight_3 x A Totally Sane Thing To Do.png" },
+              { id: 12, image: "moonknight_3 x A Totally Sane Thing To Do.png" },
+              { id: 13, image: "moonknight_3 x Past and Present Intermingle.png" },
+              { id: 14, image: "moonknight_3 x Past and Present Intermingle.png" },
+              { id: 15, image: "moonknight_3 x Past and Present Intermingle.png" },
+              { id: 16, image: "moonknight_3 x Feint.png" },
+              { id: 17, image: "moonknight_3 x Feint.png" },
+              { id: 18, image: "moonknight_3 x Feint.png" },
+              { id: 19, image: "moonknight_2 x Let Your Insanity Guide You.png" },
+              { id: 20, image: "moonknight_2 x Let Your Insanity Guide You.png" },
+              { id: 21, image: "moonknight_2 x Travelers of The Night.png" },
+              { id: 22, image: "moonknight_2 x Travelers of The Night.png" },
+              { id: 23, image: "moonknight_2 x That's The Part I Like.png" },
+              { id: 24, image: "moonknight_2 x That's The Part I Like.png" },
+              { id: 25, image: "moonknight_2 x Madness Will Keep You Alive.png" },
+              { id: 26, image: "moonknight_2 x Madness Will Keep You Alive.png" },
+              { id: 27, image: "moonknight_2 x Fist of Khonshu.png" },
+              { id: 28, image: "moonknight_2 x Fist of Khonshu.png" },
+              { id: 29, image: "moonknight_2 x Good Enough For Us.png" },
+              { id: 30, image: "moonknight_2 x Good Enough For Us.png" },
+            ]
+          },
   lukecage: {
-Â  Â  Â  Â  Â  Â  name: "LUKE CAGE",
-Â  Â  Â  Â  Â  Â  image: "lukecage_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "lukecage_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "LUKE CAGE", startValue: 13, color: "#FFD640", size: "large" },
+            name: "LUKE CAGE",
+            image: "lukecage_back.png",
+            infoImage: "lukecage_info.png",
+            healthBars: [
+      { label: "LUKE CAGE", startValue: 13, color: "#FFD640", size: "large" },
       { label: "MISTY KNIGHT", startValue: 6, color: "#C57C0D", size: "medium" }],
-	Â  intermediateZone: null,
-Â  Â  Â  Â  Â  Â  cards: [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "lukecage_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "lukecage_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "lukecage_3 x Regroup.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "lukecage_3 x Trash Talk.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "lukecage_3 x Trash Talk.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "lukecage_3 x Trash Talk.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "lukecage_3 x Commanding Impact.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "lukecage_3 x Commanding Impact.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "lukecage_3 x Commanding Impact.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "lukecage_3 x Hero For Hire.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "lukecage_3 x Hero For Hire.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "lukecage_3 x Hero For Hire.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "lukecage_2 x Pushback.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "lukecage_2 x Pushback.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "lukecage_2 x Skin Like Titanium.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "lukecage_2 x Skin Like Titanium.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "lukecage_2 x Where's My Money.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "lukecage_2 x Where's My Money.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "lukecage_2 x Got My Back.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "lukecage_2 x Got My Back.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "lukecage_2 x Daughter of the Dragon.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "lukecage_2 x Daughter of the Dragon.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "lukecage_2 x Get Paid.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "lukecage_2 x Get Paid.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "lukecage_2 x Sweet Christmas!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "lukecage_2 x Sweet Christmas!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "lukecage_2 x Power Man.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "lukecage_2 x Power Man.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "lukecage_2 x Still Standing.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "lukecage_2 x Still Standing.png" },
-Â  Â  Â  Â  Â  Â  ]
-Â  Â  Â  Â  Â  },
+	  intermediateZone: null,
+            cards: [
+              { id: 1, image: "lukecage_3 x Regroup.png" },
+              { id: 2, image: "lukecage_3 x Regroup.png" },
+              { id: 3, image: "lukecage_3 x Regroup.png" },
+              { id: 4, image: "lukecage_3 x Trash Talk.png" },
+              { id: 5, image: "lukecage_3 x Trash Talk.png" },
+              { id: 6, image: "lukecage_3 x Trash Talk.png" },
+              { id: 7, image: "lukecage_3 x Commanding Impact.png" },
+              { id: 8, image: "lukecage_3 x Commanding Impact.png" },
+              { id: 9, image: "lukecage_3 x Commanding Impact.png" },
+              { id: 10, image: "lukecage_3 x Hero For Hire.png" },
+              { id: 11, image: "lukecage_3 x Hero For Hire.png" },
+              { id: 12, image: "lukecage_3 x Hero For Hire.png" },
+              { id: 13, image: "lukecage_2 x Pushback.png" },
+              { id: 14, image: "lukecage_2 x Pushback.png" },
+              { id: 15, image: "lukecage_2 x Skin Like Titanium.png" },
+              { id: 16, image: "lukecage_2 x Skin Like Titanium.png" },
+              { id: 17, image: "lukecage_2 x Where's My Money.png" },
+              { id: 18, image: "lukecage_2 x Where's My Money.png" },
+              { id: 19, image: "lukecage_2 x Got My Back.png" },
+              { id: 20, image: "lukecage_2 x Got My Back.png" },
+              { id: 21, image: "lukecage_2 x Daughter of the Dragon.png" },
+              { id: 22, image: "lukecage_2 x Daughter of the Dragon.png" },
+              { id: 23, image: "lukecage_2 x Get Paid.png" },
+              { id: 24, image: "lukecage_2 x Get Paid.png" },
+              { id: 25, image: "lukecage_2 x Sweet Christmas!.png" },
+              { id: 26, image: "lukecage_2 x Sweet Christmas!.png" },
+              { id: 27, image: "lukecage_2 x Power Man.png" },
+              { id: 28, image: "lukecage_2 x Power Man.png" },
+              { id: 29, image: "lukecage_2 x Still Standing.png" },
+              { id: 30, image: "lukecage_2 x Still Standing.png" },
+            ]
+          },
 loki: {
-Â  Â  Â  Â  Â  Â  name: "LOKI",
-Â  Â  Â  Â  Â  Â  image: "loki_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "loki_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "LOKI", startValue: 16, color: "#687F5A", size: "large" }],
-Â  Â  intermediateZone: null,
+            name: "LOKI",
+            image: "loki_back.png",
+            infoImage: "loki_info.png",
+            healthBars: [
+      { label: "LOKI", startValue: 16, color: "#687F5A", size: "large" }],
+    intermediateZone: null,
     specialAbility: {
       enabled: true,
       label: "Trick Tracker",
       mode: "trick-counter"
     },
-    cards:Â  Â  Â  [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "loki_4 x Shapershifter.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "loki_4 x Shapershifter.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "loki_4 x Shapershifter.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "loki_4 x Shapershifter.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "loki_3 x TRICK, Baldr's downfall.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "loki_3 x TRICK, Baldr's downfall.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "loki_3 x TRICK, Baldr's downfall.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "loki_3 x GOD OF MISCHIEF.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "loki_3 x GOD OF MISCHIEF.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "loki_3 x GOD OF MISCHIEF.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "loki_3 x LAEVATEINN.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "loki_3 x LAEVATEINN.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "loki_3 x LAEVATEINN.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "loki_3 x Looking for trouble.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "loki_3 x Looking for trouble.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "loki_3 x Looking for trouble.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "loki_3 x MALICIOUS FLYTING.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "loki_3 x MALICIOUS FLYTING.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "loki_3 x MALICIOUS FLYTING.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "loki_3 x UNDERHANDED.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "loki_3 x UNDERHANDED.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "loki_3 x UNDERHANDED.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "loki_2 x TRICK, FREYJA'S RESCUE.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "loki_2 x TRICK, FREYJA'S RESCUE.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "loki_2 x RAGNARÃ–K.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "loki_2 x RAGNARÃ–K.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "loki_2 x TRICK, SINDRI'S BET.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "loki_2 x TRICK, SINDRI'S BET.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "loki_2 x TRICK, SVADILFARI'S LURE.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "loki_2 x TRICK, SVADILFARI'S LURE.png" },
-Â  Â  Â  Â  Â  Â  ]
+    cards:      [
+              { id: 1, image: "loki_4 x Shapershifter.png" },
+              { id: 2, image: "loki_4 x Shapershifter.png" },
+              { id: 3, image: "loki_4 x Shapershifter.png" },
+              { id: 4, image: "loki_4 x Shapershifter.png" },
+              { id: 5, image: "loki_3 x TRICK, Baldr's downfall.png" },
+              { id: 6, image: "loki_3 x TRICK, Baldr's downfall.png" },
+              { id: 7, image: "loki_3 x TRICK, Baldr's downfall.png" },
+              { id: 8, image: "loki_3 x GOD OF MISCHIEF.png" },
+              { id: 9, image: "loki_3 x GOD OF MISCHIEF.png" },
+              { id: 10, image: "loki_3 x GOD OF MISCHIEF.png" },
+              { id: 11, image: "loki_3 x LAEVATEINN.png" },
+              { id: 12, image: "loki_3 x LAEVATEINN.png" },
+              { id: 13, image: "loki_3 x LAEVATEINN.png" },
+              { id: 14, image: "loki_3 x Looking for trouble.png" },
+              { id: 15, image: "loki_3 x Looking for trouble.png" },
+              { id: 16, image: "loki_3 x Looking for trouble.png" },
+              { id: 17, image: "loki_3 x MALICIOUS FLYTING.png" },
+              { id: 18, image: "loki_3 x MALICIOUS FLYTING.png" },
+              { id: 19, image: "loki_3 x MALICIOUS FLYTING.png" },
+              { id: 20, image: "loki_3 x UNDERHANDED.png" },
+              { id: 21, image: "loki_3 x UNDERHANDED.png" },
+              { id: 22, image: "loki_3 x UNDERHANDED.png" },
+              { id: 23, image: "loki_2 x TRICK, FREYJA'S RESCUE.png" },
+              { id: 24, image: "loki_2 x TRICK, FREYJA'S RESCUE.png" },
+              { id: 25, image: "loki_2 x RAGNARÖK.png" },
+              { id: 26, image: "loki_2 x RAGNARÖK.png" },
+              { id: 27, image: "loki_2 x TRICK, SINDRI'S BET.png" },
+              { id: 28, image: "loki_2 x TRICK, SINDRI'S BET.png" },
+              { id: 29, image: "loki_2 x TRICK, SVADILFARI'S LURE.png" },
+              { id: 30, image: "loki_2 x TRICK, SVADILFARI'S LURE.png" },
+            ]
     },
   trex: {
     name: "T.REX",
@@ -1955,127 +1955,127 @@ loki: {
     ]
   },
 chupacabra: {
-Â  Â  Â  Â  Â  Â  name: "",
-Â  Â  Â  Â  Â  Â  image: "chupacabra_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "chupacabra_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "", startValue: 14, color: "#44323A", size: "large" }],
-Â  Â  intermediateZone: null,
-Â  Â  cards:Â  Â  Â  [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "chupacabra_3 x Wounded beast.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "chupacabra_3 x Wounded beast.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "chupacabra_3 x Wounded beast.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "chupacabra_3 x Blood in the air.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "chupacabra_3 x Blood in the air.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "chupacabra_3 x Blood in the air.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "chupacabra_3 x Feeding.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "chupacabra_3 x Feeding.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "chupacabra_3 x Feeding.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "chupacabra_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "chupacabra_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "chupacabra_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "chupacabra_3 x Ravenous lunge.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "chupacabra_3 x Ravenous lunge.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "chupacabra_3 x Ravenous lunge.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "chupacabra_3 x Traveler of the night.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "chupacabra_3 x Traveler of the night.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "chupacabra_3 x Traveler of the night.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "chupacabra_3 x The more they struggle.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "chupacabra_3 x The more they struggle.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "chupacabra_3 x The more they struggle.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "chupacabra_3 x Tooth and tail.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "chupacabra_3 x Tooth and tail.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "chupacabra_3 x Tooth and tail.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "chupacabra_2 x Ambush.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "chupacabra_2 x Ambush.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "chupacabra_2 x Natural toughness.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "chupacabra_2 x Natural toughness.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "chupacabra_2 x Unsettle.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "chupacabra_2 x Unsettle.png" },
-Â  Â  Â  Â  Â  Â  ]
+            name: "",
+            image: "chupacabra_back.png",
+            infoImage: "chupacabra_info.png",
+            healthBars: [
+      { label: "", startValue: 14, color: "#44323A", size: "large" }],
+    intermediateZone: null,
+    cards:      [
+              { id: 1, image: "chupacabra_3 x Wounded beast.png" },
+              { id: 2, image: "chupacabra_3 x Wounded beast.png" },
+              { id: 3, image: "chupacabra_3 x Wounded beast.png" },
+              { id: 4, image: "chupacabra_3 x Blood in the air.png" },
+              { id: 5, image: "chupacabra_3 x Blood in the air.png" },
+              { id: 6, image: "chupacabra_3 x Blood in the air.png" },
+              { id: 7, image: "chupacabra_3 x Feeding.png" },
+              { id: 8, image: "chupacabra_3 x Feeding.png" },
+              { id: 9, image: "chupacabra_3 x Feeding.png" },
+              { id: 10, image: "chupacabra_3 x Feint.png" },
+              { id: 11, image: "chupacabra_3 x Feint.png" },
+              { id: 12, image: "chupacabra_3 x Feint.png" },
+              { id: 13, image: "chupacabra_3 x Ravenous lunge.png" },
+              { id: 14, image: "chupacabra_3 x Ravenous lunge.png" },
+              { id: 15, image: "chupacabra_3 x Ravenous lunge.png" },
+              { id: 16, image: "chupacabra_3 x Traveler of the night.png" },
+              { id: 17, image: "chupacabra_3 x Traveler of the night.png" },
+              { id: 18, image: "chupacabra_3 x Traveler of the night.png" },
+              { id: 19, image: "chupacabra_3 x The more they struggle.png" },
+              { id: 20, image: "chupacabra_3 x The more they struggle.png" },
+              { id: 21, image: "chupacabra_3 x The more they struggle.png" },
+              { id: 22, image: "chupacabra_3 x Tooth and tail.png" },
+              { id: 23, image: "chupacabra_3 x Tooth and tail.png" },
+              { id: 24, image: "chupacabra_3 x Tooth and tail.png" },
+              { id: 25, image: "chupacabra_2 x Ambush.png" },
+              { id: 26, image: "chupacabra_2 x Ambush.png" },
+              { id: 27, image: "chupacabra_2 x Natural toughness.png" },
+              { id: 28, image: "chupacabra_2 x Natural toughness.png" },
+              { id: 29, image: "chupacabra_2 x Unsettle.png" },
+              { id: 30, image: "chupacabra_2 x Unsettle.png" },
+            ]
 
-  Â  },
+    },
 blackbeard: {
-Â  Â  Â  Â  Â  Â  name: "BLACKBEARD",
-Â  Â  Â  Â  Â  Â  image: "blackbeard_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "blackbeard_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "", startValue: 13, color: "#FFD640", size: "large" },
-Â  Â  Â  { label: "", startValue: 6, color: "#C57C0D", size: "small" }],
-Â  Â  intermediateZone: null,
-Â  Â  cards:Â  Â  Â  [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "blackbeard_3 x Light the fuse.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "blackbeard_3 x Light the fuse.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "blackbeard_3 x Light the fuse.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "blackbeard_3 x Plunder.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "blackbeard_3 x Plunder.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "blackbeard_3 x Plunder.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "blackbeard_3 x Give no quarter.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "blackbeard_3 x Give no quarter.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "blackbeard_3 x Give no quarter.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "blackbeard_3 x Parley.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "blackbeard_3 x Parley.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "blackbeard_3 x Parley.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "blackbeard_3 x Fearsome and calculating.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "blackbeard_3 x Fearsome and calculating.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "blackbeard_3 x Fearsome and calculating.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "blackbeard_3 x No prey, no pay.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "blackbeard_3 x No prey, no pay.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "blackbeard_3 x No prey, no pay.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "blackbeard_2 x A brace of primed pistols.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "blackbeard_2 x A brace of primed pistols.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "blackbeard_2 x Scourge of the seven seas.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "blackbeard_2 x Scourge of the seven seas.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "blackbeard_2 x Avast Ye!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "blackbeard_2 x Avast Ye!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "blackbeard_2 x Intimidating visage.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "blackbeard_2 x Intimidating visage.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "blackbeard_2 x Show a leg!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "blackbeard_2 x Show a leg!.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "blackbeard_2 x Queen Anne's revenge.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "blackbeard_2 x Queen Anne's revenge.png" },
-Â  Â  Â  Â  Â  Â  ]
+            name: "BLACKBEARD",
+            image: "blackbeard_back.png",
+            infoImage: "blackbeard_info.png",
+            healthBars: [
+      { label: "", startValue: 13, color: "#FFD640", size: "large" },
+      { label: "", startValue: 6, color: "#C57C0D", size: "small" }],
+    intermediateZone: null,
+    cards:      [
+              { id: 1, image: "blackbeard_3 x Light the fuse.png" },
+              { id: 2, image: "blackbeard_3 x Light the fuse.png" },
+              { id: 3, image: "blackbeard_3 x Light the fuse.png" },
+              { id: 4, image: "blackbeard_3 x Plunder.png" },
+              { id: 5, image: "blackbeard_3 x Plunder.png" },
+              { id: 6, image: "blackbeard_3 x Plunder.png" },
+              { id: 7, image: "blackbeard_3 x Give no quarter.png" },
+              { id: 8, image: "blackbeard_3 x Give no quarter.png" },
+              { id: 9, image: "blackbeard_3 x Give no quarter.png" },
+              { id: 10, image: "blackbeard_3 x Parley.png" },
+              { id: 11, image: "blackbeard_3 x Parley.png" },
+              { id: 12, image: "blackbeard_3 x Parley.png" },
+              { id: 13, image: "blackbeard_3 x Fearsome and calculating.png" },
+              { id: 14, image: "blackbeard_3 x Fearsome and calculating.png" },
+              { id: 15, image: "blackbeard_3 x Fearsome and calculating.png" },
+              { id: 16, image: "blackbeard_3 x No prey, no pay.png" },
+              { id: 17, image: "blackbeard_3 x No prey, no pay.png" },
+              { id: 18, image: "blackbeard_3 x No prey, no pay.png" },
+              { id: 19, image: "blackbeard_2 x A brace of primed pistols.png" },
+              { id: 20, image: "blackbeard_2 x A brace of primed pistols.png" },
+              { id: 21, image: "blackbeard_2 x Scourge of the seven seas.png" },
+              { id: 22, image: "blackbeard_2 x Scourge of the seven seas.png" },
+              { id: 23, image: "blackbeard_2 x Avast Ye!.png" },
+              { id: 24, image: "blackbeard_2 x Avast Ye!.png" },
+              { id: 25, image: "blackbeard_2 x Intimidating visage.png" },
+              { id: 26, image: "blackbeard_2 x Intimidating visage.png" },
+              { id: 27, image: "blackbeard_2 x Show a leg!.png" },
+              { id: 28, image: "blackbeard_2 x Show a leg!.png" },
+              { id: 29, image: "blackbeard_2 x Queen Anne's revenge.png" },
+              { id: 30, image: "blackbeard_2 x Queen Anne's revenge.png" },
+            ]
 
-  Â  },
+    },
 pandora: {
-Â  Â  Â  Â  Â  Â  name: "PANDORA",
-Â  Â  Â  Â  Â  Â  image: "pandora_back.png",
-Â  Â  Â  Â  Â  Â  infoImage: "pandora_info.png",
-Â  Â  Â  Â  Â  Â  healthBars: [
-Â  Â  Â  { label: "PANDORA", startValue: 14, color: "#F8EADA", size: "large" },
-Â  Â  Â  { label: "KAKODAEMONS ALIVE", startValue: 2, color: "#C57C0D", size: "small" }],
-Â  Â  intermediateZone: null,
-Â  Â  cards:Â  Â  Â  [
-Â  Â  Â  Â  Â  Â  Â  { id: 1, image: "pandora_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 2, image: "pandora_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 3, image: "pandora_3 x Feint.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 4, image: "pandora_3 x FORGED BY HEPHAESTUS.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 5, image: "pandora_3 x FORGED BY HEPHAESTUS.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 6, image: "pandora_3 x FORGED BY HEPHAESTUS.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 7, image: "pandora_3 x HERA'S CURIOSITY.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 8, image: "pandora_3 x HERA'S CURIOSITY.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 9, image: "pandora_3 x HERA'S CURIOSITY.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 10, image: "pandora_3 x HINDSIGHT.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 11, image: "pandora_3 x HINDSIGHT.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 12, image: "pandora_3 x HINDSIGHT.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 13, image: "pandora_3 x APHRODITE'S BEAUTY.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 14, image: "pandora_3 x APHRODITE'S BEAUTY.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 15, image: "pandora_3 x APHRODITE'S BEAUTY.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 16, image: "pandora_3 x GUIDED BY THE FATES.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 17, image: "pandora_3 x GUIDED BY THE FATES.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 18, image: "pandora_3 x GUIDED BY THE FATES.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 19, image: "pandora_2 x DIVINE INTERVENTION.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 20, image: "pandora_2 x DIVINE INTERVENTION.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 21, image: "pandora_2 x Spite.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 22, image: "pandora_2 x Spite.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 23, image: "pandora_2 x Malice.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 24, image: "pandora_2 x Malice.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 25, image: "pandora_2 x OFFERING TO THE GODS.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 26, image: "pandora_2 x OFFERING TO THE GODS.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 27, image: "pandora_2 x ZEUS'S MISCHIEF.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 28, image: "pandora_2 x ZEUS'S MISCHIEF.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 29, image: "pandora_2 x CELESTIAL RAIMENTS.png" },
-Â  Â  Â  Â  Â  Â  Â  { id: 30, image: "pandora_2 x CELESTIAL RAIMENTS.png" },
+            name: "PANDORA",
+            image: "pandora_back.png",
+            infoImage: "pandora_info.png",
+            healthBars: [
+      { label: "PANDORA", startValue: 14, color: "#F8EADA", size: "large" },
+      { label: "KAKODAEMONS ALIVE", startValue: 2, color: "#C57C0D", size: "small" }],
+    intermediateZone: null,
+    cards:      [
+              { id: 1, image: "pandora_3 x Feint.png" },
+              { id: 2, image: "pandora_3 x Feint.png" },
+              { id: 3, image: "pandora_3 x Feint.png" },
+              { id: 4, image: "pandora_3 x FORGED BY HEPHAESTUS.png" },
+              { id: 5, image: "pandora_3 x FORGED BY HEPHAESTUS.png" },
+              { id: 6, image: "pandora_3 x FORGED BY HEPHAESTUS.png" },
+              { id: 7, image: "pandora_3 x HERA'S CURIOSITY.png" },
+              { id: 8, image: "pandora_3 x HERA'S CURIOSITY.png" },
+              { id: 9, image: "pandora_3 x HERA'S CURIOSITY.png" },
+              { id: 10, image: "pandora_3 x HINDSIGHT.png" },
+              { id: 11, image: "pandora_3 x HINDSIGHT.png" },
+              { id: 12, image: "pandora_3 x HINDSIGHT.png" },
+              { id: 13, image: "pandora_3 x APHRODITE'S BEAUTY.png" },
+              { id: 14, image: "pandora_3 x APHRODITE'S BEAUTY.png" },
+              { id: 15, image: "pandora_3 x APHRODITE'S BEAUTY.png" },
+              { id: 16, image: "pandora_3 x GUIDED BY THE FATES.png" },
+              { id: 17, image: "pandora_3 x GUIDED BY THE FATES.png" },
+              { id: 18, image: "pandora_3 x GUIDED BY THE FATES.png" },
+              { id: 19, image: "pandora_2 x DIVINE INTERVENTION.png" },
+              { id: 20, image: "pandora_2 x DIVINE INTERVENTION.png" },
+              { id: 21, image: "pandora_2 x Spite.png" },
+              { id: 22, image: "pandora_2 x Spite.png" },
+              { id: 23, image: "pandora_2 x Malice.png" },
+              { id: 24, image: "pandora_2 x Malice.png" },
+              { id: 25, image: "pandora_2 x OFFERING TO THE GODS.png" },
+              { id: 26, image: "pandora_2 x OFFERING TO THE GODS.png" },
+              { id: 27, image: "pandora_2 x ZEUS'S MISCHIEF.png" },
+              { id: 28, image: "pandora_2 x ZEUS'S MISCHIEF.png" },
+              { id: 29, image: "pandora_2 x CELESTIAL RAIMENTS.png" },
+              { id: 30, image: "pandora_2 x CELESTIAL RAIMENTS.png" },
             ],
     specialAbility: {
       enabled: true,
@@ -2092,6 +2092,7 @@ pandora: {
         { id: 7, image: "pandora's Woe.png" }
       ]
     }
+  }
 };</script>
 
 <!-- WELCOME SCREEN -->
@@ -2100,8 +2101,8 @@ pandora: {
     <div class="welcome-title">DECK GAME</div>
     <div class="welcome-subtitle">Choose your mode</div>
     <div class="welcome-buttons">
-      <button class="btn btn-accent btn-full" onclick="startMultiplayer()">ğŸŒ Multiplayer</button>
-      <button class="btn btn-ghost btn-full" onclick="startSolo()">ğŸ´ Solo Play</button>
+      <button class="btn btn-accent btn-full" onclick="startMultiplayer()">?? Multiplayer</button>
+      <button class="btn btn-ghost btn-full" onclick="startSolo()">?? Solo Play</button>
     </div>
   </div>
 </div>
@@ -2114,7 +2115,7 @@ pandora: {
     <div class="welcome-buttons">
       <button class="btn btn-accent btn-full" onclick="hostRoom()">Create Room</button>
       <button class="btn btn-ghost btn-full" onclick="goTo('s-join-room')">Join Room</button>
-      <button class="btn btn-ghost btn-full" onclick="goBack('s-welcome')">â† Back</button>
+      <button class="btn btn-ghost btn-full" onclick="goBack('s-welcome')">? Back</button>
     </div>
   </div>
 </div>
@@ -2132,7 +2133,7 @@ pandora: {
     </div>
     <div class="welcome-buttons" style="max-width:320px">
       <button class="btn btn-accent btn-full" onclick="joinRoom()">Join Game</button>
-      <button class="btn btn-ghost btn-full" onclick="goBack('s-mp-select')">â† Back</button>
+      <button class="btn btn-ghost btn-full" onclick="goBack('s-mp-select')">? Back</button>
     </div>
   </div>
 </div>
@@ -2140,7 +2141,7 @@ pandora: {
 <!-- LOBBY (HOST) -->
 <div id="s-lobby-host" class="screen">
   <div class="lobby-container">
-    <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-bottom:8px" onclick="leaveLobby()">â† Back</button>
+    <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-bottom:8px" onclick="leaveLobby()">? Back</button>
     <div class="lobby-code-display">
       <div class="lobby-code-label">Room Code</div>
       <div class="lobby-code-value" id="host-code"></div>
@@ -2163,7 +2164,7 @@ pandora: {
 <!-- LOBBY (GUEST) -->
 <div id="s-lobby-guest" class="screen">
   <div class="lobby-container">
-    <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-bottom:8px" onclick="leaveLobby()">â† Back</button>
+    <button class="btn btn-ghost btn-sm" style="align-self:flex-start;margin-bottom:8px" onclick="leaveLobby()">? Back</button>
     <div class="lobby-code-display">
       <div class="lobby-code-label">Connected to</div>
       <div class="lobby-code-value" id="guest-code"></div>
@@ -2194,14 +2195,14 @@ pandora: {
       <svg viewBox="0 0 24 24"><polyline points="15,18 9,12 15,6"/></svg>
     </button>
     <div class="play-bar-counts" id="bar-counts"></div>
-    <button class="play-bar-info-btn" id="play-effects-btn" onclick="openEffectsSheet()" style="display:none">âš¡</button>
+    <button class="play-bar-info-btn" id="play-effects-btn" onclick="openEffectsSheet()" style="display:none">?</button>
     <button class="play-bar-info-btn" id="play-bar-deck-info-btn" onclick="openDeckInfo(G.deckKey, event)" style="display:none">i</button>
   </div>
   <div class="player-status-area" id="player-status-area" style="display:none"></div>
 
   <!-- TURN CONTROL (MULTIPLAYER ONLY) -->
   <div id="turn-control" style="display:none; padding: 10px 14px 0;">
-    <button class="btn btn-accent btn-full" id="end-turn-btn" onclick="endTurn()">âœ“ End My Turn</button>
+    <button class="btn btn-accent btn-full" id="end-turn-btn" onclick="endTurn()">? End My Turn</button>
   </div>
 
   <div class="play-section" id="special-section" style="display:none">
@@ -2235,14 +2236,14 @@ pandora: {
         <div class="draw-actions">
           <button class="btn btn-ghost btn-sm" onclick="shuffleDraw()">Shuffle</button>
           <button class="btn btn-ghost btn-sm" onclick="openSheet('sh-top-n-picker')">See Deck</button>
-          <button class="btn btn-accent btn-sm" onclick="pickRandom('draw')">ğŸ² Pick Random</button>
+          <button class="btn btn-accent btn-sm" onclick="pickRandom('draw')">?? Pick Random</button>
         </div>
       </div>
     </div>
   </div>
 
   <div class="play-section">
-    <div class="sec-label collapsible" onclick="toggleSection(this)">Hand <span class="sec-count" id="sc-hand">0</span><span id="hand-sync-icon" style="display:none;font-size:.6rem;color:var(--muted);margin-left:5px" title="Hand synced to opponents">ğŸ”„</span></div>
+    <div class="sec-label collapsible" onclick="toggleSection(this)">Hand <span class="sec-count" id="sc-hand">0</span><span id="hand-sync-icon" style="display:none;font-size:.6rem;color:var(--muted);margin-left:5px" title="Hand synced to opponents">??</span></div>
     <div class="hand-top" id="hand-top-bar" style="display:none">
       <span class="select-hint" id="select-hint">0 selected</span>
       <button class="btn btn-xs btn-ghost" onclick="selectAll()">All</button>
@@ -2250,15 +2251,15 @@ pandora: {
     </div>
     <div class="hand-grid" id="hand-grid"></div>
     <div class="select-actions" id="sel-actions" style="display:none">
-      <button class="btn btn-accent btn-sm" onclick="playSelected()">â–¶ Play</button>
+      <button class="btn btn-accent btn-sm" onclick="playSelected()">? Play</button>
       <button class="btn btn-ghost btn-sm" onclick="discardSelected()">Discard</button>
-      <button class="btn btn-red btn-sm" onclick="addSelectedToCombat()" id="sel-combat-btn" style="display:none">âš”ï¸ Combat</button>
+      <button class="btn btn-red btn-sm" onclick="addSelectedToCombat()" id="sel-combat-btn" style="display:none">?? Combat</button>
       <button class="btn btn-ghost btn-sm" onclick="putSelectedInDeck()">Put in Deck</button>
       <button class="btn btn-ghost btn-sm" onclick="exitSel()">Done</button>
     </div>
     <div id="hand-normal">
       <button class="btn btn-ghost btn-sm" id="sel-mode-btn" onclick="enterSel()" style="display:none">Select Cards</button>
-      <button class="btn btn-accent btn-sm" id="pick-random-hand-btn" onclick="pickRandom('hand')" style="display:none;margin-top:6px">ğŸ² Pick Random</button>
+      <button class="btn btn-accent btn-sm" id="pick-random-hand-btn" onclick="pickRandom('hand')" style="display:none;margin-top:6px">?? Pick Random</button>
     </div>
   </div>
 
@@ -2276,11 +2277,11 @@ pandora: {
     <div id="intermediate-content"><div class="intermediate-empty">No cards here yet</div></div>
     <div id="intermediate-normal">
       <button class="btn btn-ghost btn-sm" id="intermediate-sel-mode-btn" onclick="enterIntermediateSel()" style="display:none;margin-top:6px">Select Cards</button>
-      <button class="btn btn-accent btn-sm" id="pick-random-intermediate-btn" onclick="pickRandom('intermediate')" style="display:none;margin-top:6px">ğŸ² Pick Random</button>
+      <button class="btn btn-accent btn-sm" id="pick-random-intermediate-btn" onclick="pickRandom('intermediate')" style="display:none;margin-top:6px">?? Pick Random</button>
     </div>
     <div class="select-actions" id="intermediate-sel-actions" style="display:none">
-      <button class="btn btn-accent btn-sm" onclick="playSelectedFromIntermediate()">â–¶ Activate</button>
-      <button class="btn btn-ghost btn-sm" onclick="discardSelectedFromIntermediate()">â†’ Discard</button>
+      <button class="btn btn-accent btn-sm" onclick="playSelectedFromIntermediate()">? Activate</button>
+      <button class="btn btn-ghost btn-sm" onclick="discardSelectedFromIntermediate()">? Discard</button>
       <button class="btn btn-ghost btn-sm" onclick="exitIntermediateSel()">Done</button>
     </div>
   </div>
@@ -2288,13 +2289,13 @@ pandora: {
   <div class="play-section">
     <div class="sec-label collapsible" onclick="toggleSection(this)">Discard <span class="sec-count" id="sc-discard">0</span></div>
     <div class="discard-zone">
-      <div class="discard-card" id="discard-visual">ğŸ‚ </div>
+      <div class="discard-card" id="discard-visual">??</div>
       <div class="discard-info">
         <div class="discard-big" id="discard-big">0</div>
         <div class="discard-sublabel">discarded</div>
         <div class="discard-actions">
           <button class="btn btn-ghost btn-sm" onclick="openSheet('sh-discard-browse')">Browse</button>
-          <button class="btn btn-accent btn-sm" onclick="pickRandom('discard')">ğŸ² Pick Random</button>
+          <button class="btn btn-accent btn-sm" onclick="pickRandom('discard')">?? Pick Random</button>
         </div>
       </div>
     </div>
@@ -2347,7 +2348,7 @@ pandora: {
 </div>
 
 <div class="card-overlay" id="card-overlay" onclick="handleOverlayClick(event)">
-  <button class="card-overlay-close" onclick="closeCardOverlay()">âœ•</button>
+  <button class="card-overlay-close" onclick="closeCardOverlay()">?</button>
   <div class="card-enlarged"><img id="overlay-img" src="" alt=""></div>
   <div class="card-overlay-actions" id="overlay-actions"></div>
 </div>
@@ -2357,7 +2358,7 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title">Info</span>
-      <button class="sheet-close" onclick="closeSheet('sh-info')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-info')">?</button>
     </div>
     <div class="sheet-body">
       <div class="info-img-wrap"><img id="info-sheet-img" src="" alt="info"></div>
@@ -2371,7 +2372,7 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title">Draw Pile</span>
-      <button class="sheet-close" onclick="closeSheet('sh-draw-browse')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-draw-browse')">?</button>
     </div>
     <div class="sheet-body" id="draw-browse-body"></div>
   </div>
@@ -2382,7 +2383,7 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title">See Deck</span>
-      <button class="sheet-close" onclick="closeSheet('sh-top-n-picker')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-top-n-picker')">?</button>
     </div>
     <div class="sheet-body" style="padding:16px;display:flex;flex-direction:column;gap:10px">
       <input type="number" id="top-n-input-own" min="1" placeholder="How many?" style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text);font-size:1rem">
@@ -2397,7 +2398,7 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title" id="special-top-n-title">See Box</span>
-      <button class="sheet-close" onclick="closeSheet('sh-special-top-n-picker')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-special-top-n-picker')">?</button>
     </div>
     <div class="sheet-body" style="padding:16px;display:flex;flex-direction:column;gap:10px">
       <input type="number" id="special-top-n-input" min="1" placeholder="How many cards?" style="width:100%;padding:8px 12px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface2);color:var(--text);font-size:1rem">
@@ -2412,7 +2413,7 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title">Reorder Players</span>
-      <button class="sheet-close" onclick="closeSheet('sh-reorder-players')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-reorder-players')">?</button>
     </div>
     <div class="sheet-body" id="reorder-players-body" style="padding:0 16px"></div>
   </div>
@@ -2423,7 +2424,7 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title">Discard Pile</span>
-      <button class="sheet-close" onclick="closeSheet('sh-discard-browse')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-discard-browse')">?</button>
     </div>
     <div class="sheet-body" id="discard-browse-body"></div>
   </div>
@@ -2434,7 +2435,7 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title">Search All Cards</span>
-      <button class="sheet-close" onclick="closeSheet('sh-search-all')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-search-all')">?</button>
     </div>
     <div class="sheet-body" id="search-all-body"></div>
   </div>
@@ -2445,7 +2446,7 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title">Shuffle Into Deck</span>
-      <button class="sheet-close" onclick="closeSheet('sh-shuffle-options')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-shuffle-options')">?</button>
     </div>
     <div class="sheet-body">
       <button class="btn btn-accent btn-full" style="margin-bottom:10px" onclick="shuffleHandIn()">Shuffle in from Hand</button>
@@ -2459,7 +2460,7 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title">Put Selected in Deck</span>
-      <button class="sheet-close" onclick="closeSheet('sh-put-in-deck')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-put-in-deck')">?</button>
     </div>
     <div class="sheet-body">
       <button class="btn btn-accent btn-full" style="margin-bottom:10px" onclick="putInDeck('top')">Put on Top</button>
@@ -2474,7 +2475,7 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title" id="special-deck-title">Special Deck</span>
-      <button class="sheet-close" onclick="closeSheet('sh-special-deck')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-special-deck')">?</button>
     </div>
     <div class="sheet-body" id="special-deck-body"></div>
   </div>
@@ -2485,7 +2486,7 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title" id="special-discard-title">Used Special Cards</span>
-      <button class="sheet-close" onclick="closeSheet('sh-special-discard')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-special-discard')">?</button>
     </div>
     <div class="sheet-body" id="special-discard-body"></div>
   </div>
@@ -2493,7 +2494,7 @@ pandora: {
 
 <div class="sheet-overlay" id="sh-card-effects">
   <div class="sheet"><div class="sheet-handle"></div>
-    <div class="sheet-head"><span class="sheet-title">ğŸ‘¥ Interact</span><button class="sheet-close" onclick="closeSheet('sh-card-effects')">âœ•</button></div>
+    <div class="sheet-head"><span class="sheet-title">?? Interact</span><button class="sheet-close" onclick="closeSheet('sh-card-effects')">?</button></div>
     <div class="sheet-body" id="interact-body">
       <!-- Built dynamically by openEffectsSheet() -->
     </div>
@@ -2502,14 +2503,14 @@ pandora: {
 
 <div class="sheet-overlay" id="sh-view-opp-hand">
   <div class="sheet"><div class="sheet-handle"></div>
-    <div class="sheet-head"><span class="sheet-title" id="view-opp-hand-title">Opponent Hand</span><button class="sheet-close" onclick="closeSheet('sh-view-opp-hand')">âœ•</button></div>
+    <div class="sheet-head"><span class="sheet-title" id="view-opp-hand-title">Opponent Hand</span><button class="sheet-close" onclick="closeSheet('sh-view-opp-hand')">?</button></div>
     <div class="sheet-body" id="view-opp-hand-body"></div>
   </div>
 </div>
 
 <div class="sheet-overlay" id="sh-inspect-top-n">
   <div class="sheet"><div class="sheet-handle"></div>
-    <div class="sheet-head"><span class="sheet-title" id="inspect-top-n-title">Inspect Top Cards</span><button class="sheet-close" onclick="closeSheet('sh-inspect-top-n')">âœ•</button></div>
+    <div class="sheet-head"><span class="sheet-title" id="inspect-top-n-title">Inspect Top Cards</span><button class="sheet-close" onclick="closeSheet('sh-inspect-top-n')">?</button></div>
     <div class="sheet-body" id="inspect-top-n-body"></div>
   </div>
 </div>
@@ -2532,12 +2533,12 @@ pandora: {
 
 <div class="sheet-overlay" id="sh-combat-add-more">
   <div class="sheet"><div class="sheet-handle"></div>
-    <div class="sheet-head"><span class="sheet-title">âš”ï¸ Add More Cards</span><button class="sheet-close" onclick="closeSheet('sh-combat-add-more')">âœ•</button></div>
+    <div class="sheet-head"><span class="sheet-title">?? Add More Cards</span><button class="sheet-close" onclick="closeSheet('sh-combat-add-more')">?</button></div>
     <div class="sheet-body">
       <div class="effects-list">
-        <button class="btn btn-accent btn-full" onclick="enterCombatHandSelect()">ğŸƒ‹ Select from Hand</button>
-        <button class="btn btn-ghost btn-full" onclick="pickRandomForCombatFromMenu()">ğŸ² Random from Hand</button>
-        <button class="btn btn-ghost btn-full" onclick="addTopCardToCombatDirect()">â†‘ Top of Deck</button>
+        <button class="btn btn-accent btn-full" onclick="enterCombatHandSelect()">?? Select from Hand</button>
+        <button class="btn btn-ghost btn-full" onclick="pickRandomForCombatFromMenu()">?? Random from Hand</button>
+        <button class="btn btn-ghost btn-full" onclick="addTopCardToCombatDirect()">? Top of Deck</button>
       </div>
     </div>
   </div>
@@ -2548,7 +2549,7 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title">Other Players</span>
-      <button class="sheet-close" onclick="closeSheet('sh-other-players')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-other-players')">?</button>
     </div>
     <div class="sheet-body">
       <div class="other-players-list" id="other-players-list"></div>
@@ -2561,8 +2562,8 @@ pandora: {
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-head">
-      <span class="sheet-title">âš”ï¸ Select Opponent</span>
-      <button class="sheet-close" onclick="closeSheet('sh-attack-target')">âœ•</button>
+      <span class="sheet-title">?? Select Opponent</span>
+      <button class="sheet-close" onclick="closeSheet('sh-attack-target')">?</button>
     </div>
     <div class="sheet-body">
       <div style="margin-bottom: 16px; font-size: 0.85rem; color: var(--muted);">
@@ -2578,7 +2579,7 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title" id="discard-browse-header">Discard Pile</span>
-      <button class="sheet-close" onclick="closeSheet('sh-discard-full')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-discard-full')">?</button>
     </div>
     <div class="sheet-body">
       <div class="discard-cards-grid" id="discard-browse-grid"></div>
@@ -2591,73 +2592,73 @@ pandora: {
     <div class="sheet-handle"></div>
     <div class="sheet-head">
       <span class="sheet-title">How to Play</span>
-      <button class="sheet-close" onclick="closeSheet('sh-help')">âœ•</button>
+      <button class="sheet-close" onclick="closeSheet('sh-help')">?</button>
     </div>
     <div class="sheet-body">
 
       <div style="display:flex;gap:8px;margin-bottom:16px">
-        <button class="btn btn-accent btn-full" onclick="document.getElementById('help-rules').style.display='block';document.getElementById('help-app').style.display='none';this.classList.add('btn-accent');this.classList.remove('btn-ghost');this.nextElementSibling.classList.add('btn-ghost');this.nextElementSibling.classList.remove('btn-accent')">ğŸ² Game Rules</button>
-        <button class="btn btn-ghost btn-full" onclick="document.getElementById('help-app').style.display='block';document.getElementById('help-rules').style.display='none';this.classList.add('btn-accent');this.classList.remove('btn-ghost');this.previousElementSibling.classList.add('btn-ghost');this.previousElementSibling.classList.remove('btn-accent')">ğŸ“± App Help</button>
+        <button class="btn btn-accent btn-full" onclick="document.getElementById('help-rules').style.display='block';document.getElementById('help-app').style.display='none';this.classList.add('btn-accent');this.classList.remove('btn-ghost');this.nextElementSibling.classList.add('btn-ghost');this.nextElementSibling.classList.remove('btn-accent')">?? Game Rules</button>
+        <button class="btn btn-ghost btn-full" onclick="document.getElementById('help-app').style.display='block';document.getElementById('help-rules').style.display='none';this.classList.add('btn-accent');this.classList.remove('btn-ghost');this.previousElementSibling.classList.add('btn-ghost');this.previousElementSibling.classList.remove('btn-accent')">?? App Help</button>
       </div>
 
       <!-- GAME RULES -->
       <div id="help-rules">
         <div class="help-section">
           <div class="help-title">Goal</div>
-          <div class="help-text">Defeat your opponentâ€™s <strong>hero</strong> (reduce it to 0 health). If your hero is defeated, you lose.</div>
+          <div class="help-text">Defeat your opponent’s <strong>hero</strong> (reduce it to 0 health). If your hero is defeated, you lose.</div>
           <div class="help-text"><strong>Team play:</strong> defeat both enemy heroes to win.</div>
         </div>
 
         <div class="help-section">
           <div class="help-title">Setup</div>
-          <div class="help-text">â€¢ Draw <strong>5 cards</strong>.</div>
-          <div class="help-text">â€¢ Younger player places hero on <strong>1</strong>, older player on <strong>2</strong>.</div>
-          <div class="help-text">â€¢ Sidekicks start in the same zone as their hero.</div>
-          <div class="help-text">â€¢ Younger player goes first.</div>
+          <div class="help-text">• Draw <strong>5 cards</strong>.</div>
+          <div class="help-text">• Younger player places hero on <strong>1</strong>, older player on <strong>2</strong>.</div>
+          <div class="help-text">• Sidekicks start in the same zone as their hero.</div>
+          <div class="help-text">• Younger player goes first.</div>
         </div>
 
         <div class="help-section">
           <div class="help-title">Turn</div>
           <div class="help-text">Take <strong>2 actions</strong> (same or different):</div>
-          <div class="help-text">â€¢ <strong>Maneuver</strong></div>
-          <div class="help-text">â€¢ <strong>Scheme</strong></div>
-          <div class="help-text">â€¢ <strong>Attack</strong></div>
+          <div class="help-text">• <strong>Maneuver</strong></div>
+          <div class="help-text">• <strong>Scheme</strong></div>
+          <div class="help-text">• <strong>Attack</strong></div>
           <div class="help-text" style="margin-top:6px">Then discard down to <strong>7 cards</strong> and end your turn.</div>
         </div>
 
         <div class="help-section">
           <div class="help-title">Maneuver</div>
-          <div class="help-text">â€¢ Draw <strong>1 card</strong>.</div>
-          <div class="help-text">â€¢ Move fighters up to their move value.</div>
-          <div class="help-text">â€¢ Can move through allies, not enemies.</div>
-          <div class="help-text">â€¢ Cannot end in an occupied space.</div>
-          <div class="help-text">â€¢ You may <strong>Boost</strong> by discarding a card to add its boost value.</div>
+          <div class="help-text">• Draw <strong>1 card</strong>.</div>
+          <div class="help-text">• Move fighters up to their move value.</div>
+          <div class="help-text">• Can move through allies, not enemies.</div>
+          <div class="help-text">• Cannot end in an occupied space.</div>
+          <div class="help-text">• You may <strong>Boost</strong> by discarding a card to add its boost value.</div>
         </div>
 
         <div class="help-section">
           <div class="help-title">Scheme</div>
-          <div class="help-text">â€¢ Play a scheme card with an eligible fighter.</div>
-          <div class="help-text">â€¢ Resolve the effect, then discard it.</div>
+          <div class="help-text">• Play a scheme card with an eligible fighter.</div>
+          <div class="help-text">• Resolve the effect, then discard it.</div>
         </div>
 
         <div class="help-section">
           <div class="help-title">Attack</div>
           <div class="help-text">1. Choose your fighter and a target:</div>
-          <div class="help-text" style="padding-left:12px">â€¢ <strong>Melee:</strong> adjacent only.</div>
-          <div class="help-text" style="padding-left:12px">â€¢ <strong>Ranged:</strong> adjacent or same zone.</div>
+          <div class="help-text" style="padding-left:12px">• <strong>Melee:</strong> adjacent only.</div>
+          <div class="help-text" style="padding-left:12px">• <strong>Ranged:</strong> adjacent or same zone.</div>
           <div class="help-text">2. Both players play cards face down (defense optional).</div>
           <div class="help-text">3. Reveal together.</div>
-          <div class="help-text" style="margin-top:6px"><strong>Damage = Attack âˆ’ Defense</strong></div>
+          <div class="help-text" style="margin-top:6px"><strong>Damage = Attack - Defense</strong></div>
           <div class="help-text">Attacker wins if they deal damage. Defender wins if they take none.</div>
           <div class="help-text">Discard played cards after combat.</div>
         </div>
 
         <div class="help-section">
           <div class="help-title">Important Rules</div>
-          <div class="help-text">â€¢ <strong>Spaces:</strong> 1 fighter per space.</div>
-          <div class="help-text">â€¢ <strong>Adjacent:</strong> spaces connected by a line.</div>
-          <div class="help-text">â€¢ <strong>Zones:</strong> colored areas for ranged attacks/effects.</div>
-          <div class="help-text">â€¢ <strong>Deck empty:</strong> drawing causes each of your fighters to take <strong>2 damage</strong> instead.</div>
+          <div class="help-text">• <strong>Spaces:</strong> 1 fighter per space.</div>
+          <div class="help-text">• <strong>Adjacent:</strong> spaces connected by a line.</div>
+          <div class="help-text">• <strong>Zones:</strong> colored areas for ranged attacks/effects.</div>
+          <div class="help-text">• <strong>Deck empty:</strong> drawing causes each of your fighters to take <strong>2 damage</strong> instead.</div>
         </div>
       </div>
 
@@ -2666,16 +2667,16 @@ pandora: {
         <div class="help-section">
           <div class="help-title">Basic Gameplay</div>
           <div class="help-text"><strong>1. Draw Phase:</strong> Tap the draw pile to draw cards into your hand.</div>
-          <div class="help-text"><strong>2. Play Cards:</strong> Tap any card and choose â€œPlayâ€ to play it. Others see a notification. You can also select multiple cards and play them at once.</div>
-          <div class="help-text"><strong>3. Discard Cards:</strong> Tap a card and choose â€œDiscardâ€ to discard it. Other players are notified.</div>
+          <div class="help-text"><strong>2. Play Cards:</strong> Tap any card and choose “Play” to play it. Others see a notification. You can also select multiple cards and play them at once.</div>
+          <div class="help-text"><strong>3. Discard Cards:</strong> Tap a card and choose “Discard” to discard it. Other players are notified.</div>
         </div>
 
         <div class="help-section">
           <div class="help-title">Zones Explained</div>
           <div class="help-subtitle">Draw Pile</div>
-          <div class="help-text">Your deck. Tap to draw one card, or use â€œBrowseâ€ to see all cards and pick specific ones.</div>
+          <div class="help-text">Your deck. Tap to draw one card, or use “Browse” to see all cards and pick specific ones.</div>
           <div class="help-subtitle">Hand</div>
-          <div class="help-text">Cards youâ€™ve drawn. Tap any card for options (play, discard, return to deck, add to combat).</div>
+          <div class="help-text">Cards you’ve drawn. Tap any card for options (play, discard, return to deck, add to combat).</div>
           <div class="help-subtitle">Intermediate Zone</div>
           <div class="help-text">(Some decks only) Cards go here before discard. Tap to move to hand, discard, or deck.</div>
           <div class="help-subtitle">Discard Pile</div>
@@ -2686,7 +2687,7 @@ pandora: {
           <div class="help-title">Button Guide</div>
           <div class="help-button-list">
             <div class="help-button-item">
-              <div class="help-button-name">ğŸ² Pick Random</div>
+              <div class="help-button-name">?? Pick Random</div>
               <div class="help-button-desc">Randomly selects a card from that zone.</div>
             </div>
             <div class="help-button-item">
@@ -2702,7 +2703,7 @@ pandora: {
               <div class="help-button-desc">Randomizes order of draw pile cards.</div>
             </div>
             <div class="help-button-item">
-              <div class="help-button-name">â–¶ Play</div>
+              <div class="help-button-name">? Play</div>
               <div class="help-button-desc">Play selected cards. Moves to discard and notifies others.</div>
             </div>
             <div class="help-button-item">
@@ -2716,19 +2717,19 @@ pandora: {
           <div class="help-title">Multiplayer Features</div>
           <div class="help-button-list">
             <div class="help-button-item">
-              <div class="help-button-name">ğŸ‘¥ Player Status</div>
+              <div class="help-button-name">?? Player Status</div>
               <div class="help-button-desc">Shows all players with HP, deck, and card counts.</div>
             </div>
             <div class="help-button-item">
-              <div class="help-button-name">âš”ï¸ Combat Zone</div>
+              <div class="help-button-name">?? Combat Zone</div>
               <div class="help-button-desc">Shared area for face-down cards. Each player reveals when ready.</div>
             </div>
             <div class="help-button-item">
-              <div class="help-button-name">ğŸ—‚ï¸ Discard Browsing</div>
-              <div class="help-button-desc">View any playerâ€™s discard pile. Take cards from any pile to your hand.</div>
+              <div class="help-button-name">??? Discard Browsing</div>
+              <div class="help-button-desc">View any player’s discard pile. Take cards from any pile to your hand.</div>
             </div>
             <div class="help-button-item">
-              <div class="help-button-name">ğŸ”„ Turn System</div>
+              <div class="help-button-name">?? Turn System</div>
               <div class="help-button-desc">END TURN button passes to next player. Host reorders before start.</div>
             </div>
           </div>
@@ -2736,11 +2737,11 @@ pandora: {
 
         <div class="help-section">
           <div class="help-title">Tips</div>
-          <div class="help-text">â€¢ Tap any card in your hand to see all available actions</div>
-          <div class="help-text">â€¢ Health values can be adjusted with + and âˆ’ buttons</div>
-          <div class="help-text">â€¢ Top bar shows Draw, Hand, and Discard counts</div>
-          <div class="help-text">â€¢ Use â€œSelect Cardsâ€ to play or discard multiple at once</div>
-          <div class="help-text">â€¢ You can take cards from any playerâ€™s discard pile</div>
+          <div class="help-text">• Tap any card in your hand to see all available actions</div>
+          <div class="help-text">• Health values can be adjusted with + and - buttons</div>
+          <div class="help-text">• Top bar shows Draw, Hand, and Discard counts</div>
+          <div class="help-text">• Use “Select Cards” to play or discard multiple at once</div>
+          <div class="help-text">• You can take cards from any player’s discard pile</div>
         </div>
       </div>
 
@@ -2777,9 +2778,9 @@ pandora: {
         firebase.initializeApp(firebaseConfig);
       }
       window.fbDatabase = firebase.database();
-      console.log('âœ… Firebase initialized successfully');
+      console.log('? Firebase initialized successfully');
     } catch (error) {
-      console.error('âŒ Firebase initialization error:', error);
+      console.error('? Firebase initialization error:', error);
     }
   };
 
@@ -2801,9 +2802,9 @@ pandora: {
     const script = document.createElement('script');
     // Try to detect the base path for GitHub Pages
     const basePath = window.location.pathname.includes('/unmatched-lobby/') ? '/unmatched-lobby/' : './';
-    script.src = basePath + 'game.js?v=20260227c';
+    script.src = basePath + 'game.js?v=20260227d';
     script.onerror = function() {
-      console.error('âŒ Failed to load game.js from:', basePath + 'game.js');
+      console.error('? Failed to load game.js from:', basePath + 'game.js');
       console.error('Current URL:', window.location.href);
       document.body.innerHTML += '<div style="color: red; padding: 20px; text-align: center;">Error loading game. Check browser console.</div>';
     };
