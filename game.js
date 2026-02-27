@@ -3064,6 +3064,8 @@ function initSpecialAbility(dk) {
     document.getElementById('special-section').style.display = 'block';
     document.getElementById('special-label').textContent = sa.label || 'Voyages Used';
     document.getElementById('special-action-btn').style.display = 'none';
+    document.getElementById('special-browse-deck-btn').style.display = 'none';
+    document.getElementById('special-peek-top-btn').style.display = 'none';
     document.getElementById('special-browse-discard-btn').style.display = 'none';
     updateSpecialDisplay();
     return;
@@ -3077,6 +3079,8 @@ function initSpecialAbility(dk) {
     document.getElementById('special-section').style.display = 'block';
     document.getElementById('special-label').textContent = sa.label || 'Trick Tracker';
     document.getElementById('special-action-btn').style.display = 'none';
+    document.getElementById('special-browse-deck-btn').style.display = 'none';
+    document.getElementById('special-peek-top-btn').style.display = 'none';
     document.getElementById('special-browse-discard-btn').style.display = 'none';
     updateSpecialDisplay();
     return;
@@ -3090,6 +3094,8 @@ function initSpecialAbility(dk) {
     document.getElementById('special-section').style.display = 'block';
     document.getElementById('special-label').textContent = sa.label || 'Resource';
     document.getElementById('special-action-btn').style.display = 'none';
+    document.getElementById('special-browse-deck-btn').style.display = 'none';
+    document.getElementById('special-peek-top-btn').style.display = 'none';
     document.getElementById('special-browse-discard-btn').style.display = 'none';
     updateSpecialDisplay();
     return;
@@ -3105,11 +3111,15 @@ function initSpecialAbility(dk) {
   document.getElementById('special-action-btn').style.display = '';
   document.getElementById('special-deck-title').textContent = sa.label + ' Deck';
   document.getElementById('special-discard-title').textContent = 'Used ' + sa.label;
+  document.getElementById('special-top-n-title').textContent = 'See ' + sa.label;
+  document.getElementById('special-browse-deck-btn').style.display = 'block';
 
   if (sa.mode === 'discard') {
     document.getElementById('special-browse-discard-btn').style.display = 'block';
+    document.getElementById('special-peek-top-btn').style.display = 'block';
   } else {
     document.getElementById('special-browse-discard-btn').style.display = 'none';
+    document.getElementById('special-peek-top-btn').style.display = 'none';
   }
 
   updateSpecialDisplay();
@@ -3223,6 +3233,44 @@ function viewSpecialCard() {
   openCardOverlay(G.specialCurrent, 'special');
 }
 
+function peekSpecialTopN(n) {
+  const limit = n === 'all' ? G.specialDeck.length : Math.min(parseInt(n), G.specialDeck.length);
+  const cards = G.specialDeck.slice(0, limit);
+  const dk = DECKS[G.deckKey];
+  const sa = dk && dk.specialAbility ? dk.specialAbility : {};
+
+  document.getElementById('special-deck-title').textContent = (sa.label || 'Special') + ' — Top ' + (cards.length || 0);
+  const body = document.getElementById('special-deck-body');
+  body.innerHTML = '';
+
+  if (!cards.length) {
+    body.innerHTML = '<p style="color:var(--muted);text-align:center;padding:32px 0;font-size:.78rem">Deck is empty</p>';
+    openSheet('sh-special-deck');
+    return;
+  }
+
+  const note = document.createElement('p');
+  note.style.cssText = 'color:var(--muted);font-size:0.72rem;padding:0 0 12px;text-align:center';
+  note.textContent = 'Showing top ' + cards.length + ' of ' + G.specialDeck.length + ' remaining';
+  body.appendChild(note);
+
+  cards.forEach((card, idx) => {
+    const item = document.createElement('div');
+    item.className = 'browse-item';
+    const cardBig = document.createElement('div');
+    cardBig.className = 'browse-card-big';
+    cardBig.innerHTML = `<img src="${card.image}" alt="" onerror="this.style.opacity='.2'">`;
+    item.appendChild(cardBig);
+    const info = document.createElement('div');
+    info.className = 'browse-info-text';
+    info.textContent = '#' + (idx + 1) + ' from top';
+    item.appendChild(info);
+    body.appendChild(item);
+  });
+
+  openSheet('sh-special-deck');
+}
+
 function buildSpecialDeckBrowse() {
   const body = document.getElementById('special-deck-body');
   body.innerHTML = '';
@@ -3231,8 +3279,6 @@ function buildSpecialDeckBrowse() {
     body.innerHTML = '<p style="color:var(--muted);text-align:center;padding:32px 0;font-size:.78rem">Deck is empty</p>';
     return;
   }
-
-  const shuffleBtn = document.createElement('button');
   shuffleBtn.className = 'btn btn-ghost btn-sm btn-full';
   shuffleBtn.style.marginBottom = '16px';
   shuffleBtn.textContent = 'Shuffle Deck';
