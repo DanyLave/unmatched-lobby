@@ -1792,9 +1792,7 @@ function goTo(id) {
     
     cur = id;
     nextEl.classList.add('active');
-
-    if (id === 's-editions') buildEditionGrid();
-
+    
     if (id === 's-play') {
       document.getElementById('s-play').scrollTop = 0;
       // Show/hide multiplayer UI elements
@@ -3281,6 +3279,8 @@ function buildSpecialDeckBrowse() {
     body.innerHTML = '<p style="color:var(--muted);text-align:center;padding:32px 0;font-size:.78rem">Deck is empty</p>';
     return;
   }
+
+  const shuffleBtn = document.createElement('button');
   shuffleBtn.className = 'btn btn-ghost btn-sm btn-full';
   shuffleBtn.style.marginBottom = '16px';
   shuffleBtn.textContent = 'Shuffle Deck';
