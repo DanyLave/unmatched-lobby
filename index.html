@@ -1725,7 +1725,6 @@ ghostrider: {
         mode: "resource-counter",
         startValue: 5,
         minValue: 0,
-        maxValue: 5,
         color: "#FFF6A9"
       },
            cards: 
@@ -2087,7 +2086,16 @@ blackbeard: {
             healthBars: [
       { label: "BLACKBEARD", startValue: 13, color: "#043A41", size: "large" },
       { label: "SEADOGS ALIVE", startValue: 2, color: "#75C5B3", size: "small" }],
-    intermediateZone: null,
+     intermediateZone: null,
+      specialAbility: {
+        enabled: true,
+        label: "Treasury",
+        mode: "resource-counter",
+        startValue: 5,
+        minValue: 0,
+        maxValue: 3,
+        color: "#FFF6A9"
+      },
     cards:      [
               { id: 1, image: "blackbeard_3 x Light the fuse.png" },
               { id: 2, image: "blackbeard_3 x Light the fuse.png" },

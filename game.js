@@ -1218,7 +1218,7 @@ function showPlayerDeckInfo(pid) {
       const playerRoomData = getRoomData();
       const playerEntry = playerRoomData && playerRoomData.players ? playerRoomData.players[pid] : null;
       const curVal = playerEntry && playerEntry.specialCounterValue !== undefined ? playerEntry.specialCounterValue : (sa.startValue || 0);
-      saDesc = `<div class="special-ability-desc">Current value: <strong>${curVal}</strong> / ${sa.maxValue !== undefined ? sa.maxValue : '?'}</div>`;
+      saDesc = `<div class="special-ability-desc">Current value: <strong>${curVal}</strong>${sa.maxValue !== undefined ? ` / ${sa.maxValue}` : ''}</div>`;
     }
     specialInfo.innerHTML = `<div class="special-ability-title">${saLabel}</div>${saDesc}`;
     specialInfo.style.display = 'block';
@@ -1930,7 +1930,7 @@ function openDeckInfo(key, e) {
     else if (sa.mode === 'trick-counter') saDesc = '<div class="special-ability-desc">Tracks trick cards in opponents\' hands.</div>';
     else if (sa.mode === 'resource-counter') {
       const curVal = G.deckKey === key ? G.specialCounter : (sa.startValue || 0);
-      saDesc = `<div class="special-ability-desc">Current value: <strong>${curVal}</strong> / ${sa.maxValue !== undefined ? sa.maxValue : '?'}</div>`;
+      saDesc = `<div class="special-ability-desc">Current value: <strong>${curVal}</strong>${sa.maxValue !== undefined ? ` / ${sa.maxValue}` : ''}</div>`;
     } else if (sa.mode === 'swap' || sa.mode === 'discard') {
       const deckLeft = G.deckKey === key ? G.specialDeck.length : (sa.deck ? sa.deck.length : 0);
       saDesc = `<div class="special-ability-desc">${deckLeft} card(s) remaining in deck.</div>`;
@@ -3173,16 +3173,17 @@ function updateSpecialDisplay() {
     const sa2 = dk2 && dk2.specialAbility ? dk2.specialAbility : {};
     const counterColor = sa2.color || 'var(--accent)';
     const minVal = sa2.minValue !== undefined ? sa2.minValue : 0;
-    const maxVal = sa2.maxValue !== undefined ? sa2.maxValue : 99;
+    const hasMax = sa2.maxValue !== undefined;
+    const maxVal = hasMax ? sa2.maxValue : Infinity;
     display.innerHTML = `<div class="voyage-counter-display">
       <span class="voyage-counter-num" style="color:${counterColor}">${G.specialCounter}</span>
       <span class="voyage-counter-label">${sa2.label || 'Resource'}</span>
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="hp-btn" onclick="adjustSpecialCounter(-1)" ${G.specialCounter <= minVal ? 'disabled' : ''}>−</button>
-        <button class="hp-btn" onclick="adjustSpecialCounter(1)" ${G.specialCounter >= maxVal ? 'disabled' : ''}>＋</button>
+        <button class="hp-btn" onclick="adjustSpecialCounter(1)" ${hasMax && G.specialCounter >= maxVal ? 'disabled' : ''}>＋</button>
       </div>
     </div>`;
-    count.textContent = `${G.specialCounter} / ${maxVal}`;
+    count.textContent = hasMax ? `${G.specialCounter} / ${maxVal}` : `${G.specialCounter}`;
     return;
   }
 
@@ -3202,7 +3203,7 @@ function adjustSpecialCounter(delta) {
   const dk = DECKS[G.deckKey];
   const sa = dk && dk.specialAbility ? dk.specialAbility : {};
   const minVal = sa.minValue !== undefined ? sa.minValue : 0;
-  const maxVal = sa.maxValue !== undefined ? sa.maxValue : 99;
+  const maxVal = sa.maxValue !== undefined ? sa.maxValue : Infinity;
   G.specialCounter = Math.max(minVal, Math.min(maxVal, G.specialCounter + delta));
   updateSpecialDisplay();
   if (G.isMultiplayer) {
