@@ -3055,6 +3055,9 @@ function buildSearchCards(edition, deck, deckKey) {
       updateAll();
       closeSheet('sh-search-all');
       toast('Added to hand');
+      const cName = cardLabel(newCard);
+      addLogEntry('You searched and added "' + cName + '" to hand', 'other');
+      broadcastLogMessage(G.playerName + ' searched and added "' + cName + '" to their hand', 'other');
     };
     grid.appendChild(item);
   });
@@ -3204,7 +3207,14 @@ function adjustSpecialCounter(delta) {
   const sa = dk && dk.specialAbility ? dk.specialAbility : {};
   const minVal = sa.minValue !== undefined ? sa.minValue : 0;
   const maxVal = sa.maxValue !== undefined ? sa.maxValue : Infinity;
+  const prev = G.specialCounter;
   G.specialCounter = Math.max(minVal, Math.min(maxVal, G.specialCounter + delta));
+  if (G.specialCounter !== prev) {
+    const label = sa.label || 'Special';
+    const sign = delta > 0 ? '+' : '−';
+    addLogEntry(`${label}: ${sign}${Math.abs(delta)} → ${G.specialCounter}`, 'other');
+    broadcastLogMessage(`${G.playerName} adjusted ${label}: ${sign}${Math.abs(delta)} → ${G.specialCounter}`, 'other');
+  }
   updateSpecialDisplay();
   if (G.isMultiplayer) {
     const roomData = getRoomData();
