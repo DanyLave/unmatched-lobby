@@ -1094,25 +1094,39 @@ function renderPlayerStatusArea() {
     }
     
     const turnBadge = isActiveTurn
-      ? `<div class="turn-badge ${isMe ? 'my-turn' : 'their-turn'}">${isMe ? 'YOUR TURN' : 'ACTIVE'}</div>`
+      ? `<div class="turn-badge ${isMe ? 'my-turn' : 'their-turn'}" style="margin-left:auto;flex-shrink:0">${isMe ? 'YOUR TURN' : 'ACTIVE'}</div>`
       : '';
 
+    // SVG icon definitions for each card zone
+    // Draw pile — stacked layers
+    const iconDraw = `<svg viewBox="0 0 16 16"><path d="M2 11l6-3 6 3"/><path d="M2 7.5l6-3 6 3"/></svg>`;
+    // Hand — card with lines
+    const iconHand = `<svg viewBox="0 0 16 16"><rect x="3" y="2" width="10" height="13" rx="1.5"/><line x1="6" y1="6" x2="10" y2="6"/><line x1="6" y1="9" x2="10" y2="9"/></svg>`;
+    // Intermediate zone — clock / waiting
+    const iconInter = `<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><polyline points="8,5 8,8 10.5,10"/></svg>`;
+    // Discard — downward arrow into tray
+    const iconDiscard = `<svg viewBox="0 0 16 16"><polyline points="5,6 8,9.5 11,6"/><line x1="8" y1="2" x2="8" y2="9.5"/><line x1="3" y1="13" x2="13" y2="13"/></svg>`;
+
     row.innerHTML = `
-      <div class="status-name">${player.name} ${isMe ? '(You)' : ''}</div>
-      <div class="status-hero">
-        <img src="${heroImagePath}" alt="Hero" class="hero-back-img">
-        <button class="info-btn-small" onclick="showPlayerDeckInfo('${pid}')">i</button>
+      <div class="status-row-1">
+        <div class="status-name">${player.name}${isMe ? ' <span style="font-size:0.65rem;color:var(--muted);font-weight:600">(You)</span>' : ''}</div>
+        <div class="status-hero">
+          <img src="${heroImagePath}" alt="Hero" class="hero-back-img">
+          <button class="info-btn-small" onclick="showPlayerDeckInfo('${pid}')">i</button>
+        </div>
+        ${specialHTML}
+        ${turnBadge}
       </div>
-      ${specialHTML}
-      <div class="status-hp">${hpHTML}</div>
-      <div class="status-counts">
-        <span>D:${counts.draw}</span>
-        <span>H:${counts.hand}</span>
-        <span>S:${counts.staged}</span>
-        <span>I:${counts.intermediate}</span>
-        <span>Disc:${counts.discard}</span>
+      <div class="status-row-2">
+        <div class="status-hp">${hpHTML}</div>
+        <div class="status-row-2-sep"></div>
+        <div class="status-icon-counts">
+          <span class="status-icon-count" title="Cards in draw pile">${iconDraw}${counts.draw}</span>
+          <span class="status-icon-count" title="Cards in hand">${iconHand}${counts.hand}</span>
+          <span class="status-icon-count" title="Cards in intermediate zone">${iconInter}${counts.intermediate}</span>
+          <span class="status-icon-count" title="Cards in discard pile">${iconDiscard}${counts.discard}</span>
+        </div>
       </div>
-      ${turnBadge}
     `;
 
     container.appendChild(row);
@@ -1133,8 +1147,11 @@ function renderPlayerStatusArea() {
 
 function viewPlayerSpecialCard(imagePath) {
   const overlay = document.getElementById('card-overlay');
+  const enlarged = overlay.querySelector('.card-enlarged');
   document.getElementById('overlay-img').src = imagePath;
-  overlay.style.display = 'flex';
+  document.getElementById('overlay-actions').innerHTML = ''; // view only — no game actions
+  enlarged.classList.add('landscape'); // switch to wide 16:9 container
+  overlay.classList.add('open');
 }
 
 function updateMyCardCounts() {
@@ -2402,7 +2419,11 @@ function openCardOverlay(card, source = 'hand') {
 }
 
 function closeCardOverlay() {
-  document.getElementById('card-overlay').classList.remove('open');
+  const overlay = document.getElementById('card-overlay');
+  overlay.classList.remove('open');
+  // Remove landscape mode if it was set for a special-card view
+  const enlarged = overlay.querySelector('.card-enlarged');
+  if (enlarged) enlarged.classList.remove('landscape');
   _overlayCard = null;
   _overlayMenu = 'main';
   _overlaySource = 'hand';
@@ -3257,13 +3278,20 @@ function peekSpecialTopN(n) {
     const item = document.createElement('div');
     item.className = 'browse-item';
     const cardBig = document.createElement('div');
-    cardBig.className = 'browse-card-big';
+    cardBig.className = 'browse-card-big wide'; // 16:9 landscape for special cards
     cardBig.innerHTML = `<img src="${card.image}" alt="" onerror="this.style.opacity='.2'">`;
     item.appendChild(cardBig);
     const info = document.createElement('div');
     info.className = 'browse-info-text';
     info.textContent = '#' + (idx + 1) + ' from top';
     item.appendChild(info);
+    // For discard-mode decks (e.g. Titania, Pandora) show Set as Active
+    if (G.specialMode === 'discard') {
+      const btns = document.createElement('div');
+      btns.className = 'browse-btns';
+      btns.innerHTML = `<button class="btn btn-sm btn-accent" onclick="activateSpecialCard(${idx})">Set as Active</button>`;
+      item.appendChild(btns);
+    }
     body.appendChild(item);
   });
 
@@ -3301,7 +3329,7 @@ function buildSpecialDeckBrowse() {
     const item = document.createElement('div');
     item.className = 'browse-item';
     const cardBig = document.createElement('div');
-    cardBig.className = 'browse-card-big';
+    cardBig.className = 'browse-card-big wide'; // 16:9 landscape for special cards
     cardBig.innerHTML = `<img src="${card.image}" alt="" onerror="this.style.opacity='.2'">`;
     item.appendChild(cardBig);
     const info = document.createElement('div');
@@ -3363,7 +3391,7 @@ function buildSpecialDiscardBrowse() {
     const item = document.createElement('div');
     item.className = 'browse-item';
     const cardBig = document.createElement('div');
-    cardBig.className = 'browse-card-big';
+    cardBig.className = 'browse-card-big wide'; // 16:9 landscape for special cards
     cardBig.innerHTML = `<img src="${card.image}" alt="" onerror="this.style.opacity='.2'">`;
     item.appendChild(cardBig);
     const info = document.createElement('div');

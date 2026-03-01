@@ -158,127 +158,134 @@ body {
   border-radius: 100px; letter-spacing: 0.05em;
 }
 
-/* PLAYER STATUS AREA - SHOWS ALL PLAYERS' HP, DECK INFO, AND CARD COUNTS
-   VISIBLE TO: All multiplayer players (not just host)
-   HOW TO CUSTOMIZE:
-   - max-height: Adjust scrollable area height (increase to show more rows without scrolling)
-   - padding: Space inside the container
-   - .player-status-row gap: Space between player name, hero image, HP, and card counts
-   - .status-name font-size: Player name text size
-   - .hero-back-img height: Hero card preview size (width auto-adjusts)
-   - .status-hp font-size: HP display text size
-   - .status-counts font-size: Card count abbreviations (D, H, S, etc) text size
+/* PLAYER STATUS AREA - 2-ROW CARD PER PLAYER
+   Row 1: name  |  hero image + info btn  |  special ability  |  turn badge
+   Row 2: HP hearts  |  deck / hand / intermediate / discard icon counts
+
+   CUSTOMIZE:
+   - .player-status-area   max-height  : scroll window height
+   - .hero-back-img        height      : hero thumbnail size
+   - .status-name          font-size   : player name text size
+   - .status-hp-heart      font-size   : HP heart + number size
+   - .status-icon-count    font-size   : card-count badge text size
+   - .status-row-1 .special-preview height : special card height in row 1
 */
 .player-status-area {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r); padding: 12px; margin-bottom: 16px;
-  max-height: 220px; overflow-y: auto;
+  border-radius: var(--r); padding: 10px 12px; margin-bottom: 16px;
+  max-height: 320px; overflow-y: auto;
 }
 
-/* Individual player row in the status area
-   EDIT: gap value to increase/decrease horizontal spacing between elements
-   EDIT: padding value to increase/decrease vertical spacing between rows
-*/
+/* One block per player — stacks vertically */
 .player-status-row {
-  display: flex; align-items: center; gap: 8px; padding: 8px;
-  border-radius: var(--r-sm); transition: background .2s;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 8px 0; transition: background .2s;
+}
+.player-status-row:not(:last-child) {
+  border-bottom: 1px solid var(--border); margin-bottom: 2px;
 }
 
-/* Player name display
-   EDIT: font-size to make player names bigger or smaller
-   EDIT: min-width to allocate more/less space for names
-   EDIT: font-weight (600-900) to make names bolder
-*/
-.status-name { 
-  flex: 0 0 auto; font-weight: 600; min-width: 70px; font-size: 0.85rem;
+/* Row 1: name / hero / special / turn badge */
+.status-row-1 { display: flex; align-items: center; gap: 8px; }
+
+/* Row 2: HP + card-count icon badges */
+.status-row-2 { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+
+/* Player name  — truncates long names to stay on one line */
+.status-name {
+  font-weight: 700; font-size: 0.82rem; flex-shrink: 0;
+  max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
-/* Hero image container
-   EDIT: gap value to change space between hero image and info button
-*/
-.status-hero { 
-  display: flex; align-items: center; gap: 4px; flex: 0 0 auto;
-}
-
-/* Hero card back preview image
-   EDIT: height value to make hero images bigger (width auto-scales to maintain aspect ratio)
-   EDIT: border-radius to round corners more/less
-*/
+/* Hero thumbnail + info button */
+.status-hero { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .hero-back-img {
-  height: 60px; aspect-ratio: 2.5/3.5; object-fit: cover;
+  height: 48px; aspect-ratio: 2.5/3.5; object-fit: cover;
   border-radius: var(--r-hand); border: 1px solid var(--border2);
 }
 
-.status-special {
-  flex: 0 0 auto;
-}
+/* Special ability area in row 1 */
+.status-special { flex-shrink: 0; }
 
-/* Counter badge for numeric special abilities (voyage-counter, trick-counter, resource-counter) */
+/* Special card image — compact size for row 1
+   EDIT height to make it taller/shorter */
+.status-row-1 .special-preview {
+  height: 56px;
+  width: auto;
+  max-width: 100px;
+  aspect-ratio: unset;
+  object-fit: cover;
+  border-radius: var(--r-hand);
+  border: 2px solid var(--accent);
+  cursor: pointer;
+  transition: transform .12s;
+  display: block;
+}
+.status-row-1 .special-preview:active { transform: scale(0.93); }
+
+/* Numeric counter badge (voyage / trick / resource counters) */
 .status-special-counter {
-  flex: 0 0 auto;
+  flex-shrink: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-width: 46px; padding: 4px 8px;
+  min-width: 40px; padding: 3px 7px;
   background: var(--surface2); border: 1px solid var(--border2);
   border-radius: var(--r-sm);
 }
-.status-counter-num {
-  font-size: 1.3rem; font-weight: 800; line-height: 1; color: var(--accent);
-}
+.status-counter-num { font-size: 1.1rem; font-weight: 800; line-height: 1; color: var(--accent); }
 .status-counter-label {
-  font-size: 0.48rem; color: var(--muted); text-transform: uppercase;
+  font-size: 0.46rem; color: var(--muted); text-transform: uppercase;
   letter-spacing: 0.06em; font-weight: 600; text-align: center; margin-top: 2px;
 }
 
-/* Special ability card preview in player status
-   EDIT: height to make special card preview bigger or smaller
-   EDIT: border color (currently uses accent color for yellow border)
-   CLICK: Click on special card to zoom in for detailed view
-*/
-.special-preview {
-  height: 100px; aspect-ratio: 16/9; object-fit: cover; /*mod special ability list size*/
-  border-radius: var(--r-hand); border: 2px solid var(--accent);
-  cursor: pointer; transition: transform .12s;
-}
-
-.special-preview:hover { transform: scale(1.05); }
-.special-preview:active { transform: scale(0.95); }
-
-/* Info button (small "i" button next to hero image)
-   EDIT: width & height to make button bigger or smaller
-   EDIT: font-size to adjust text size inside button
-*/
+/* Info button */
 .info-btn-small {
   width: 20px; height: 20px; border-radius: 50%;
   background: var(--accent); color: var(--accent-text);
   border: none; display: flex; align-items: center; justify-content: center;
   cursor: pointer; font-size: 0.65rem; font-weight: 700;
-  -webkit-tap-highlight-color: transparent; transition: opacity .12s;
+  -webkit-tap-highlight-color: transparent; transition: opacity .12s; flex-shrink: 0;
 }
-
 .info-btn-small:active { opacity: 0.8; }
 
-/* HP display in player status (shows colored hearts with HP values for each health bar)
-   EDIT: font-size to make HP numbers and hearts bigger or smaller
-   EDIT: gap value to change space between multiple HP values
-*/
-.status-hp { 
-  flex: 0 0 auto; font-size: 0.8rem; color: var(--muted);
-  display: flex; gap: 8px; flex-wrap: wrap;
-}
-
+/* HP hearts in row 2 */
+.status-hp { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .status-hp-heart {
-  font-size: 1rem; font-weight: 600; display: inline-flex; align-items: center; gap: 2px;
+  font-size: 0.88rem; font-weight: 700;
+  display: inline-flex; align-items: center; gap: 2px;
   text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 
-/* Card counts display (D:draw, H:hand, S:staged, I:intermediate, Disc:discard)
-   EDIT: font-size to make these abbreviations bigger or smaller
-   EDIT: gap to adjust space between count items
-*/
-.status-counts { 
-  display: flex; gap: 3px; font-size: 0.7rem; color: var(--text);
-  flex: 1;
+/* Thin separator between HP and card counts in row 2 */
+.status-row-2-sep {
+  width: 1px; height: 16px; background: var(--border2); flex-shrink: 0; margin: 0 2px;
 }
+
+/* Icon + number badge for each card zone */
+.status-icon-counts { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.status-icon-count {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 0.72rem; font-weight: 700; color: var(--text);
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 2px 6px;
+}
+/* Icon SVGs inside the badge */
+.status-icon-count svg {
+  width: 12px; height: 12px; flex-shrink: 0; opacity: 0.65;
+  stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* Keep the full-size special-preview used outside the status area unchanged */
+.special-preview {
+  height: 100px; aspect-ratio: 16/9; object-fit: cover;
+  border-radius: var(--r-hand); border: 2px solid var(--accent);
+  cursor: pointer; transition: transform .12s;
+}
+.special-preview:hover { transform: scale(1.05); }
+.special-preview:active { transform: scale(0.95); }
+
+/* .status-counts kept for any legacy references */
+.status-counts { display: flex; gap: 3px; font-size: 0.7rem; color: var(--text); flex: 1; }
 
 /* DISCARD BROWSING - SHOWS PREVIEW OF EACH PLAYER'S DISCARD PILE
    VISIBLE TO: All multiplayer players (not just host)
@@ -452,7 +459,9 @@ body {
 }
 
 .combat-card {
-  width: 100px; aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
+  /* Fill the screen: on a typical phone 2 cards sit side-by-side at ~45vw each */
+  width: min(160px, calc(50vw - 18px));
+  aspect-ratio: 2.5 / 3.5; border-radius: var(--r-hand);
   border: 2px solid var(--border2); background: var(--surface);
   display: flex; align-items: center; justify-content: center;
   font-size: 1.5rem; color: var(--muted);
@@ -649,6 +658,13 @@ body {
 }
 .sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 .sec-count { font-size: 0.64rem; color: var(--border2); font-weight: 700; }
+/* Icon inside section label — matches the stat-area badge icons */
+.sec-label svg {
+  width: 13px; height: 13px; flex-shrink: 0;
+  stroke: currentColor; fill: none;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  opacity: 0.6;
+}
 
 .special-zone {
   background: var(--surface); border: 1px solid var(--border);
@@ -867,6 +883,12 @@ body {
   border: 2px solid var(--border2); background: var(--surface);
   margin-bottom: 20px; box-shadow: 0 16px 48px rgba(0,0,0,.7); flex-shrink: 0;
 }
+/* Wide (landscape 16:9) variant used for special ability card previews */
+.card-enlarged.landscape {
+  width: min(88vw, 580px);
+  aspect-ratio: 16 / 9;
+  max-height: unset;
+}
 .card-enlarged img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .card-overlay-actions { display: flex; flex-direction: column; gap: 9px; width: 100%; max-width: 280px; }
 .card-overlay-close {
@@ -929,6 +951,11 @@ body {
   border-radius: var(--r-hand); overflow: hidden;
   border: 1.5px solid var(--border2); background: var(--surface);
   margin-bottom: 6px;
+}
+/* 16:9 landscape variant for special ability card decks */
+.browse-card-big.wide {
+  width: min(88vw, 480px);
+  aspect-ratio: 16 / 9;
 }
 .browse-card-big img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .browse-info-text { font-size: 0.7rem; color: var(--muted); font-weight: 600; text-align: center; margin-bottom: 10px; }
@@ -1919,7 +1946,7 @@ loki: {
     infoImage: "pandora_info.png",
     healthBars: [
       { label: "PANDORA", startValue: 14, color: "#F8EADA", size: "large" },
-      { label: "KAKODAEMONS ALIVE", startValue: 2, color: "#C57C0D", size: "small" }
+      { label: "KAKODAEMONS ALIVE", startValue: 0, color: "#C57C0D", size: "small" }
     ],
     intermediateZone: null,
     cards: [
@@ -2011,7 +2038,90 @@ loki: {
       { id: 29, image: "drsattler_1 x Must Go Faster.png" },
       { id: 30, image: "drsattler_1 x The Future Ex-Mrs. Malcolm.png" }
     ]
-  }
+  },
+chupacabra: {
+            name: "",
+            image: "chupacabra_back.png",
+            infoImage: "chupacabra_info.png",
+            healthBars: [
+      { label: "", startValue: 14, color: "#44323A", size: "large" }],
+    intermediateZone: null,
+    cards:      [
+              { id: 1, image: "chupacabra_3 x Wounded beast.png" },
+              { id: 2, image: "chupacabra_3 x Wounded beast.png" },
+              { id: 3, image: "chupacabra_3 x Wounded beast.png" },
+              { id: 4, image: "chupacabra_3 x Blood in the air.png" },
+              { id: 5, image: "chupacabra_3 x Blood in the air.png" },
+              { id: 6, image: "chupacabra_3 x Blood in the air.png" },
+              { id: 7, image: "chupacabra_3 x Feeding.png" },
+              { id: 8, image: "chupacabra_3 x Feeding.png" },
+              { id: 9, image: "chupacabra_3 x Feeding.png" },
+              { id: 10, image: "chupacabra_3 x Feint.png" },
+              { id: 11, image: "chupacabra_3 x Feint.png" },
+              { id: 12, image: "chupacabra_3 x Feint.png" },
+              { id: 13, image: "chupacabra_3 x Ravenous lunge.png" },
+              { id: 14, image: "chupacabra_3 x Ravenous lunge.png" },
+              { id: 15, image: "chupacabra_3 x Ravenous lunge.png" },
+              { id: 16, image: "chupacabra_3 x Traveler of the night.png" },
+              { id: 17, image: "chupacabra_3 x Traveler of the night.png" },
+              { id: 18, image: "chupacabra_3 x Traveler of the night.png" },
+              { id: 19, image: "chupacabra_3 x The more they struggle.png" },
+              { id: 20, image: "chupacabra_3 x The more they struggle.png" },
+              { id: 21, image: "chupacabra_3 x The more they struggle.png" },
+              { id: 22, image: "chupacabra_3 x Tooth and tail.png" },
+              { id: 23, image: "chupacabra_3 x Tooth and tail.png" },
+              { id: 24, image: "chupacabra_3 x Tooth and tail.png" },
+              { id: 25, image: "chupacabra_2 x Ambush.png" },
+              { id: 26, image: "chupacabra_2 x Ambush.png" },
+              { id: 27, image: "chupacabra_2 x Natural toughness.png" },
+              { id: 28, image: "chupacabra_2 x Natural toughness.png" },
+              { id: 29, image: "chupacabra_2 x Unsettle.png" },
+              { id: 30, image: "chupacabra_2 x Unsettle.png" },
+            ]
+
+    },
+blackbeard: {
+            name: "BLACKBEARD",
+            image: "blackbeard_back.png",
+            infoImage: "blackbeard_info.png",
+            healthBars: [
+      { label: "BLACKBEARD", startValue: 13, color: "#043A41", size: "large" },
+      { label: "SEADOGS ALIVE", startValue: 2, color: "#75C5B3", size: "small" }],
+    intermediateZone: null,
+    cards:      [
+              { id: 1, image: "blackbeard_3 x Light the fuse.png" },
+              { id: 2, image: "blackbeard_3 x Light the fuse.png" },
+              { id: 3, image: "blackbeard_3 x Light the fuse.png" },
+              { id: 4, image: "blackbeard_3 x Plunder.png" },
+              { id: 5, image: "blackbeard_3 x Plunder.png" },
+              { id: 6, image: "blackbeard_3 x Plunder.png" },
+              { id: 7, image: "blackbeard_3 x Give no quarter.png" },
+              { id: 8, image: "blackbeard_3 x Give no quarter.png" },
+              { id: 9, image: "blackbeard_3 x Give no quarter.png" },
+              { id: 10, image: "blackbeard_3 x Parley.png" },
+              { id: 11, image: "blackbeard_3 x Parley.png" },
+              { id: 12, image: "blackbeard_3 x Parley.png" },
+              { id: 13, image: "blackbeard_3 x Fearsome and calculating.png" },
+              { id: 14, image: "blackbeard_3 x Fearsome and calculating.png" },
+              { id: 15, image: "blackbeard_3 x Fearsome and calculating.png" },
+              { id: 16, image: "blackbeard_3 x No prey, no pay.png" },
+              { id: 17, image: "blackbeard_3 x No prey, no pay.png" },
+              { id: 18, image: "blackbeard_3 x No prey, no pay.png" },
+              { id: 19, image: "blackbeard_2 x A brace of primed pistols.png" },
+              { id: 20, image: "blackbeard_2 x A brace of primed pistols.png" },
+              { id: 21, image: "blackbeard_2 x Scourge of the seven seas.png" },
+              { id: 22, image: "blackbeard_2 x Scourge of the seven seas.png" },
+              { id: 23, image: "blackbeard_2 x Avast Ye!.png" },
+              { id: 24, image: "blackbeard_2 x Avast Ye!.png" },
+              { id: 25, image: "blackbeard_2 x Intimidating visage.png" },
+              { id: 26, image: "blackbeard_2 x Intimidating visage.png" },
+              { id: 27, image: "blackbeard_2 x Show a leg!.png" },
+              { id: 28, image: "blackbeard_2 x Show a leg!.png" },
+              { id: 29, image: "blackbeard_2 x Queen Anne's revenge.png" },
+              { id: 30, image: "blackbeard_2 x Queen Anne's revenge.png" },
+            ]
+
+    }
 };</script>
 
 <!-- WELCOME SCREEN -->
@@ -2140,12 +2250,18 @@ loki: {
   </div>
 
   <div class="play-section">
-    <div class="sec-label collapsible" onclick="toggleSection(this)">Health</div>
+    <div class="sec-label collapsible" onclick="toggleSection(this)">
+      <svg viewBox="0 0 16 16"><path d="M8 1.5l3.5 2L8 5.5 4.5 3.5Z"/><path d="M4.5 3.5v5L8 10.5l3.5-2v-5"/><path d="M4.5 7L8 9l3.5-2"/></svg>
+      Health
+    </div>
     <div class="hp-grid" id="hp-grid"></div>
   </div>
 
   <div class="play-section">
-    <div class="sec-label collapsible" onclick="toggleSection(this)">Draw <span class="sec-count" id="sc-draw">0</span></div>
+    <div class="sec-label collapsible" onclick="toggleSection(this)">
+      <svg viewBox="0 0 16 16"><path d="M2 11l6-3 6 3"/><path d="M2 7.5l6-3 6 3"/></svg>
+      Draw <span class="sec-count" id="sc-draw">0</span>
+    </div>
     <div class="draw-zone">
       <div id="draw-stack-wrap"></div>
       <div class="draw-info">
@@ -2161,7 +2277,10 @@ loki: {
   </div>
 
   <div class="play-section">
-    <div class="sec-label collapsible" onclick="toggleSection(this)">Hand <span class="sec-count" id="sc-hand">0</span><span id="hand-sync-icon" style="display:none;font-size:.6rem;color:var(--muted);margin-left:5px" title="Hand synced to opponents">🔄</span></div>
+    <div class="sec-label collapsible" onclick="toggleSection(this)">
+      <svg viewBox="0 0 16 16"><rect x="3" y="2" width="10" height="13" rx="1.5"/><line x1="6" y1="6" x2="10" y2="6"/><line x1="6" y1="9" x2="10" y2="9"/></svg>
+      Hand <span class="sec-count" id="sc-hand">0</span><span id="hand-sync-icon" style="display:none;font-size:.6rem;color:var(--muted);margin-left:5px" title="Hand synced to opponents">🔄</span>
+    </div>
     <div class="hand-top" id="hand-top-bar" style="display:none">
       <span class="select-hint" id="select-hint">0 selected</span>
       <button class="btn btn-xs btn-ghost" onclick="selectAll()">All</button>
@@ -2186,7 +2305,10 @@ loki: {
   <div id="staged-actions" style="display:none"></div>
 
   <div class="play-section" id="intermediate-section" style="display:none">
-    <div class="sec-label collapsible" onclick="toggleSection(this)"><span id="intermediate-label">Zone</span> <span class="sec-count" id="sc-intermediate">0</span></div>
+    <div class="sec-label collapsible" onclick="toggleSection(this)">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><polyline points="8,5 8,8 10.5,10"/></svg>
+      <span id="intermediate-label">Zone</span> <span class="sec-count" id="sc-intermediate">0</span>
+    </div>
     <div class="hand-top-bar" id="intermediate-top-bar" style="display:none">
       <span class="select-hint" id="intermediate-hint">0 selected</span>
       <button class="btn btn-xs btn-ghost" onclick="intermediateSelectAll()">All</button>
@@ -2205,7 +2327,10 @@ loki: {
   </div>
 
   <div class="play-section">
-    <div class="sec-label collapsible" onclick="toggleSection(this)">Discard <span class="sec-count" id="sc-discard">0</span></div>
+    <div class="sec-label collapsible" onclick="toggleSection(this)">
+      <svg viewBox="0 0 16 16"><polyline points="5,6 8,9.5 11,6"/><line x1="8" y1="2" x2="8" y2="9.5"/><line x1="3" y1="13" x2="13" y2="13"/></svg>
+      Discard <span class="sec-count" id="sc-discard">0</span>
+    </div>
     <div class="discard-zone">
       <div class="discard-card" id="discard-visual">🂠</div>
       <div class="discard-info">
@@ -2238,7 +2363,10 @@ loki: {
 
   <!-- ACTIVITY LOG -->
   <div class="play-section" id="action-log-section">
-    <div class="sec-label collapsible" onclick="toggleSection(this)">Activity Log</div>
+    <div class="sec-label collapsible" onclick="toggleSection(this)">
+      <svg viewBox="0 0 16 16"><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="7" x2="13" y2="7"/><line x1="3" y1="10" x2="9" y2="10"/></svg>
+      Activity Log
+    </div>
     <div class="action-log" id="action-log"><div class="log-empty">No actions yet</div></div>
   </div>
 
