@@ -21,6 +21,7 @@ const G = {
   specialCurrent: null,
   specialMode: null,
   specialCounter: 0,
+  ongoingCards: [],
   
   // Multiplayer state
   isMultiplayer: false,
@@ -1124,6 +1125,30 @@ function renderPlayerStatusArea() {
       </div>
     `;
 
+    // Append ongoing cards row if any
+    const playerOngoing = isMe ? G.ongoingCards : (player.ongoingCards || []);
+    if (playerOngoing.length > 0) {
+      const ongoingRow = document.createElement('div');
+      ongoingRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;padding:6px 10px 8px;border-top:1px solid var(--border2);';
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'width:100%;font-size:0.58rem;font-weight:700;letter-spacing:0.08em;color:var(--accent);text-transform:uppercase;margin-bottom:4px';
+      lbl.textContent = '\uD83D\uDD04 Ongoing';
+      ongoingRow.appendChild(lbl);
+      playerOngoing.forEach(oc => {
+        const thumb = document.createElement('img');
+        thumb.src = oc.image;
+        thumb.alt = '';
+        thumb.style.cssText = 'height:48px;width:auto;border-radius:5px;border:1.5px solid var(--accent);cursor:' + (isMe ? 'pointer' : 'default');
+        thumb.onerror = () => { thumb.style.opacity = '.2'; };
+        if (isMe) thumb.onclick = () => {
+          const card = G.ongoingCards.find(c => c.uid === oc.uid);
+          if (card) { _overlayCard = card; _overlayMenu = 'main'; _overlaySource = 'ongoing'; document.getElementById('overlay-img').src = card.image; renderOverlayMenu(); document.getElementById('card-overlay').classList.add('open'); }
+        };
+        ongoingRow.appendChild(thumb);
+      });
+      row.appendChild(ongoingRow);
+    }
+
     container.appendChild(row);
   });
 
@@ -1168,6 +1193,7 @@ function updateMyCardCounts() {
     roomData.players[G.playerId].specialMode = G.specialMode;
     roomData.players[G.playerId].specialCounterValue = G.specialCounter || 0;
   }
+  roomData.players[G.playerId].ongoingCards = G.ongoingCards.map(c => ({ image: c.image, uid: c.uid }));
   
   setRoomData(roomData);
 }
@@ -1187,6 +1213,69 @@ function syncMyHand() {
   if (!roomData || !roomData.players || !roomData.players[G.playerId]) return;
   roomData.players[G.playerId].handCards = G.hand.map(c => ({ image: c.image, uid: c.uid, deckKey: c.deckKey || G.deckKey }));
   setRoomData(roomData);
+}
+
+function syncMyOngoing() {
+  if (!G.isMultiplayer || !G.roomCode) return;
+  const roomData = getRoomData();
+  if (!roomData || !roomData.players || !roomData.players[G.playerId]) return;
+  roomData.players[G.playerId].ongoingCards = G.ongoingCards.map(c => ({ image: c.image, uid: c.uid }));
+  setRoomData(roomData);
+}
+
+function playCardAsOngoing(card) {
+  G.hand = G.hand.filter(c => c.uid !== card.uid);
+  G.staged = G.staged.filter(c => c.uid !== card.uid);
+  G.ongoingCards.push(card);
+  closeCardOverlay();
+  updateAll();
+  renderOngoing();
+  if (G.isMultiplayer) syncMyOngoing();
+  addLogEntry('You played \u201c' + cardLabel(card) + '\u201d as ongoing', 'play');
+  broadcastLogMessage(G.playerName + ' played \u201c' + cardLabel(card) + '\u201d as ongoing', 'play');
+  publishAction(card, 'played');
+}
+
+function discardOngoingCard(card) {
+  G.ongoingCards = G.ongoingCards.filter(c => c.uid !== card.uid);
+  G.discard.push(card);
+  closeCardOverlay();
+  updateAll();
+  renderOngoing();
+  if (G.isMultiplayer) { syncMyOngoing(); syncMyDiscard(); }
+  addLogEntry('You discarded ongoing \u201c' + cardLabel(card) + '\u201d', 'other');
+  broadcastLogMessage(G.playerName + ' discarded ongoing \u201c' + cardLabel(card) + '\u201d', 'other');
+}
+
+function renderOngoing() {
+  const section = document.getElementById('ongoing-section');
+  const grid = document.getElementById('ongoing-grid');
+  if (!section || !grid) return;
+  if (G.ongoingCards.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  grid.innerHTML = '';
+  G.ongoingCards.forEach(card => {
+    const wrap = document.createElement('div');
+    wrap.className = 'hand-card';
+    wrap.style.cssText = 'outline: 2px solid var(--accent); outline-offset: 2px;';
+    const img = document.createElement('img');
+    img.src = card.image;
+    img.alt = '';
+    img.onerror = () => { img.style.opacity = '.2'; };
+    wrap.appendChild(img);
+    wrap.onclick = () => {
+      _overlayCard = card;
+      _overlayMenu = 'main';
+      _overlaySource = 'ongoing';
+      document.getElementById('overlay-img').src = card.image;
+      renderOverlayMenu();
+      document.getElementById('card-overlay').classList.add('open');
+    };
+    grid.appendChild(wrap);
+  });
 }
 
 function showPlayerDeckInfo(pid) {
@@ -2038,6 +2127,7 @@ function selectDeck(key) {
   G.selected = [];
   G.selectMode = false;
   G.intermediate = [];
+  G.ongoingCards = [];
 
   G.hp = {};
   (dk.healthBars || []).forEach((bar, idx) => {
@@ -2529,9 +2619,23 @@ function renderOverlayMenu() {
         btn.onclick = b.fn;
         acts.appendChild(btn);
       });
+    } else if (_overlaySource === 'ongoing') {
+      const note = document.createElement('div');
+      note.style.cssText = 'text-align:center;color:var(--accent);font-size:0.78rem;font-weight:600;padding:8px 0 12px';
+      note.textContent = '🔄 Ongoing Effect';
+      acts.appendChild(note);
+      const discardBtn = document.createElement('button');
+      discardBtn.className = 'btn btn-ghost btn-full';
+      discardBtn.textContent = 'Discard (end effect)';
+      discardBtn.onclick = () => discardOngoingCard(card);
+      acts.appendChild(discardBtn);
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'btn btn-ghost btn-full';
+      closeBtn.textContent = 'Close';
+      closeBtn.onclick = () => closeCardOverlay();
+      acts.appendChild(closeBtn);
     } else {
-      const buttons = [
-        { label: '▶ Play', cls: 'btn btn-accent btn-full', fn: () => playCard(card) },
+        { label: '🔄 Play as Ongoing', cls: 'btn btn-ghost btn-full', fn: () => playCardAsOngoing(card) },
         { label: 'Discard', cls: 'btn btn-ghost btn-full', fn: () => { discardCard(card); closeCardOverlay(); toast('Discarded'); } },
         { label: 'Return to Deck', cls: 'btn btn-ghost btn-full', fn: () => { _overlayMenu = 'return'; renderOverlayMenu(); } },
       ];
@@ -2682,6 +2786,7 @@ function updateAll() {
   if (document.getElementById('staged-content')) renderStaged();
   renderIntermediate();
   renderDiscard();
+  renderOngoing();
   
   // Update multiplayer card counts
   if (G.isMultiplayer) {
