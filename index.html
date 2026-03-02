@@ -210,9 +210,9 @@ body {
 /* Special card image — compact size for row 1
    EDIT height to make it taller/shorter */
 .status-row-1 .special-preview {
-  height: 56px;
+  height: 120px;
   width: auto;
-  max-width: 100px;
+  max-width: 20000px;
   aspect-ratio: unset;
   object-fit: cover;
   border-radius: var(--r-hand);
@@ -1124,12 +1124,12 @@ body {
 <script>
 var EDITIONS = [
   { id: "vol1", image: "EDITION Battle-of-Legends vol1.png", infoImage: "vol1_info.png", decks: ["kingarthur", "alice", "sinbad", "medusa"] },
-  { id: "vol2", image: "EDITION RobinHood-vs-Bigfoot.png", infoImage: "vol2_info.png", decks: ["robinhood", "bigfoot"] },
+  { id: "vol2", image: "EDITION RobinHood-vs-Bigfoot.png", infoImage: "vol2_info.png", decks: ["robinhood", "bigfoot", "geralt"] },
   { id: "vol3", image: "EDITION sling&arrows.png", infoImage: "vol2_info.png", decks: ["shakespeare", "titania", "hamlet", "sisters"] },
   { id: "vol4", image: "EDITION brains&brawn.png", infoImage: "vol2_info.png", decks: ["spiderman", "shehulk", "drstrange"] },
   { id: "vol5", image: "EDITION Redemption Row.png", infoImage: "vol2_info.png", decks: ["ghostrider", "lukecage", "moonknight"] },
   { id: "vol6", image: "EDITION Jurassic Park Vol1.png", infoImage: "vol2_info.png", decks: ["trex", "drsattler"] },
-  { id: "vol7", image: "EDITION Battle-of-Legends vol1.png", infoImage: "vol2_info.png", decks: ["loki", "chupacabra", "blackbeard", "pandora"] }
+  { id: "vol7", image: "EDITION Battle-of-Legends vol3.png", infoImage: "vol2_info.png", decks: ["loki", "chupacabra", "blackbeard", "pandora"] }
 ];
 var DECKS = { 
 medusa: {
@@ -1813,7 +1813,7 @@ moonknight: {
               { id: 30, image: "moonknight_2 x Good Enough For Us.png" },
             ]
           },
-  lukecage: {
+lukecage: {
             name: "LUKE CAGE",
             image: "lukecage_back.png",
             infoImage: "lukecage_info.png",
@@ -1899,7 +1899,7 @@ loki: {
               { id: 30, image: "loki_2 x TRICK, SVADILFARI'S LURE.png" },
             ]
     },
-  trex: {
+trex: {
     name: "T.REX",
     image: "trex_back.png",
     infoImage: "trex_info.png",
@@ -1939,7 +1939,7 @@ loki: {
       { id: 30, image: "trex_2 x Terrifying Roar.png" }
     ]
   },
-  pandora: {
+pandora: {
     name: "PANDORA",
     image: "pandora_back.png",
     infoImage: "pandora_info.png",
@@ -1988,16 +1988,16 @@ loki: {
       startCard: { id: 0, image: "pandora's box back.png" },
       deck: [
         { id: 1, image: "pandora's Confusion.png" },
-        { id: 2, image: "pandora's Greed.png" },
+        { id: 2, image: "pandora's Greed +1.png" },
         { id: 3, image: "pandora's Hope.png" },
-        { id: 4, image: "pandora's Misfortune.png" },
-        { id: 5, image: "pandora's Pain.png" },
-        { id: 6, image: "pandora's Toil.png" },
+        { id: 4, image: "pandora's Misfortune +2.png" },
+        { id: 5, image: "pandora's Pain +1.png" },
+        { id: 6, image: "pandora's Toil +1.png" },
         { id: 7, image: "pandora's Woe.png" }
       ]
     }
   },
-  drsattler: {
+drsattler: {
     name: "DR.SATTLER",
     image: "drsattler_back.png",
     infoImage: "drsattler_info.png",
@@ -2084,17 +2084,17 @@ blackbeard: {
             image: "blackbeard_back.png",
             infoImage: "blackbeard_info.png",
             healthBars: [
-      { label: "BLACKBEARD", startValue: 13, color: "#043A41", size: "large" },
+      { label: "BLACKBEARD", startValue: 13, color: "#6C2F38", size: "large" },
       { label: "SEADOGS ALIVE", startValue: 2, color: "#75C5B3", size: "small" }],
      intermediateZone: null,
       specialAbility: {
         enabled: true,
-        label: "Treasury",
+        label: "Doubloons",
         mode: "resource-counter",
-        startValue: 5,
+        startValue: 2,
         minValue: 0,
         maxValue: 3,
-        color: "#FFF6A9"
+        color: "#EBE205"
       },
     cards:      [
               { id: 1, image: "blackbeard_3 x Light the fuse.png" },
@@ -2127,6 +2127,54 @@ blackbeard: {
               { id: 28, image: "blackbeard_2 x Show a leg!.png" },
               { id: 29, image: "blackbeard_2 x Queen Anne's revenge.png" },
               { id: 30, image: "blackbeard_2 x Queen Anne's revenge.png" },
+            ]
+
+    },
+geralt: {
+            name: "DR.STRANGE",
+            image: "geralt_back.png",
+            infoImage: "geralt_info.png",
+            healthBars: [
+      { label: "GERALT of RIVIA", startValue: 16, color: "#E6E9F1", size: "large" },
+      { label: "DANDELION", startValue: 5, color: "#AA78A5", size: "medium" }],
+  intermediateZone: null,
+  cards:      [
+              { id: 1, image: "geralt_2 x ATTACK, Sword of silver.png" },
+              { id: 2, image: "geralt_2 x ATTACK, Sword of silver.png" },
+              { id: 3, image: "geralt_2 x ATTACK, Sword of steel.png" },
+              { id: 4, image: "geralt_2 x ATTACK, Sword of steel.png" },
+              { id: 5, image: "geralt_2 x DEFENSE, Wolf Medallion.png" },
+              { id: 6, image: "geralt_2 x DEFENSE, Wolf Medallion.png" },
+              { id: 7, image: "geralt_2 x DEFENSE, Armor of the Forgotten Wolf.png" },
+              { id: 8, image: "geralt_2 x DEFENSE, Armor of the Forgotten Wolf.png" },
+              { id: 9, image: "geralt_2 x SCHEME, Blizzard.png" },
+              { id: 10, image: "geralt_2 x SCHEME, Blizzard.png" },
+              { id: 11, image: "geralt_2 x SCHEME, Tawny Owl.png" },
+              { id: 12, image: "geralt_2 x SCHEME, Tawny Owl.png" },
+              { id: 13, image: "geralt_2 x Igni.png" },
+              { id: 14, image: "geralt_2 x Igni.png" },
+              { id: 15, image: "geralt_3 x Damn, you're ugly.png" },
+              { id: 16, image: "geralt_3 x Damn, you're ugly.png" },
+              { id: 17, image: "geralt_3 x Damn, you're ugly.png" },
+              { id: 18, image: "geralt_3 x Disciplined Duelist.png" },
+              { id: 19, image: "geralt_3 x Disciplined Duelist.png" },
+              { id: 20, image: "geralt_3 x Disciplined Duelist.png" },
+              { id: 21, image: "geralt_3 x Annoying tune.png" },
+              { id: 22, image: "geralt_3 x Annoying tune.png" },
+              { id: 23, image: "geralt_3 x Annoying tune.png" },
+              { id: 24, image: "geralt_3 x Rend.png" },
+              { id: 25, image: "geralt_3 x Rend.png" },
+              { id: 26, image: "geralt_3 x Rend.png" },
+              { id: 27, image: "geralt_3 x Plot twist.png" },
+              { id: 28, image: "geralt_3 x Plot twist.png" },
+              { id: 29, image: "geralt_3 x Plot twist.png" },
+              { id: 30, image: "geralt_2 x Riposte.png" },
+              { id: 31, image: "geralt_2 x Riposte.png" },
+              { id: 32, image: "geralt_3 x Yrden.png" },
+              { id: 33, image: "geralt_3 x Yrden.png" },
+              { id: 34, image: "geralt_3 x Yrden.png" },
+              { id: 35, image: "geralt_2 x Witcher Senses.png" },
+              { id: 36, image: "geralt_2 x Witcher Senses.png" },
             ]
 
     }
@@ -2208,6 +2256,19 @@ blackbeard: {
     </div>
     <div class="lobby-players" id="guest-players-list"></div>
     <button class="btn btn-accent btn-full" style="margin-top:auto" onclick="goTo('s-editions')">Pick Deck</button>
+  </div>
+</div>
+
+<div id="s-gear-picker" class="screen">
+  <div style="display:flex;flex-direction:column;height:100%;background:var(--bg)">
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px 10px;border-bottom:1px solid var(--border)">
+      <button class="btn btn-ghost" style="padding:6px 14px" onclick="goBack('s-decks')">← Back</button>
+      <span style="font-size:1.1rem;font-weight:700;color:var(--text)">Choose Your Gear</span>
+    </div>
+    <div id="gear-picker-body" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:24px"></div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border)">
+      <button id="gear-confirm-btn" class="btn btn-accent btn-full" onclick="confirmGearPick()" disabled>Confirm Gear</button>
+    </div>
   </div>
 </div>
 

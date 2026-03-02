@@ -1093,10 +1093,6 @@ function renderPlayerStatusArea() {
       `;
     }
     
-    const turnBadge = isActiveTurn
-      ? `<div class="turn-badge ${isMe ? 'my-turn' : 'their-turn'}" style="margin-left:auto;flex-shrink:0">${isMe ? 'YOUR TURN' : 'ACTIVE'}</div>`
-      : '';
-
     // SVG icon definitions for each card zone
     // Draw pile — stacked layers
     const iconDraw = `<svg viewBox="0 0 16 16"><path d="M2 11l6-3 6 3"/><path d="M2 7.5l6-3 6 3"/></svg>`;
@@ -1115,7 +1111,6 @@ function renderPlayerStatusArea() {
           <button class="info-btn-small" onclick="showPlayerDeckInfo('${pid}')">i</button>
         </div>
         ${specialHTML}
-        ${turnBadge}
       </div>
       <div class="status-row-2">
         <div class="status-hp">${hpHTML}</div>
@@ -1943,14 +1938,74 @@ function openDeckInfo(key, e) {
   document.getElementById('sh-info').classList.add('open');
 }
 
+function buildGearPicker(dk) {
+  G.gearSelections = {};
+  const body = document.getElementById('gear-picker-body');
+  body.innerHTML = '';
+  document.getElementById('gear-confirm-btn').disabled = true;
+  dk.gearPicker.categories.forEach(cat => {
+    const section = document.createElement('div');
+    const label = document.createElement('div');
+    label.style.cssText = 'font-size:0.72rem;font-weight:700;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;margin-bottom:10px';
+    label.textContent = cat.label;
+    section.appendChild(label);
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:12px;';
+    cat.options.forEach(opt => {
+      const card = document.createElement('div');
+      card.className = 'gear-option';
+      card.dataset.category = cat.label;
+      card.dataset.image = opt.image;
+      card.style.cssText = 'flex:1;cursor:pointer;border-radius:10px;border:3px solid transparent;transition:border-color .15s;overflow:hidden;';
+      const img = document.createElement('img');
+      img.src = opt.image;
+      img.alt = '';
+      img.style.cssText = 'width:100%;border-radius:8px;display:block;';
+      img.onerror = () => { img.style.opacity = '.2'; };
+      card.appendChild(img);
+      card.onclick = () => selectGear(cat.label, opt.image, card);
+      row.appendChild(card);
+    });
+    section.appendChild(row);
+    body.appendChild(section);
+  });
+}
+
+function selectGear(category, image, el) {
+  document.querySelectorAll(`.gear-option[data-category="${category}"]`).forEach(c => {
+    c.style.borderColor = 'transparent';
+  });
+  el.style.borderColor = 'var(--accent)';
+  G.gearSelections[category] = image;
+  const dk = DECKS[G.deckKey];
+  const total = dk.gearPicker.categories.length;
+  document.getElementById('gear-confirm-btn').disabled = Object.keys(G.gearSelections).length < total;
+}
+
+function confirmGearPick() {
+  const dk = DECKS[G.deckKey];
+  dk.gearPicker.categories.forEach(cat => {
+    const img = G.gearSelections[cat.label];
+    if (!img) return;
+    for (let i = 0; i < 2; i++) {
+      G.draw.push({ image: img, uid: G.deckKey + '_gear_' + cat.label + '_' + i + '_' + Date.now(), deckKey: G.deckKey });
+    }
+  });
+  G.draw = shuffle(G.draw);
+  buildDrawStack();
+  updateAll();
+  addLogEntry('You chose your gear and shuffled it into your deck', 'other');
+  if (G.isMultiplayer) broadcastLogMessage(G.playerName + ' chose their gear and shuffled it into their deck', 'other');
+  goTo('s-play');
+}
+
 function buildEditionGrid() {
   const grid = document.getElementById('edition-grid');
   grid.innerHTML = '';
   EDITIONS.forEach(ed => {
     const div = document.createElement('div');
     div.className = 'edition-item';
-    div.innerHTML = `<img src="${ed.image}" alt="" onerror="this.style.opacity='.25'">
-      <div class="info-btn" onclick="openEditionInfo('${ed.id}',event)">i</div>`;
+    div.innerHTML = `<img src="${ed.image}" alt="" onerror="this.style.opacity='.25'">`;
     div.onclick = () => selectEdition(ed);
     grid.appendChild(div);
   });
@@ -2011,7 +2066,12 @@ function selectDeck(key) {
   exitSel();
   buildDrawStack();
   updateAll();
-  goTo('s-play');
+  if (dk.gearPicker) {
+    buildGearPicker(dk);
+    goTo('s-gear-picker');
+  } else {
+    goTo('s-play');
+  }
 }
 
 function buildHealthBars(dk) {
