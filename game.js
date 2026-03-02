@@ -2635,6 +2635,8 @@ function renderOverlayMenu() {
       closeBtn.onclick = () => closeCardOverlay();
       acts.appendChild(closeBtn);
     } else {
+      const buttons = [
+        { label: '▶ Play', cls: 'btn btn-accent btn-full', fn: () => playCard(card) },
         { label: '🔄 Play as Ongoing', cls: 'btn btn-ghost btn-full', fn: () => playCardAsOngoing(card) },
         { label: 'Discard', cls: 'btn btn-ghost btn-full', fn: () => { discardCard(card); closeCardOverlay(); toast('Discarded'); } },
         { label: 'Return to Deck', cls: 'btn btn-ghost btn-full', fn: () => { _overlayMenu = 'return'; renderOverlayMenu(); } },
