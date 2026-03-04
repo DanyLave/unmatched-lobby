@@ -2480,20 +2480,201 @@ tesla: {
               { id: 30, image: "tesla_2 x Remote Control.png" },
             ]
           }
-};</script>
+};
+
+// ── Italian card name translations ──────────────────────────────────────────
+var CARD_NAMES_IT = {
+  // ── shared generics ──
+  'Regroup':'Riorganizzarsi','Feint':'Finta','Momentous Shift':'Svolta Decisiva',
+  'Skirmish':'Scaramuccia','Commanding Impact':'Impatto Dominante','Dash':'Scatto',
+  'Disarming Shot':'Colpo Disarmante','Snark':'Sarcasmo','Prophecy':'Profezia',
+  'Divine Intervention':'Intervento Divino','Ambush':'Imboscata',
+  'Toil and Danger':'Fatica e Pericolo','Exploit':'Sfruttamento',
+  // ── Medusa ──
+  'A Momentary Glance':'Uno Sguardo Fugace',
+  'The Hounds of Mighty Zeus':'I Cani del Possente Zeus',
+  'Winged Frenzy':'Frenesia Alata','Clutching Claws':'Artigli Afferranti',
+  'Gaze of Stone':'Sguardo di Pietra','Hiss and Slither':'Sibilo e Scivolata',
+  'Second Shot':'Secondo Tiro','Snipe':'Cecchino',
+  // ── King Arthur ──
+  'Aid the Chosen One':"Aiuta l'Eletto",'Excalibur':'Excalibur',
+  'Restless Spirits':'Spiriti Irrequieti','The Aid of Morgana':"L'Aiuto di Morgana",
+  'The Holy Grail':'Il Santo Graal','The Lady of the Lake':'La Dama del Lago',
+  'Bewilderment':'Sconcerto','Command the Storms':'Comandare le Tempeste',
+  'Swift Strike':'Colpo Rapido','Noble Sacrifice':'Nobile Sacrificio',
+  // ── Sinbad ──
+  'Voyage to the Island That Was a Whale':"Viaggio all'Isola Che Era una Balena",
+  'Voyage to the City of the Man-Eating Apes':'Viaggio nella Città delle Scimmie Cannibali',
+  'Voyage Home':'Viaggio a Casa',
+  'Voyage to the Valley of the Giant Snakes':'Viaggio nella Valle dei Serpenti Giganti',
+  'Voyage to the City of the King of Serendib':'Viaggio nella Città del Re di Serendib',
+  'Voyage to the Creature With Eyes Like Coals of Fire':'Viaggio alla Creatura dagli Occhi di Brace',
+  'Voyage to the Cannibals With the Root of Madness':'Viaggio dai Cannibali con la Radice della Follia',
+  'Riches Beyond Compare':'Ricchezze Senza Pari','Leap Away':'Balzo in Ritirata',
+  'By Fortune and Fate':'Per Fortuna e Destino',
+  // ── Alice ──
+  'O Frabjous Day!':'O Giorno Frabjous!','Snicker-Snack':'Snicker-Snack',
+  'The Other Side of the Mushroom':"L'Altro Lato del Fungo",
+  'Claws That Catch':'Artigli Che Afferrano','Drink Me':'Bevimi','Eat Me':'Mangiami',
+  'Jaws That Bite':'Fauci Che Mordono','Looking Glass':'Specchio Magico',
+  'Mad as a Hatter':'Matto come un Cappellaio','Manxome Foe':'Nemico Manxome',
+  "I'm Late, I'm Late":'Sono in Ritardo',
+  // ── Bigfoot ──
+  "It's Just Your Imagination":'È Solo la Tua Immaginazione',
+  'Crash Through the Trees':'Sfondare tra gli Alberi','Disengage':'Sganciarsi',
+  'Savagery':'Ferocia','Jackalope Horns':'Corna di Jackalope','Hoax':'Bufala',
+  'Larger Than Life':'Più Grande della Vita',
+  // ── Robin Hood ──
+  "A Hunter's Eye":"L'Occhio del Cacciatore",'Highway Robbery':'Rapina su Strada',
+  'Piercing Shot':'Colpo Perforante','Wily Fighting':'Combattimento Astuto',
+  'Steal From the Rich':'Rubare ai Ricchi','Defenders of Sherwood':'Difensori di Sherwood',
+  // ── Hamlet ──
+  'To Sleep, Perchance To Dream':'Dormire, Forse Sognare',
+  'Blood Will Have Blood':'Il Sangue Chiama Sangue',
+  'Nothing Either Good Or Bad':'Niente è Buono né Cattivo',
+  "The Play's The Thing":'La Recita è il Punto',
+  'Uncertain Doom':'Destino Incerto','Method In The Madness':'Metodo nella Follia',
+  'The Ghost':'Il Fantasma','The Readiness Is All':'La Preparazione è Tutto',
+  'Maddening Insight':'Intuizione Devastante','Outrageous Fortune':'Fortuna Iniqua',
+  'The Rest Is Silence':'Il Resto è Silenzio','Cruel To Be Kind':'Crudele per Essere Gentile',
+  // ── Titania ──
+  'As Wise As Beautiful':'Saggia quanto Bella','Met By Moonlight':'Incontrata al Chiaro di Luna',
+  'Protection Of The Fairy Woods':'Protezione del Bosco delle Fate',
+  'Fairy Song':'Canto delle Fate','Gift Of The Fair Folk':'Dono del Popolo Fatato',
+  'Whisked Away':'Portata Via','The Moon Looks Down':"La Luna Guarda Dall'Alto",
+  'What Fools These Mortals Be':'Che Sciocchi i Mortali',
+  'But A Dream':'Solo un Sogno',"Parting Gift":"Dono d'Addio",
+  'Queen Of The Fairies':'Regina delle Fate',
+  // ── Shakespeare ──
+  'Deceive':'Ingannare','My Kingdom For a Horse':'Il Mio Regno per un Cavallo','Again':'Ancora',
+  'Once More Unto The Breach':'Ancora una Volta nella Breccia','Revise':'Rivedere','Alas':'Ahimè',
+  'Places, Places!':'Ai Posti, Ai Posti!','The Ides Of March':'Le Idi di Marzo',
+  'All Are Punished':'Tutti Sono Puniti','Et Tu, Brute':'Et Tu, Brute',
+  'Such Sweet Sorrow':'Una Dolce Tristezza',
+  'Horror1':'Orrore I','Horror2':'Orrore II','Horror3':'Orrore III','Horror4':'Orrore IV','Horror5':'Orrore V',
+  // ── Sisters ──
+  'Fire Burn And Cauldron Bubble':'Fuoco Arde e Calderone Bolle','Ward':'Protezione',
+  'Toil And Trouble':'Fatica e Guai','Double, Double':'Doppio, Doppio','Hurly-Burly':'Trambusto',
+  'The Stars Align':'Le Stelle si Allineano',
+  'Something Wicked This Way Comes':'Qualcosa di Malvagio si Avvicina',
+  'Curious Familiar':'Famiglio Curioso','Pricking Of My Thumbs':'Il Bruciore dei Miei Pollici',
+  'Unnatural Remedy':'Rimedio Innaturale','All-Seeing Familiar':'Famiglio Onniveggente',
+  // ── Spiderman ──
+  'Spider-Sense Tingling!':'Senso di Ragno in Allerta!','Thwip!':'Thwip!',
+  'Counter-Attack':'Contrattacco','Swinging Kick':'Calcio Oscillante',
+  'Web Shooters':'Lanciaragnatele','Friendly Neighborhood Spider-Man':'Simpatico Spider-Man di Quartiere',
+  'Wall Crawler':'Arrampicatore Murale','With Great Power':'Con Grande Potere',
+  'Right in the Face!':'Dritto in Faccia!',
+  // ── Dr Strange ──
+  'Bolts of Balthakk':'Fulmini di Balthakk','The Mists of Munnopor':'Le Nebbie di Munnopor',
+  'Seven Suns of Cinnibus':'Sette Soli di Cinnibus','Steadfast Disciple':'Discepolo Fedele',
+  'The Winds of Watoomb':'I Venti di Watoomb','Master of Kamar-Taj':'Maestro di Kamar-Taj',
+  'The Rings of Raggadorr':'Gli Anelli di Raggadorr','Eye of Agamotto':'Occhio di Agamotto',
+  'Cloak of Levitation':'Mantello della Levitazione',"No Really, I'm a Doctor":'No Davvero, Sono un Dottore',
+  // ── She-Hulk ──
+  'Nerve Cluster Strike':'Colpo al Plesso Nervoso','Lady Justice':'Dama Giustizia',
+  'Sensational':'Straordinaria','Cease and Desist':'Cessate e Desistete',
+  'Green Energy':'Energia Verde','Legalese':'Gergo Legale',
+  'Jennifer Walters, Esq.':'Jennifer Walters, Avv.','Leap Toward':'Balzo Verso',
+  'Omega-Level Threat':'Minaccia di Livello Omega','Double Jeopardy':'Doppio Pericolo',
+  'The Defense Rests':'La Difesa ha Concluso','The Savage She-Hulk':'La Selvaggia She-Hulk',
+  // ── Ghost Rider ──
+  'Control The Demon':'Controllare il Demone','I Brought The Devil With Me':'Ho Portato il Diavolo con Me',
+  'Spirit Of Vengeance':'Spirito di Vendetta',"I Finally Escaped Hell":"Sono Finalmente Fuggito dall'Inferno",
+  'Stoke The Flames':'Alimentare le Fiamme','The Wicked Will Burn':'Gli Empi Bruceranno',
+  'Penance Stare':'Sguardo della Penitenza','Deal With The Devil':'Patto con il Diavolo',
+  'Hell Rides With Me':"L'Inferno mi Accompagna",'Blaze of Glory':'Bagliore di Gloria',
+  'Chains of Hellfire':'Catene del Fuoco Infernale',
+  // ── Moon Knight ──
+  "We're All In This Together":'Siamo Tutti in Questo Insieme',"I'm Not Real":'Non Sono Reale',
+  "That's Why I Always Win":'Ecco Perché Vinco Sempre',
+  'A Totally Sane Thing To Do':'Una Cosa Perfettamente Sana da Fare',
+  'Past and Present Intermingle':'Passato e Presente si Mescolano',
+  'Let Your Insanity Guide You':'Lascia che la Follia ti Guidi',
+  'Travelers of The Night':'Viaggiatori della Notte',
+  "That's The Part I Like":'È la Parte Che mi Piace',
+  'Madness Will Keep You Alive':'La Follia ti Terrà in Vita',
+  'Fist of Khonshu':'Pugno di Khonshu','Good Enough For Us':'Abbastanza Buono per Noi',
+  // ── Luke Cage ──
+  'Trash Talk':'Provocazioni','Hero For Hire':'Eroe a Pagamento','Pushback':'Resistenza',
+  'Skin Like Titanium':'Pelle come il Titanio',"Where's My Money":"Dov'\u00e8 il Mio Denaro",
+  'Got My Back':'Mi Copre le Spalle','Daughter of the Dragon':'Figlia del Drago',
+  'Get Paid':'Essere Pagato','Sweet Christmas!':'Dolce Natale!',
+  'Power Man':'Power Man','Still Standing':'Ancora in Piedi',
+  // ── Loki ──
+  'Shapershifter':'Mutaforma',"TRICK, Baldr's downfall":'INGANNO, La Caduta di Baldr',
+  'GOD OF MISCHIEF':'DIO degli Imbrogli','LAEVATEINN':'LAEVATEINN',
+  'Looking for trouble':'In Cerca di Guai','MALICIOUS FLYTING':'FLYTING MALEVOLO',
+  'UNDERHANDED':'SUBDOLO',"TRICK, FREYJA'S RESCUE":'INGANNO, Il Salvataggio di Freya',
+  'RAGNARÖK':'RAGNARÖK',"TRICK, SINDRI'S BET":'INGANNO, La Scommessa di Sindri',
+  "TRICK, SVADILFARI'S LURE":'INGANNO, Il Richiamo di Svadilfari',
+  // ── T-Rex ──
+  'When Dinosaurs Ruled the Earth':'Quando i Dinosauri Dominavano la Terra',
+  'Ripples in the Water':"Increspature nell'Acqua",
+  'Closer Than She Appears':'Più Vicina di Quanto Sembra',
+  'Reckless Lunge':'Slancio Spericolato','Thrash':'Dimenare',
+  "You're Just Making Her Angry":'La Stai Solo Facendo Arrabbiare',
+  '65 Million Years of Gut Instinct':'65 Milioni di Anni di Istinto',
+  '15,000 Pounds of Muscle':'15.000 Libbre di Muscoli','Terrifying Roar':'Ruggito Terrificante',
+  // ── Pandora ──
+  'FORGED BY HEPHAESTUS':'FORGIATA DA EFESTO',"HERA'S CURIOSITY":'LA CURIOSITÀ DI ERA',
+  'HINDSIGHT':'SENNO DI POI',"APHRODITE'S BEAUTY":'LA BELLEZZA DI AFRODITE',
+  'GUIDED BY THE FATES':'GUIDATA DALLE MOIRE','DIVINE INTERVENTION':'INTERVENTO DIVINO',
+  'Spite':'Dispetto','Malice':'Malizia','OFFERING TO THE GODS':'OFFERTA AGLI DEI',
+  "ZEUS'S MISCHIEF":'L\'INGANNO DI ZEUS','CELESTIAL RAIMENTS':'VESTIMENTI CELESTI',
+  // ── Dr Sattler ──
+  'The Concept of Attraction':'Il Concetto di Attrazione',
+  "You Never Had Control, That's the Illusion":"Non Hai Mai Avuto Controllo, È un'Illusione",
+  "I Think We're Back In Business":'Credo che Siamo di Nuovo Operativi',
+  'Violently, If Necessary':'Violentemente, se Necessario',
+  'Woman Inherits the Earth':'La Donna Eredita la Terra',
+  'Life Finds a Way':'La Vita Trova Sempre una Via',
+  'Lock The Doors!':'Chiudete a Chiave!',
+  'Sexism in Survival Situations':'Sessismo nelle Situazioni di Sopravvivenza',
+  'Chaotician':'Caotista',"Hey! Hey! Hey!":'Ehi! Ehi! Ehi!',
+  'Must Go Faster':'Devi Andare Più Veloce','The Future Ex-Mrs. Malcolm':'La Futura ex Sig.ra Malcolm',
+  // ── Chupacabra ──
+  'Wounded beast':'Bestia Ferita','Blood in the air':"Sangue nell'Aria",'Feeding':'Banchetto',
+  'Ravenous lunge':'Slancio Famelico','Traveler of the night':'Viaggiatore della Notte',
+  'The more they struggle':'Più si Dibattono','Tooth and tail':'Denti e Coda',
+  'Natural toughness':'Resistenza Naturale','Unsettle':'Turbare',
+  // ── Blackbeard ──
+  'Light the fuse':'Accendere la Miccia','Plunder':'Saccheggio',
+  'Give no quarter':'Non Dare Quartiere','Parley':'Parlamentare',
+  'Fearsome and calculating':'Temibile e Calcolatore','No prey, no pay':'Nessuna Preda, Nessun Compenso',
+  'A brace of primed pistols':'Un Paio di Pistole Cariche',
+  'Scourge of the seven seas':'Flagello dei Sette Mari','Avast Ye!':'Fermi Tutti!',
+  'Intimidating visage':'Aspetto Intimidatorio',"Show a leg!":'Svegliatevi!',
+  "Queen Anne's revenge":'La Vendetta della Regina Anna',
+  // ── Geralt ──
+  'Igni':'Igni',"Damn, you're ugly":'Mannaggia, sei Brutto',
+  'Disciplined Duelist':'Duellante Disciplinato','Annoying tune':'Melodia Fastidiosa',
+  'Rend':'Lacerare','Plot twist':'Colpo di Scena','Riposte':'Risposta','Yrden':'Yrden',
+  'Witcher Senses':'Sensi dello Strigo',
+  'ATTACK, Sword of silver':'ATTACCO, Spada d\'Argento','ATTACK, Sword of steel':'ATTACCO, Spada d\'Acciaio',
+  'DEFENSE, Armor of the Forgotten Wolf':'DIFESA, Armatura del Lupo Dimenticato',
+  'DEFENSE, Wolf Medallion':'DIFESA, Medaglione del Lupo',
+  'SCHEME, Blizzard':'SCHEMA, Bufera','SCHEME, Tawny Owl':'SCHEMA, Civetta Fulva',
+  // ── Tesla ──
+  'The Alternating Current':'La Corrente Alternata','7 Hertz':'7 Hertz',
+  'Death Ray':'Raggio della Morte','X-Ray Radiation':'Radiazione ai Raggi X',
+  'Lightning Storm':'Tempesta di Fulmini','Polyphase Coils':'Bobine Polifase',
+  'Repulsion Blast':'Esplosione Repulsiva','Kinetic Induction':'Induzione Cinetica',
+  'Intense Experimentation':'Sperimentazione Intensa','Fully Charged':'Completamente Carico',
+  'Remote Control':'Telecomando'
+};
+</script>
+<style>
+.overlay-it-name { display:flex; align-items:center; gap:6px; justify-content:center;
+  background:rgba(0,60,130,.18); border:1px solid rgba(100,160,255,.25);
+  border-radius:8px; padding:6px 14px; margin:6px 16px 0;
+  font-size:.82rem; font-weight:600; color:var(--accent); text-align:center; }
+.overlay-it-name .it-flag { font-size:.95rem; flex-shrink:0; }
+</style>
 
 <!-- WELCOME SCREEN -->
 <div id="s-welcome" class="screen active">
   <div class="welcome-container">
-    <div class="welcome-title">DECK GAME</div>
-    <div class="welcome-subtitle" data-i18n="app.subtitle">Choose your mode</div>
-    <div class="welcome-buttons">
-      <button class="btn btn-accent btn-full" onclick="startMultiplayer()" data-i18n="btn.multiplayer">🌐 Multiplayer</button>
-      <button class="btn btn-ghost btn-full" onclick="startSolo()" data-i18n="btn.solo">🎴 Solo Play</button>
-    </div>
-    <button id="lang-toggle-btn" onclick="setLang(window.currentLang==='en'?'it':'en')" style="margin-top:24px;background:transparent;border:1px solid var(--border2);border-radius:100px;padding:6px 14px;cursor:pointer;font-size:1rem;color:var(--muted)">🇮🇹</button>
-  </div>
-</div>
 
 <!-- MULTIPLAYER MODE SELECT -->
 <div id="s-mp-select" class="screen">
@@ -2801,6 +2982,7 @@ tesla: {
 <div class="card-overlay" id="card-overlay" onclick="handleOverlayClick(event)">
   <button class="card-overlay-close" onclick="closeCardOverlay()">✕</button>
   <div class="card-enlarged"><img id="overlay-img" src="" alt=""></div>
+  <div id="overlay-it-name" class="overlay-it-name" style="display:none"><span class="it-flag">🇮🇹</span><span id="overlay-it-name-text"></span></div>
   <div class="card-overlay-actions" id="overlay-actions"></div>
 </div>
 
