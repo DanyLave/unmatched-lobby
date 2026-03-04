@@ -512,8 +512,15 @@ function checkNewReveals(roomData) {
     const cnt = r.cards ? r.cards.length : (r.count || 1);
     const cWord = cnt === 1 ? '1 card' : cnt + ' cards';
     let text, type;
+    let logCardImage = null;
 
     switch (r.action) {
+      case 'played-ongoing':
+        text = n + ' played a card as Ongoing 🔄';
+        type = 'play';
+        lastShowNotif = r;
+        if (r.cards && r.cards[0]) logCardImage = r.cards[0].image;
+        break;
       case 'played':
         text = r.random ? n + ' played a random card 🎲' : n + ' played ' + cWord;
         type = 'other';
@@ -699,13 +706,14 @@ function checkNewReveals(roomData) {
       case 'log-broadcast':
         text = r.text || (n + ' performed an action');
         type = r.type || 'other';
+        if (r.cardImage) logCardImage = r.cardImage;
         break;
       default:
         text = n + ' performed an action';
         type = 'other';
     }
 
-    if (text) addLogEntry(text, type);
+    if (text) addLogEntry(text, type, logCardImage);
   });
 
   // Show reveal notification only for the latest played/discarded event
@@ -717,9 +725,14 @@ function checkNewReveals(roomData) {
 function showRevealNotification(reveal) {
   const notif = document.getElementById('reveal-notification');
   const action = reveal.action || 'played';
-  const verb = action === 'discarded' ? 'discarded' : action === 'activated-special' ? 'activated their special ability' : 'played';
+  const verb = action === 'discarded' ? 'discarded'
+    : action === 'activated-special' ? 'activated their special ability'
+    : action === 'played-ongoing' ? 'played as Ongoing'
+    : 'played';
   const count = reveal.cards ? reveal.cards.length : 0;
-  const cardWord = action === 'activated-special' ? '' : (reveal.random ? 'a random card \ud83c\udfb2' : (count === 1 ? 'a card' : count + ' cards'));
+  const cardWord = action === 'activated-special' ? ''
+    : action === 'played-ongoing' ? 'a card \uD83D\uDD04'
+    : (reveal.random ? 'a random card \ud83c\udfb2' : (count === 1 ? 'a card' : count + ' cards'));
   document.getElementById('reveal-notif-player').textContent = reveal.playerName + ' ' + verb + (cardWord ? ' ' + cardWord : '') + '!';
   
   const timeAgo = Math.floor((Date.now() - reveal.timestamp) / 1000);
@@ -1241,10 +1254,12 @@ function playCardAsOngoing(card) {
   closeCardOverlay();
   updateAll();
   renderOngoing();
-  if (G.isMultiplayer) syncMyOngoing();
-  addLogEntry('You played \u201c' + cardLabel(card) + '\u201d as ongoing', 'play');
-  broadcastLogMessage(G.playerName + ' played \u201c' + cardLabel(card) + '\u201d as ongoing', 'play');
-  publishAction(card, 'played');
+  if (G.isMultiplayer) {
+    syncMyOngoing();
+    publishEvent({ action: 'played-ongoing', cards: [{ image: card.image }] });
+  }
+  addLogEntry('You played \u201c' + cardLabel(card) + '\u201d as Ongoing \uD83D\uDD04', 'play', card.image);
+  broadcastLogMessage(G.playerName + ' played \u201c' + cardLabel(card) + '\u201d as Ongoing \uD83D\uDD04', 'play', card.image);
 }
 
 function discardOngoingCard(card) {
@@ -1253,9 +1268,13 @@ function discardOngoingCard(card) {
   closeCardOverlay();
   updateAll();
   renderOngoing();
-  if (G.isMultiplayer) { syncMyOngoing(); syncMyDiscard(); }
-  addLogEntry('You discarded ongoing \u201c' + cardLabel(card) + '\u201d', 'other');
-  broadcastLogMessage(G.playerName + ' discarded ongoing \u201c' + cardLabel(card) + '\u201d', 'other');
+  if (G.isMultiplayer) {
+    syncMyOngoing();
+    syncMyDiscard();
+    publishEvent({ action: 'discarded', cards: [{ image: card.image }] });
+  }
+  addLogEntry('You ended the effect of \u201c' + cardLabel(card) + '\u201d (\u2192 discard)', 'discard', card.image);
+  broadcastLogMessage(G.playerName + ' ended the effect of \u201c' + cardLabel(card) + '\u201d', 'discard', card.image);
 }
 
 function renderOngoing() {
@@ -2607,6 +2626,13 @@ function renderOverlayMenu() {
       note.style.cssText = 'text-align:center;color:var(--muted);font-size:0.76rem;padding:20px';
       note.textContent = window.t('card.specialAbilityNote');
       acts.appendChild(note);
+    } else if (_overlaySource === 'log-view') {
+      // Read-only zoom from activity log
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'btn btn-ghost btn-full';
+      closeBtn.textContent = window.t('card.close');
+      closeBtn.onclick = () => closeCardOverlay();
+      acts.appendChild(closeBtn);
     } else if (_overlaySource === 'other-discard') {
       // Card from another player's discard — just view, take is via the browse sheet button
       const note = document.createElement('div');
@@ -2748,9 +2774,9 @@ function timeLabel(ts) {
          d.getSeconds().toString().padStart(2, '0');
 }
 
-function addLogEntry(text, type) {
+function addLogEntry(text, type, cardImage) {
   type = type || 'neutral';
-  _actionLog.unshift({ text: text, type: type, time: Date.now() });
+  _actionLog.unshift({ text: text, type: type, time: Date.now(), cardImage: cardImage || null });
   if (_actionLog.length > 30) _actionLog.pop();
   renderActionLog();
 }
@@ -2762,12 +2788,27 @@ function renderActionLog() {
     container.innerHTML = '<div class="log-empty">' + window.t('log.empty') + '</div>';
     return;
   }
-  container.innerHTML = _actionLog.map(function(e) {
+  container.innerHTML = _actionLog.map(function(e, i) {
+    var thumb = e.cardImage
+      ? '<img class="log-card-thumb" src="' + e.cardImage + '" alt="" onclick="openLogCardZoom(' + i + ')" title="Tap to zoom">'
+      : '';
     return '<div class="log-entry log-' + e.type + '">' +
+      thumb +
       '<span class="log-text">' + e.text + '</span>' +
       '<span class="log-time">' + timeLabel(e.time) + '</span>' +
       '</div>';
   }).join('');
+}
+
+function openLogCardZoom(idx) {
+  var entry = _actionLog[idx];
+  if (!entry || !entry.cardImage) return;
+  _overlayCard = { image: entry.cardImage, uid: '__log__' };
+  _overlayMenu = 'main';
+  _overlaySource = 'log-view';
+  document.getElementById('overlay-img').src = entry.cardImage;
+  renderOverlayMenu();
+  document.getElementById('card-overlay').classList.add('open');
 }
 
 function toggleSection(label) {
@@ -3079,19 +3120,21 @@ function peekTopN(n) {
   document.getElementById('sh-draw-browse').classList.add('open');
 }
 
-function broadcastLogMessage(text, type) {
+function broadcastLogMessage(text, type, cardImage) {
   if (!G.isMultiplayer || !G.roomCode) return;
   const roomData = getRoomData();
   if (!roomData) return;
   if (!roomData.reveals) roomData.reveals = [];
-  roomData.reveals.push({
+  const entry = {
     playerId: G.playerId,
     playerName: G.playerName,
     action: 'log-broadcast',
     text: text,
     type: type || 'other',
     timestamp: Date.now()
-  });
+  };
+  if (cardImage) entry.cardImage = cardImage;
+  roomData.reveals.push(entry);
   if (roomData.reveals.length > 20) roomData.reveals = roomData.reveals.slice(-20);
   setRoomData(roomData);
 }
