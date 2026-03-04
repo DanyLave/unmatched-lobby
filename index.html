@@ -1153,6 +1153,10 @@ body {
 .map-token.is-mine { cursor:grab; touch-action:none; }
 .map-token.is-mine.dragging { cursor:grabbing; z-index:100; opacity:.9; touch-action:none; }
 .map-token.not-mine { cursor:default; pointer-events:none; }
+/* Movement trail SVG */
+.map-trails { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+.map-trail-line { animation: trail-fade 2.8s ease-out forwards; }
+@keyframes trail-fade { 0%{stroke-opacity:.75;stroke-dashoffset:0} 70%{stroke-opacity:.35} 100%{stroke-opacity:0} }
 .map-token-circle { width:48px; height:48px; border-radius:50%; border:3px solid; overflow:hidden; box-shadow:0 3px 10px rgba(0,0,0,.55); background:var(--surface2); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .map-token-circle img { width:100%; height:100%; object-fit:cover; display:block; }
 .map-token-initials { font-weight:800; font-size:1.3rem; color:#fff; line-height:1; }

@@ -4401,9 +4401,14 @@ function _gatherTokens(positions) {
 }
 
 function renderMapView() {
-  if (_mapDragActive) return;
+  // Only skip if dragging AND no map is rendered yet (first build must happen)
   var mv = document.getElementById('map-view');
   if (!mv) return;
+  var canvas = mv.querySelector('.map-canvas');
+  if (_mapDragActive && canvas) {
+    // Allow incremental updates but skip repositioning the actively-dragged token
+    // (fall through to incremental path below)
+  }
 
   var mapKey  = G.selectedMap;
   var mapData = (typeof MAPS !== 'undefined') ? MAPS.find(function(m){ return m.key === mapKey; }) : null;
@@ -4443,8 +4448,22 @@ function renderMapView() {
       livePids[t.tokenPid] = true;
       var el = canvas.querySelector('.map-token[data-pid="' + t.tokenPid + '"]');
       if (el) {
-        el.style.left = (t.posX * 100).toFixed(2) + '%';
-        el.style.top  = (t.posY * 100).toFixed(2) + '%';
+        // Skip repositioning the token the local player is actively dragging
+        if (t.tokenPid === _draggedTokenPid) return;
+        var oldLeft = parseFloat(el.style.left);
+        var oldTop  = parseFloat(el.style.top);
+        var newLeft = parseFloat((t.posX * 100).toFixed(2));
+        var newTop  = parseFloat((t.posY * 100).toFixed(2));
+        // Draw trail for remote (or local non-dragged) token position changes
+        if (!isNaN(oldLeft) && !isNaN(oldTop) && (Math.abs(newLeft - oldLeft) > 0.8 || Math.abs(newTop - oldTop) > 0.8)) {
+          var trailWrapper = canvas.querySelector('.map-image-wrapper');
+          // Get token color from its circle border
+          var circle = el.querySelector('.map-token-circle');
+          var trailColor = circle ? (circle.style.borderColor || '#ffffff') : '#ffffff';
+          _drawMapTrail(trailWrapper, oldLeft / 100, oldTop / 100, newLeft / 100, newTop / 100, trailColor);
+        }
+        el.style.left = newLeft + '%';
+        el.style.top  = newTop + '%';
       } else {
         var tmp = document.createElement('div');
         tmp.innerHTML = _makeTokenHTML(t);
@@ -4461,6 +4480,31 @@ function renderMapView() {
 }
 
 var _mapDragActive = false;
+var _draggedTokenPid = null;  // pid of token currently being dragged by local player
+var _dragLiveThrottle = 0;    // timestamp of last live-drag Firebase write
+
+function _drawMapTrail(wrapper, x0, y0, x1, y1, color) {
+  if (!wrapper) return;
+  if (Math.hypot(x1 - x0, y1 - y0) < 0.01) return; // ignore tiny moves
+  var svg = wrapper.querySelector('.map-trails');
+  if (!svg) {
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'map-trails');
+    wrapper.appendChild(svg);
+  }
+  var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', (x0 * 100).toFixed(2) + '%');
+  line.setAttribute('y1', (y0 * 100).toFixed(2) + '%');
+  line.setAttribute('x2', (x1 * 100).toFixed(2) + '%');
+  line.setAttribute('y2', (y1 * 100).toFixed(2) + '%');
+  line.setAttribute('stroke', color || '#ffffff');
+  line.setAttribute('stroke-width', '2.5');
+  line.setAttribute('stroke-dasharray', '7 5');
+  line.setAttribute('stroke-linecap', 'round');
+  line.setAttribute('class', 'map-trail-line');
+  svg.appendChild(line);
+  setTimeout(function() { if (line.parentNode) line.parentNode.removeChild(line); }, 3000);
+}
 
 // ── Split-view draggable divider ────────────────────────────────────────
 var _splitDividerInited = false;
@@ -4500,19 +4544,21 @@ function _initSplitDivider() {
 function _startTokenDrag(e) {
   e.preventDefault();
   var el = e.currentTarget;
-  // Use the token's own data-pid so sidekicks are tracked separately
   var tokenPid = el.dataset ? el.dataset.pid : el.getAttribute('data-pid');
 
   _mapDragActive = true;
+  _draggedTokenPid = tokenPid;
   el.setPointerCapture(e.pointerId);
   el.classList.add('dragging');
+
+  // Record starting position for trail
+  var startPos = G.mapPositions[tokenPid] ? { x: G.mapPositions[tokenPid].x, y: G.mapPositions[tokenPid].y } : null;
 
   function onMove(me) {
     if (me.pointerId !== e.pointerId) return;
     me.preventDefault();
     var mv = document.getElementById('map-view');
     if (!mv) return;
-    // Use wrapper's bounding rect — already accounts for zoom/pan transform
     var wrapper = mv.querySelector('.map-image-wrapper');
     var ref = wrapper ? wrapper.getBoundingClientRect() : mv.getBoundingClientRect();
     var x = Math.max(0, Math.min(1, (me.clientX - ref.left) / ref.width));
@@ -4524,11 +4570,25 @@ function _startTokenDrag(e) {
       token.style.top  = (y * 100).toFixed(2) + '%';
     }
     G.mapPositions[tokenPid] = { x: x, y: y };
+    // Live-broadcast position to Firebase (throttled ~80ms)
+    if (G.isMultiplayer) {
+      var now = Date.now();
+      if (now - _dragLiveThrottle > 80) {
+        _dragLiveThrottle = now;
+        var rd = getRoomData();
+        if (rd) {
+          if (!rd.mapPositions) rd.mapPositions = {};
+          rd.mapPositions[tokenPid] = { x: x, y: y };
+          setRoomData(rd);
+        }
+      }
+    }
   }
 
   function onEnd(me) {
     if (me.type === 'pointerup' && me.pointerId !== e.pointerId) return;
     _mapDragActive = false;
+    _draggedTokenPid = null;
     window.removeEventListener('pointermove',   onMove,  true);
     window.removeEventListener('pointerup',     onEnd,   true);
     window.removeEventListener('pointercancel', onEnd,   true);
@@ -4536,6 +4596,14 @@ function _startTokenDrag(e) {
     if (mv) {
       var token = mv.querySelector('.map-token[data-pid="' + tokenPid + '"]');
       if (token) token.classList.remove('dragging');
+      // Draw local trail
+      var finalPos = G.mapPositions[tokenPid];
+      if (startPos && finalPos) {
+        var wrapper = mv.querySelector('.map-image-wrapper');
+        var circle = token && token.querySelector('.map-token-circle');
+        var trailColor = circle ? (circle.style.borderColor || '#ffffff') : '#ffffff';
+        _drawMapTrail(wrapper, startPos.x, startPos.y, finalPos.x, finalPos.y, trailColor);
+      }
     }
     if (G.isMultiplayer) {
       var rd = getRoomData();
