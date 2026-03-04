@@ -1120,6 +1120,14 @@ body {
 .play-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
 .play-tab-panel { display:flex; flex-direction:column; flex:1; overflow-y:auto; min-height:0; }
 .play-tab-panel.map-panel { overflow:hidden; }
+/* Split-screen layout */
+#play-panels { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
+#s-play.split-view #play-panels { flex-direction:row; }
+@media (max-aspect-ratio:1/1) { #s-play.split-view #play-panels { flex-direction:column; } }
+#s-play.split-view .play-tab-panel { display:flex !important; flex:1; min-width:0; min-height:0; }
+#s-play.split-view .play-tab-panel:not(.map-panel) { border-right:1px solid var(--border); overflow-y:auto; }
+@media (max-aspect-ratio:1/1) { #s-play.split-view .play-tab-panel:not(.map-panel) { border-right:none; border-bottom:1px solid var(--border); } }
+.play-tab.split-btn { font-size:.78rem; letter-spacing:.02em; }
 .map-view { position:relative; flex:1; overflow:hidden; background:#111; touch-action:none; }
 .map-canvas { position:absolute; top:0; left:0; width:100%; height:100%; transform-origin:0 0; will-change:transform; }
 .map-bg { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(90deg); pointer-events:none; user-select:none; display:block; -webkit-user-drag:none; }
@@ -2582,10 +2590,12 @@ tesla: {
   <div class="play-tabs" id="play-tabs">
     <button class="play-tab active" id="tab-cards" onclick="switchPlayTab('cards')" data-i18n="map.cards">Cards</button>
     <button class="play-tab" id="tab-map" onclick="switchPlayTab('map')" data-i18n="map.tab">Map</button>
+    <button class="play-tab split-btn" id="tab-split" onclick="switchPlayTab('split')" title="Split screen">&#x29C9; Split</button>
   </div>
   <div class="player-status-area" id="player-status-area" style="display:none"></div>
 
   <!-- CARDS PANEL -->
+  <div id="play-panels">
   <div id="play-tab-cards" class="play-tab-panel">
 
   <!-- TURN CONTROL (MULTIPLAYER ONLY) -->
@@ -2756,6 +2766,7 @@ tesla: {
   <div id="play-tab-map" class="play-tab-panel map-panel" style="display:none">
     <div class="map-view" id="map-view"></div>
   </div>
+  </div><!-- end #play-panels -->
 
 </div><!-- end #s-play -->
 

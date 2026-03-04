@@ -4244,12 +4244,35 @@ function _initMapGestures(mv) {
 }
 
 function switchPlayTab(tab) {
+  const sPlay       = document.getElementById('s-play');
   const cardsPanel  = document.getElementById('play-tab-cards');
   const mapPanel    = document.getElementById('play-tab-map');
   const tabCards    = document.getElementById('tab-cards');
   const tabMap      = document.getElementById('tab-map');
+  const tabSplit    = document.getElementById('tab-split');
   const statusArea  = document.getElementById('player-status-area');
-  if (tab === 'map') {
+
+  // Clear split state first
+  if (sPlay) sPlay.classList.remove('split-view');
+  if (tabSplit) tabSplit.classList.remove('active');
+
+  if (tab === 'split') {
+    if (sPlay)       sPlay.classList.add('split-view');
+    if (cardsPanel)  cardsPanel.style.display  = '';
+    if (mapPanel)    mapPanel.style.display    = 'flex';
+    if (tabCards)    tabCards.classList.remove('active');
+    if (tabMap)      tabMap.classList.remove('active');
+    if (tabSplit)    tabSplit.classList.add('active');
+    if (statusArea)  statusArea.style.display  = 'none';
+    // Auto-select first map in solo play if nothing selected
+    if (!G.selectedMap && typeof MAPS !== 'undefined' && MAPS.length) {
+      G.selectedMap = MAPS[0].key;
+    }
+    const pid2 = G.playerId || 'solo';
+    if (!G.mapPositions[pid2]) G.mapPositions[pid2] = { x: 0.5, y: 0.5 };
+    renderMapView();
+    setTimeout(function() { if (typeof _sizeMapBg === 'function') _sizeMapBg(); }, 50);
+  } else if (tab === 'map') {
     if (cardsPanel)  cardsPanel.style.display  = 'none';
     if (mapPanel)    mapPanel.style.display    = 'flex';
     if (tabCards)    tabCards.classList.remove('active');
