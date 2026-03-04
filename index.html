@@ -175,6 +175,10 @@ body {
   border-radius: var(--r); padding: 10px 12px; margin-bottom: 16px;
   max-height: 320px; overflow-y: auto;
 }
+/* In split view the stats live inside the cards column — let them expand */
+#s-play.split-view .player-status-area {
+  max-height: none; flex-shrink: 0;
+}
 
 /* One block per player — stacks vertically */
 .player-status-row {
