@@ -2664,17 +2664,19 @@ var CARD_NAMES_IT = {
   'Remote Control':'Telecomando'
 };
 </script>
-<style>
-.overlay-it-name { display:flex; align-items:center; gap:6px; justify-content:center;
-  background:rgba(0,60,130,.18); border:1px solid rgba(100,160,255,.25);
-  border-radius:8px; padding:6px 14px; margin:6px 16px 0;
-  font-size:.82rem; font-weight:600; color:var(--accent); text-align:center; }
-.overlay-it-name .it-flag { font-size:.95rem; flex-shrink:0; }
-</style>
 
 <!-- WELCOME SCREEN -->
 <div id="s-welcome" class="screen active">
   <div class="welcome-container">
+    <div class="welcome-title">DECK GAME</div>
+    <div class="welcome-subtitle" data-i18n="app.subtitle">Choose your mode</div>
+    <div class="welcome-buttons">
+      <button class="btn btn-accent btn-full" onclick="startMultiplayer()" data-i18n="btn.multiplayer">🌐 Multiplayer</button>
+      <button class="btn btn-ghost btn-full" onclick="startSolo()" data-i18n="btn.solo">🎴 Solo Play</button>
+    </div>
+    <button id="lang-toggle-btn" onclick="setLang(window.currentLang==='en'?'it':'en')" style="margin-top:24px;background:transparent;border:1px solid var(--border2);border-radius:100px;padding:6px 14px;cursor:pointer;font-size:1rem;color:var(--muted)">🇮🇹</button>
+  </div>
+</div>
 
 <!-- MULTIPLAYER MODE SELECT -->
 <div id="s-mp-select" class="screen">
@@ -2982,7 +2984,6 @@ var CARD_NAMES_IT = {
 <div class="card-overlay" id="card-overlay" onclick="handleOverlayClick(event)">
   <button class="card-overlay-close" onclick="closeCardOverlay()">✕</button>
   <div class="card-enlarged"><img id="overlay-img" src="" alt=""></div>
-  <div id="overlay-it-name" class="overlay-it-name" style="display:none"><span class="it-flag">🇮🇹</span><span id="overlay-it-name-text"></span></div>
   <div class="card-overlay-actions" id="overlay-actions"></div>
 </div>
 

@@ -2620,19 +2620,6 @@ function renderOverlayMenu() {
   const acts = document.getElementById('overlay-actions');
   acts.innerHTML = '';
 
-  // Italian card name badge
-  var itBadge = document.getElementById('overlay-it-name');
-  var itText  = document.getElementById('overlay-it-name-text');
-  if (itBadge && itText) {
-    var itName = (typeof CARD_NAMES_IT !== 'undefined') && CARD_NAMES_IT[cardLabel(card)];
-    if (itName && window.currentLang === 'it') {
-      itText.textContent = itName;
-      itBadge.style.display = '';
-    } else {
-      itBadge.style.display = 'none';
-    }
-  }
-
   if (_overlayMenu === 'main') {
     if (_overlaySource === 'special') {
       const note = document.createElement('div');
