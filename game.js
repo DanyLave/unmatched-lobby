@@ -4181,15 +4181,30 @@ function _applyMapTransform(canvas) {
 }
 
 function _sizeMapBg(mv) {
-  var bg = mv ? mv.querySelector('.map-bg') : null;
-  if (bg) {
-    bg.style.width  = mv.offsetHeight + 'px';
-    bg.style.height = mv.offsetWidth  + 'px';
+  if (!mv) mv = document.getElementById('map-view');
+  var wrapper = mv ? mv.querySelector('.map-image-wrapper') : null;
+  var img = wrapper ? wrapper.querySelector('.map-bg') : null;
+  if (!wrapper || !img) return;
+  var nw = img.naturalWidth, nh = img.naturalHeight;
+  if (!nw || !nh) {
+    // Image not loaded yet — wait for it
+    img.addEventListener('load', function() { _sizeMapBg(mv); }, { once: true });
+    return;
   }
+  var vw = mv.offsetWidth, vh = mv.offsetHeight;
+  var scale = Math.min(vw / nw, vh / nh);
+  wrapper.style.width  = (nw * scale).toFixed(1) + 'px';
+  wrapper.style.height = (nh * scale).toFixed(1) + 'px';
 }
 window.addEventListener('resize', function() {
   var mv = document.getElementById('map-view');
   if (mv) _sizeMapBg(mv);
+  // Update split-view portrait attribute
+  var sPlay = document.getElementById('s-play');
+  if (sPlay && sPlay.classList.contains('split-view')) {
+    if (window.innerWidth < window.innerHeight) sPlay.setAttribute('data-portrait', '');
+    else sPlay.removeAttribute('data-portrait');
+  }
 });
 
 function _initMapGestures(mv) {
@@ -4258,20 +4273,22 @@ function switchPlayTab(tab) {
 
   if (tab === 'split') {
     if (sPlay)       sPlay.classList.add('split-view');
+    // Mark portrait for CSS
+    if (window.innerWidth < window.innerHeight) sPlay.setAttribute('data-portrait', '');
+    else sPlay.removeAttribute('data-portrait');
     if (cardsPanel)  cardsPanel.style.display  = '';
     if (mapPanel)    mapPanel.style.display    = 'flex';
     if (tabCards)    tabCards.classList.remove('active');
     if (tabMap)      tabMap.classList.remove('active');
     if (tabSplit)    tabSplit.classList.add('active');
     if (statusArea)  statusArea.style.display  = 'none';
-    // Auto-select first map in solo play if nothing selected
     if (!G.selectedMap && typeof MAPS !== 'undefined' && MAPS.length) {
       G.selectedMap = MAPS[0].key;
     }
     const pid2 = G.playerId || 'solo';
     if (!G.mapPositions[pid2]) G.mapPositions[pid2] = { x: 0.5, y: 0.5 };
     renderMapView();
-    setTimeout(function() { if (typeof _sizeMapBg === 'function') _sizeMapBg(); }, 50);
+    setTimeout(function() { _sizeMapBg(); _initSplitDivider(); }, 50);
   } else if (tab === 'map') {
     if (cardsPanel)  cardsPanel.style.display  = 'none';
     if (mapPanel)    mapPanel.style.display    = 'flex';
@@ -4407,9 +4424,9 @@ function renderMapView() {
     // ─ First render: build from scratch ─
     _mapView = { scale: 1, tx: 0, ty: 0 };
     _mapGesturesInited = false;
-    var html = '<div class="map-canvas"><img class="map-bg" src="' + mapData.image + '" alt="map" draggable="false">';
+    var html = '<div class="map-canvas"><div class="map-image-wrapper"><img class="map-bg" src="' + mapData.image + '" alt="map" draggable="false">';
     tokenList.forEach(function(t) { html += _makeTokenHTML(t); });
-    html += '</div>';
+    html += '</div></div>';  // close wrapper + canvas
     mv.innerHTML = html;
     canvas = mv.querySelector('.map-canvas');
     _applyMapTransform(canvas);
@@ -4420,6 +4437,7 @@ function renderMapView() {
     });
   } else {
     // ─ Incremental update: reposition existing, add new, remove gone ─
+    var wrapper = canvas.querySelector('.map-image-wrapper');
     var livePids = {};
     tokenList.forEach(function(t) {
       livePids[t.tokenPid] = true;
@@ -4431,7 +4449,7 @@ function renderMapView() {
         var tmp = document.createElement('div');
         tmp.innerHTML = _makeTokenHTML(t);
         var newEl = tmp.firstElementChild;
-        canvas.appendChild(newEl);
+        (wrapper || canvas).appendChild(newEl);
         if (t.isMine) newEl.addEventListener('pointerdown', _startTokenDrag);
       }
     });
@@ -4443,6 +4461,41 @@ function renderMapView() {
 }
 
 var _mapDragActive = false;
+
+// ── Split-view draggable divider ────────────────────────────────────────
+var _splitDividerInited = false;
+function _initSplitDivider() {
+  var divider = document.getElementById('split-divider');
+  if (!divider || _splitDividerInited) return;
+  _splitDividerInited = true;
+
+  divider.addEventListener('pointerdown', function(e) {
+    e.preventDefault();
+    divider.setPointerCapture(e.pointerId);
+    divider.classList.add('dragging');
+    var sPlay = document.getElementById('s-play');
+    var isPortrait = sPlay && sPlay.hasAttribute('data-portrait');
+    var panels    = document.getElementById('play-panels');
+    var totalSize = isPortrait ? panels.offsetHeight : panels.offsetWidth;
+    var startPos  = isPortrait ? e.clientY : e.clientX;
+    var startVal  = parseFloat(getComputedStyle(document.documentElement)
+                      .getPropertyValue('--split-cards-w')) || 38;
+
+    function onMove(me) {
+      var delta   = (isPortrait ? me.clientY : me.clientX) - startPos;
+      var newPct  = Math.max(15, Math.min(70, startVal + (delta / totalSize) * 100));
+      document.documentElement.style.setProperty('--split-cards-w', newPct.toFixed(1) + '%');
+      _sizeMapBg();
+    }
+    function onUp() {
+      divider.classList.remove('dragging');
+      window.removeEventListener('pointermove', onMove, true);
+      window.removeEventListener('pointerup',   onUp,   true);
+    }
+    window.addEventListener('pointermove', onMove, true);
+    window.addEventListener('pointerup',   onUp,   true);
+  });
+}
 
 function _startTokenDrag(e) {
   e.preventDefault();
@@ -4459,12 +4512,11 @@ function _startTokenDrag(e) {
     me.preventDefault();
     var mv = document.getElementById('map-view');
     if (!mv) return;
-    var rect = mv.getBoundingClientRect();
-    var sx = me.clientX - rect.left;
-    var sy = me.clientY - rect.top;
-    // Account for current zoom/pan transform
-    var x = Math.max(0, Math.min(1, (sx - _mapView.tx) / (_mapView.scale * mv.offsetWidth)));
-    var y = Math.max(0, Math.min(1, (sy - _mapView.ty) / (_mapView.scale * mv.offsetHeight)));
+    // Use wrapper's bounding rect — already accounts for zoom/pan transform
+    var wrapper = mv.querySelector('.map-image-wrapper');
+    var ref = wrapper ? wrapper.getBoundingClientRect() : mv.getBoundingClientRect();
+    var x = Math.max(0, Math.min(1, (me.clientX - ref.left) / ref.width));
+    var y = Math.max(0, Math.min(1, (me.clientY - ref.top)  / ref.height));
     var canvas = mv.querySelector('.map-canvas');
     var token = canvas && canvas.querySelector('.map-token[data-pid="' + tokenPid + '"]');
     if (token) {
