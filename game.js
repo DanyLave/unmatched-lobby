@@ -23,6 +23,10 @@ const G = {
   specialCounter: 0,
   ongoingCards: [],
   
+  // Map feature
+  selectedMap: null,
+  mapPositions: {},
+
   // Multiplayer state
   isMultiplayer: false,
   roomCode: null,
@@ -364,12 +368,12 @@ function playCard(card) {
   syncTS();
   updateAll();
   closeCardOverlay();
-  toast('Played');
+  toast(window.t('toast.played'));
 }
 
 // Play selected cards (from select mode)
 function playSelected() {
-  if (!G.selected.length) { toast('Select at least one card'); return; }
+  if (!G.selected.length) { toast(window.t('toast.selectAtLeastOne')); return; }
   const dk = DECKS[G.deckKey];
   const cards = G.hand.filter(c => G.selected.includes(c.uid));
   cards.forEach(c => scheduleCardExit(c));
@@ -394,7 +398,7 @@ function playSelected() {
   if (G.isMultiplayer && cards.length > 0) publishReveal(cards);
   exitSel();
   updateAll();
-  toast(cards.length + ' card' + (cards.length > 1 ? 's' : '') + ' played');
+  toast(cards.length + ' ' + window.t('toast.played').toLowerCase());
 }
 
 // Update host name in room data
@@ -466,6 +470,7 @@ function syncFromRoom() {
   // Update lobby lists
   if (cur === 's-lobby-host' || cur === 's-lobby-guest') {
     renderLobbyPlayers();
+    if (cur === 's-lobby-host') renderLobbyMapOptions();
   }
   
   // Update player status area and combat during gameplay
@@ -473,6 +478,11 @@ function syncFromRoom() {
     renderPlayerStatusArea();
     renderDiscardBrowsing();
     renderCombatArea();
+    // Sync map positions if map tab is visible
+    if (roomData.mapKey) G.selectedMap = roomData.mapKey;
+    if (roomData.mapPositions) G.mapPositions = roomData.mapPositions;
+    const mapPanel = document.getElementById('play-tab-map');
+    if (mapPanel && mapPanel.style.display !== 'none') renderMapView();
   }
   
   // Update other players view
@@ -836,6 +846,7 @@ function hostRoom() {
   initBroadcastChannel();
   startSync();
   renderLobbyPlayers();
+  renderLobbyMapOptions();
   goTo('s-lobby-host');
 }
 
@@ -844,12 +855,12 @@ function joinRoom() {
   const name = document.getElementById('join-name-input').value.trim();
   
   if (!code || code.length !== 6) {
-    toast('Enter a valid 6-character room code');
+    toast(window.t('toast.invalidRoomCode'));
     return;
   }
   
   if (!name) {
-    toast('Enter your name');
+    toast(window.t('toast.enterName'));
     return;
   }
   
@@ -865,7 +876,7 @@ function joinRoom() {
   setupFirebaseListener().then((success) => {
     if (!success) {
       console.error('❌ setupFirebaseListener failed');
-      toast('Failed to connect to room');
+      toast(window.t('toast.failedConnect'));
       G.roomCode = null;
       G.isMultiplayer = false;
       removeFirebaseListener();
@@ -877,7 +888,7 @@ function joinRoom() {
     
     if (!roomData) {
       console.error('❌ Room data is null after successful listener');
-      toast('Room not found');
+      toast(window.t('toast.roomNotFound'));
       G.roomCode = null;
       G.isMultiplayer = false;
       removeFirebaseListener();
@@ -1132,7 +1143,7 @@ function renderPlayerStatusArea() {
       ongoingRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;padding:6px 10px 8px;border-top:1px solid var(--border2);';
       const lbl = document.createElement('div');
       lbl.style.cssText = 'width:100%;font-size:0.58rem;font-weight:700;letter-spacing:0.08em;color:var(--accent);text-transform:uppercase;margin-bottom:4px';
-      lbl.textContent = '\uD83D\uDD04 Ongoing';
+      lbl.textContent = window.t('ongoing.label');
       ongoingRow.appendChild(lbl);
       playerOngoing.forEach(oc => {
         const thumb = document.createElement('img');
@@ -1161,7 +1172,7 @@ function renderPlayerStatusArea() {
     const currentName = currentRoomData && currentRoomData.players && currentRoomData.players[currentPid]
       ? currentRoomData.players[currentPid].name : '?';
     endTurnBtn.disabled = !myTurn;
-    endTurnBtn.textContent = myTurn ? '✓ End My Turn' : currentName + "'s Turn";
+    endTurnBtn.textContent = myTurn ? window.t('btn.endTurn') : currentName + "'s Turn";
   }
 }
 
@@ -1320,6 +1331,7 @@ function startGame() {
   if (!roomData) return;
   
   roomData.gameStarted = true;
+  if (G.selectedMap) roomData.mapKey = G.selectedMap;
   setRoomData(roomData);
   
   // Sync local state
@@ -1501,7 +1513,7 @@ function openDiscardBrowseSheet(pid) {
       // "Take" button for any player
       const takeBtn = document.createElement('button');
       takeBtn.className = 'btn btn-ghost btn-xs';
-      takeBtn.textContent = '→ My Hand';
+      takeBtn.textContent = window.t('card.toHand');
       takeBtn.onclick = (e) => { e.stopPropagation(); takeFromPlayerDiscard(pid, card.uid); };
       wrapper.appendChild(takeBtn);
       
@@ -1522,7 +1534,7 @@ function takeFromPlayerDiscard(pid, cardUid) {
   if (!player.discardCards) return;
   
   const cardIdx = player.discardCards.findIndex(c => c.uid === cardUid);
-  if (cardIdx === -1) { toast('Card already taken'); return; }
+  if (cardIdx === -1) { toast(window.t('toast.cardTaken')); return; }
   
   const [card] = player.discardCards.splice(cardIdx, 1);
   
@@ -1530,7 +1542,7 @@ function takeFromPlayerDiscard(pid, cardUid) {
   const handCard = { image: card.image, uid: card.uid, deckKey: card.deckKey || player.deckKey };
   
   // Prevent duplicate in hand
-  if (G.hand.find(c => c.uid === cardUid)) { toast('Already in hand'); return; }
+  if (G.hand.find(c => c.uid === cardUid)) { toast(window.t('toast.alreadyInHand')); return; }
   G.hand.push(handCard);
 
   // Log the action
@@ -1558,7 +1570,7 @@ function takeFromPlayerDiscard(pid, cardUid) {
   
   // Refresh the browse sheet
   openDiscardBrowseSheet(pid);
-  toast('Added to hand');
+  toast(window.t('toast.addedToHand'));
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1660,10 +1672,10 @@ function renderCombatArea() {
 
 // Add a single card to combat (from card overlay)
 function addCardToCombat(card) {
-  if (!G.isMultiplayer) { toast('Not in multiplayer'); return; }
+  if (!G.isMultiplayer) { toast(window.t('toast.notMultiplayer')); return; }
   
   const roomData = getRoomData();
-  if (!roomData) { toast('No room data'); return; }
+  if (!roomData) { toast(window.t('toast.noRoomData')); return; }
   
   // Initialize combat object if it doesn't exist
   if (!roomData.combat) roomData.combat = {};
@@ -1693,7 +1705,7 @@ function addCardToCombat(card) {
   publishEvent({ action: 'added-to-combat', count: 1, fromHand: true, random: isRnd || undefined });
   updateAll();
   renderCombatArea();
-  toast('Card added to combat');
+  toast(window.t('toast.cardAddedToCombat'));
 }
 
 // Add multiple selected cards to combat (from select mode)
@@ -1724,7 +1736,7 @@ function addSelectedToCombat() {
   exitSel();
   updateAll();
   renderCombatArea();
-  toast(`${selectedCards.length} card${selectedCards.length > 1 ? 's' : ''} added to combat`);
+  toast(window.t('toast.nToCombat').replace('{n}', selectedCards.length).replace('{s}', selectedCards.length > 1 ? 's' : ''));
 }
 
 // Reveal this player's combat cards
@@ -1733,7 +1745,7 @@ function revealMyCombatCards() {
   
   const roomData = getRoomData();
   if (!roomData || !roomData.combat || !roomData.combat[G.playerId]) {
-    toast('No cards to reveal');
+    toast(window.t('toast.noCardsToReveal'));
     return;
   }
   
@@ -1744,7 +1756,7 @@ function revealMyCombatCards() {
   addLogEntry('You revealed your combat cards 🔓', 'combat');
   publishEvent({ action: 'combat-reveal' });
   renderCombatArea();
-  toast('Cards revealed!');
+  toast(window.t('toast.cardsRevealed'));
 }
 
 // Add more cards after already revealing (enters select mode)
@@ -1762,7 +1774,7 @@ function enterCombatHandSelect() {
 }
 
 function pickRandomForCombat() {
-  if (!G.hand.length) { toast('No cards in hand'); return; }
+  if (!G.hand.length) { toast(window.t('toast.noCardsInHand')); return; }
   const idx = Math.floor(Math.random() * G.hand.length);
   const card = G.hand[idx];
   _randomPickedUid = card.uid;
@@ -1777,8 +1789,8 @@ function pickRandomForCombatFromMenu() {
 
 function addTopCardToCombatDirect() {
   closeSheet('sh-combat-add-more');
-  if (!G.isMultiplayer) { toast('Not in multiplayer'); return; }
-  if (!G.draw.length) { toast('Draw pile is empty'); return; }
+  if (!G.isMultiplayer) { toast(window.t('toast.notMultiplayer')); return; }
+  if (!G.draw.length) { toast(window.t('toast.drawPileEmpty')); return; }
   const roomData = getRoomData();
   if (!roomData) return;
   if (!roomData.combat) roomData.combat = {};
@@ -1792,7 +1804,7 @@ function addTopCardToCombatDirect() {
   publishEvent({ action: 'added-to-combat', count: 1, fromTopDeck: true });
   updateAll();
   renderCombatArea();
-  toast('Top card added to combat');
+  toast(window.t('toast.topCardToCombat'));
 }
 
 // Clear all combat cards — moves to intermediate (if present) or discard
@@ -1835,7 +1847,7 @@ function clearCombatZone() {
   publishEvent({ action: 'combat-cleared' });
   updateAll();
   renderCombatArea();
-  toast(hasIntermediate ? 'Combat → Intermediate Zone' : 'Combat cleared');
+  toast(hasIntermediate ? window.t('toast.combatToIntermediate') : window.t('toast.combatCleared'));
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2211,7 +2223,7 @@ function buildDrawStack() {
   const wrap = document.getElementById('draw-stack-wrap');
   const dk = DECKS[G.deckKey];
   if (!G.draw.length) {
-    wrap.innerHTML = `<div class="stack-empty">Empty</div>`;
+    wrap.innerHTML = `<div class="stack-empty">${window.t('draw.empty')}</div>`;
     return;
   }
   wrap.innerHTML = `<div class="draw-stack" onclick="drawCard()">
@@ -2232,7 +2244,7 @@ function shuffle(arr) {
 
 function drawCard() {
   if (!G.draw.length) {
-    toast('Draw pile is empty');
+    toast(window.t('toast.drawPileEmpty'));
     return;
   }
   const c = G.draw.shift();
@@ -2247,13 +2259,13 @@ function shuffleDraw() {
   addLogEntry('You shuffled the draw pile', 'other');
   broadcastLogMessage(G.playerName + ' shuffled their draw pile', 'other');
   buildDrawBrowse();
-  toast('Shuffled');
+  toast(window.t('toast.shuffled'));
   updateAll();
 }
 
 function shuffleHandIn() {
   if (!G.hand.length) {
-    toast('Hand is empty');
+    toast(window.t('toast.handEmpty'));
     return;
   }
   const hCount = G.hand.length;
@@ -2263,12 +2275,12 @@ function shuffleHandIn() {
   if (G.isMultiplayer) { publishEvent({ action: 'shuffled-hand-in', count: hCount }); syncMyHand(); }
   updateAll();
   closeSheet('sh-shuffle-options');
-  toast('Hand → Draw pile');
+  toast(window.t('toast.handToDeck'));
 }
 
 function shuffleDiscardIn() {
   if (!G.discard.length) {
-    toast('Discard pile is empty');
+    toast(window.t('toast.discardPileEmpty'));
     return;
   }
   const dCount = G.discard.length;
@@ -2278,7 +2290,7 @@ function shuffleDiscardIn() {
   if (G.isMultiplayer) { publishEvent({ action: 'shuffled-discard-in', count: dCount }); syncMyDiscard(); }
   updateAll();
   closeSheet('sh-shuffle-options');
-  toast('Discard → Draw pile');
+  toast(window.t('toast.discardToDeck'));
 }
 
 function discardCard(card) {
@@ -2321,7 +2333,7 @@ function moveToHand(card) {
   if (G.isMultiplayer) { publishEvent({ action: 'moved-zone-to-hand', cardName: cardLabel(card) }); syncMyHand(); syncMyDiscard(); updateMyCardCounts(); }
   updateAll();
   closeCardOverlay();
-  toast('Moved to hand');
+  toast(window.t('toast.movedToHand'));
 }
 
 function moveToDiscard(card) {
@@ -2343,7 +2355,7 @@ function moveToDiscard(card) {
   }
   updateAll();
   closeCardOverlay();
-  toast('Moved to discard');
+  toast(window.t('toast.movedToDiscard'));
 }
 
 function returnToDeck(card, pos) {
@@ -2362,7 +2374,7 @@ function returnToDeck(card, pos) {
   syncTS();
   updateAll();
   closeCardOverlay();
-  toast('Returned to deck');
+  toast(window.t('toast.returnedToDeck'));
 }
 
 function syncTS() {
@@ -2406,7 +2418,7 @@ function clearSel() {
 }
 
 function updHint() {
-  document.getElementById('select-hint').textContent = G.selected.length + ' selected';
+  document.getElementById('select-hint').textContent = window.t('nSelected').replace('{n}', G.selected.length);
 }
 
 function toggleSel(uid) {
@@ -2417,7 +2429,7 @@ function toggleSel(uid) {
 
 function stageSelected() {
   if (!G.selected.length) {
-    toast('Select at least one card');
+    toast(window.t('toast.selectAtLeastOne'));
     return;
   }
   const toAdd = G.hand.filter(c => G.selected.includes(c.uid) && !G.staged.find(s => s.uid === c.uid));
@@ -2430,7 +2442,7 @@ function stageSelected() {
 
 function discardSelected() {
   if (!G.selected.length) {
-    toast('Select at least one card');
+    toast(window.t('toast.selectAtLeastOne'));
     return;
   }
   const dk = DECKS[G.deckKey];
@@ -2470,12 +2482,12 @@ function discardSelected() {
   syncTS();
   exitSel();
   updateAll();
-  toast(count + ' discarded');
+  toast(window.t('toast.nDiscarded').replace('{n}', count));
 }
 
 function putSelectedInDeck() {
   if (!G.selected.length) {
-    toast('Select at least one card');
+    toast(window.t('toast.selectAtLeastOne'));
     return;
   }
   openSheet('sh-put-in-deck');
@@ -2500,16 +2512,16 @@ function putInDeck(pos) {
   closeSheet('sh-put-in-deck');
   exitSel();
   updateAll();
-  toast(`${cards.length} card${cards.length > 1 ? 's' : ''} → deck`);
+  toast(window.t('toast.nToDeck').replace('{n}', cards.length).replace('{s}', cards.length > 1 ? 's' : ''));
 }
 
 function stageCard(card) {
   if (G.staged.find(c => c.uid === card.uid)) {
     G.staged = G.staged.filter(c => c.uid !== card.uid);
-    toast('Un-staged');
+    toast(window.t('toast.unstaged'));
   } else {
     G.staged.push(card);
-    toast('Staged');
+    toast(window.t('toast.staged'));
   }
   syncTS();
   updateAll();
@@ -2520,7 +2532,7 @@ function unstageAll() {
   G.staged = [];
   syncTS();
   updateAll();
-  toast('All un-staged');
+  toast(window.t('toast.allUnstaged'));
 }
 
 function pickRandom(zone) {
@@ -2531,7 +2543,7 @@ function pickRandom(zone) {
   else if (zone === 'discard') pool = G.discard;
 
   if (!pool.length) {
-    toast('No cards in ' + zone);
+    toast(window.t('toast.noCardsInZone').replace('{zone}', zone));
     return;
   }
 
@@ -2593,17 +2605,17 @@ function renderOverlayMenu() {
     if (_overlaySource === 'special') {
       const note = document.createElement('div');
       note.style.cssText = 'text-align:center;color:var(--muted);font-size:0.76rem;padding:20px';
-      note.textContent = 'This is your special ability card. Use the button on the play page to activate it.';
+      note.textContent = window.t('card.specialAbilityNote');
       acts.appendChild(note);
     } else if (_overlaySource === 'other-discard') {
       // Card from another player's discard — just view, take is via the browse sheet button
       const note = document.createElement('div');
       note.style.cssText = 'text-align:center;color:var(--muted);font-size:0.76rem;padding:12px';
-      note.textContent = 'Card from discard pile. Use the "→ My Hand" button in browse view to take it.';
+      note.textContent = window.t('card.discardPileNote');
       acts.appendChild(note);
       const closeBtn = document.createElement('button');
       closeBtn.className = 'btn btn-ghost btn-full';
-      closeBtn.textContent = 'Close';
+      closeBtn.textContent = window.t('card.close');
       closeBtn.onclick = () => closeCardOverlay();
       acts.appendChild(closeBtn);
     } else if (_overlaySource === 'intermediate') {
@@ -2622,30 +2634,30 @@ function renderOverlayMenu() {
     } else if (_overlaySource === 'ongoing') {
       const note = document.createElement('div');
       note.style.cssText = 'text-align:center;color:var(--accent);font-size:0.78rem;font-weight:600;padding:8px 0 12px';
-      note.textContent = '🔄 Ongoing Effect';
+      note.textContent = window.t('card.ongoingEffect');
       acts.appendChild(note);
       const discardBtn = document.createElement('button');
       discardBtn.className = 'btn btn-ghost btn-full';
-      discardBtn.textContent = 'Discard (end effect)';
+      discardBtn.textContent = window.t('card.discardEndEffect');
       discardBtn.onclick = () => discardOngoingCard(card);
       acts.appendChild(discardBtn);
       const closeBtn = document.createElement('button');
       closeBtn.className = 'btn btn-ghost btn-full';
-      closeBtn.textContent = 'Close';
+      closeBtn.textContent = window.t('card.close');
       closeBtn.onclick = () => closeCardOverlay();
       acts.appendChild(closeBtn);
     } else {
       const buttons = [
         { label: '▶ Play', cls: 'btn btn-accent btn-full', fn: () => playCard(card) },
         { label: '🔄 Play as Ongoing', cls: 'btn btn-ghost btn-full', fn: () => playCardAsOngoing(card) },
-        { label: 'Discard', cls: 'btn btn-ghost btn-full', fn: () => { discardCard(card); closeCardOverlay(); toast('Discarded'); } },
+        { label: window.t('card.discard'), cls: 'btn btn-ghost btn-full', fn: () => { discardCard(card); closeCardOverlay(); toast(window.t('card.discard')); } },
         { label: 'Return to Deck', cls: 'btn btn-ghost btn-full', fn: () => { _overlayMenu = 'return'; renderOverlayMenu(); } },
       ];
       
       // Add combat option if in multiplayer
       if (G.isMultiplayer && G.gameStarted) {
         buttons.push({
-          label: '⚔️ Add to Combat',
+          label: window.t('btn.combat'),
           cls: 'btn btn-red btn-full',
           fn: () => addCardToCombat(card)
         });
@@ -2712,7 +2724,7 @@ function discardAllStaged() {
   if (G.isMultiplayer) syncMyHand();
   updateAll();
   goBack('s-play');
-  toast('All discarded');
+  toast(window.t('toast.allDiscarded'));
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2747,7 +2759,7 @@ function renderActionLog() {
   const container = document.getElementById('action-log');
   if (!container) return;
   if (_actionLog.length === 0) {
-    container.innerHTML = '<div class="log-empty">No actions yet</div>';
+    container.innerHTML = '<div class="log-empty">' + window.t('log.empty') + '</div>';
     return;
   }
   container.innerHTML = _actionLog.map(function(e) {
@@ -2773,7 +2785,7 @@ function updateAll() {
   document.getElementById('sc-intermediate').textContent = iz;
   document.getElementById('draw-big').textContent = d;
   document.getElementById('discard-big').textContent = di;
-  document.getElementById('bar-counts').textContent = `Draw ${d} · Hand ${h}${iz > 0 ? ` · Zone ${iz}` : ''} · Discard ${di}`;
+  document.getElementById('bar-counts').textContent = window.t('sec.draw') + ' ' + d + ' · ' + window.t('sec.hand') + ' ' + h + (iz > 0 ? ' · Zone ' + iz : '') + ' · ' + window.t('sec.discard') + ' ' + di;
   buildDrawStack();
   const badge = document.getElementById('draw-badge');
   if (badge) badge.textContent = d;
@@ -2804,7 +2816,7 @@ function renderHand() {
   if (!G.hand.length) {
     const emp = document.createElement('div');
     emp.className = 'hand-empty';
-    emp.innerHTML = '<span class="ei">🤲</span>Tap the deck to draw';
+    emp.innerHTML = '<span class="ei">🤲</span>' + window.t('draw.tapToDraw');
     grid.appendChild(emp);
     return;
   }
@@ -2938,11 +2950,11 @@ function playFromIntermediate(card) {
   syncTS();
   updateAll();
   closeCardOverlay();
-  toast('Activated!');
+  toast(window.t('toast.activated'));
 }
 
 function playSelectedFromIntermediate() {
-  if (!G.intermediateSelected.length) { toast('Select at least one card'); return; }
+  if (!G.intermediateSelected.length) { toast(window.t('toast.selectAtLeastOne')); return; }
   const cards = G.intermediate.filter(c => G.intermediateSelected.includes(c.uid));
   cards.forEach(card => {
     G.intermediate = G.intermediate.filter(c => c.uid !== card.uid);
@@ -2964,11 +2976,11 @@ function playSelectedFromIntermediate() {
   exitIntermediateSel();
   syncTS();
   updateAll();
-  toast(cards.length + ' activated!');
+  toast(window.t('toast.nActivated').replace('{n}', cards.length));
 }
 
 function discardSelectedFromIntermediate() {
-  if (!G.intermediateSelected.length) { toast('Select at least one card'); return; }
+  if (!G.intermediateSelected.length) { toast(window.t('toast.selectAtLeastOne')); return; }
   const cards = G.intermediate.filter(c => G.intermediateSelected.includes(c.uid));
   cards.forEach(card => {
     G.intermediate = G.intermediate.filter(c => c.uid !== card.uid);
@@ -2978,7 +2990,7 @@ function discardSelectedFromIntermediate() {
   if (G.isMultiplayer) syncMyDiscard();
   exitIntermediateSel();
   updateAll();
-  toast(cards.length + ' discarded');
+  toast(window.t('toast.nDiscarded').replace('{n}', cards.length));
 }
 
 function renderDiscard() {
@@ -3111,7 +3123,7 @@ function drawSpecific(idx) {
   if (G.isMultiplayer) syncMyHand();
   updateAll();
   buildDrawBrowse();
-  toast('Added to hand');
+  toast(window.t('toast.addedToHand'));
 }
 
 function buildDiscardBrowse() {
@@ -3147,7 +3159,7 @@ function recoverDiscard(idx) {
   if (G.isMultiplayer) syncMyDiscard();
   updateAll();
   buildDiscardBrowse();
-  toast('Added to hand');
+  toast(window.t('toast.addedToHand'));
 }
 
 function buildSearchAll() {
@@ -3221,7 +3233,7 @@ function buildSearchCards(edition, deck, deckKey) {
       G.hand.push(newCard);
       updateAll();
       closeSheet('sh-search-all');
-      toast('Added to hand');
+      toast(window.t('toast.addedToHand'));
       const cName = cardLabel(newCard);
       addLogEntry('You searched and added "' + cName + '" to hand', 'other');
       broadcastLogMessage(G.playerName + ' searched and added "' + cName + '" to their hand', 'other');
@@ -3407,7 +3419,7 @@ function useSpecialAbility() {
     const logCard = isStartCard ? null : usedCard;
     addLogEntry('You used ' + saLabel + (logCard ? ': ' + cardLabel(logCard) : ''), 'other');
     if (G.isMultiplayer) publishEvent({ action: 'used-special', saLabel, cardName: logCard ? cardLabel(logCard) : '' });
-    toast('Special ability used');
+    toast(window.t('toast.specialUsed'));
   } else if (G.specialMode === 'swap') {
     const currentIdx = G.specialDeck.findIndex(c => c.id === G.specialCurrent.id);
     if (currentIdx >= 0) {
@@ -3419,7 +3431,7 @@ function useSpecialAbility() {
     }
     addLogEntry('You swapped ' + saLabel + ' → ' + cardLabel(G.specialCurrent), 'other');
     if (G.isMultiplayer) publishEvent({ action: 'used-special', saLabel, cardName: cardLabel(G.specialCurrent) });
-    toast('Swapped');
+    toast(window.t('toast.swapped'));
   }
 
   updateMyPlayer(); // Sync special card change to other players
@@ -3499,7 +3511,7 @@ function buildSpecialDeckBrowse() {
     broadcastLogMessage(G.playerName + ' shuffled ' + (saShuf.label || 'the special deck'), 'other');
     buildSpecialDeckBrowse();
     updateSpecialDisplay();
-    toast('Shuffled');
+    toast(window.t('toast.shuffled'));
   };
   body.appendChild(shuffleBtn);
 
@@ -3533,7 +3545,7 @@ function activateSpecialCard(idx) {
   G.specialCurrent = G.specialDeck.splice(idx, 1)[0];
   updateSpecialDisplay();
   buildSpecialDeckBrowse();
-  toast('Card activated');
+  toast(window.t('toast.cardActivated'));
 }
 
 function buildSpecialDiscardBrowse() {
@@ -3560,7 +3572,7 @@ function buildSpecialDiscardBrowse() {
     broadcastLogMessage(G.playerName + ' shuffled ' + (saSh.label || 'special deck') + ' back into deck', 'other');
     updateSpecialDisplay();
     closeSheet('sh-special-discard');
-    toast('Shuffled back');
+    toast(window.t('toast.shuffledBack'));
   };
   body.appendChild(shuffleBtn);
 
@@ -3592,7 +3604,7 @@ function recoverSpecialCard(idx) {
   G.specialCurrent = G.specialDiscard.splice(idx, 1)[0];
   updateSpecialDisplay();
   buildSpecialDiscardBrowse();
-  toast('Card recovered');
+  toast(window.t('toast.cardRecovered'));
 }
 
 function recoverSpecialCardToBottom(idx) {
@@ -3602,7 +3614,7 @@ function recoverSpecialCardToBottom(idx) {
   addLogEntry('You returned "' + cardLabel(card) + '" to the bottom of your ' + (dk && dk.specialAbility && dk.specialAbility.label ? dk.specialAbility.label : 'special') + ' deck', 'other');
   updateSpecialDisplay();
   buildSpecialDiscardBrowse();
-  toast('Returned to bottom of deck');
+  toast(window.t('toast.returnedToBottom'));
 }
 
 // \u2550\u2550\u2550 CARD EFFECTS \u2550\u2550\u2550
@@ -3623,8 +3635,8 @@ function _buildInteractHome() {
 }
 
 function addTopCardToCombat() {
-  if (!G.isMultiplayer) { toast('Not in multiplayer'); return; }
-  if (!G.draw.length) { toast('Draw pile is empty'); return; }
+  if (!G.isMultiplayer) { toast(window.t('toast.notMultiplayer')); return; }
+  if (!G.draw.length) { toast(window.t('toast.drawPileEmpty')); return; }
   const roomData = getRoomData();
   if (!roomData) return;
   if (!roomData.combat) roomData.combat = {};
@@ -3639,7 +3651,7 @@ function addTopCardToCombat() {
   updateAll();
   renderCombatArea();
   closeSheet('sh-card-effects');
-  toast('Top card added to combat');
+  toast(window.t('toast.topCardToCombat'));
 }
 
 function openViewOpponentHandEffect(effectType) {
@@ -3647,7 +3659,7 @@ function openViewOpponentHandEffect(effectType) {
   if (!roomData) return;
   const body = document.getElementById('view-opp-hand-body');
   const opponents = Object.keys(roomData.players || {}).filter(pid => pid !== G.playerId);
-  if (!opponents.length) { toast('No opponents found'); return; }
+  if (!opponents.length) { toast(window.t('toast.noOpponents')); return; }
   if (opponents.length === 1) { loadOpponentForEffect(opponents[0], effectType); return; }
   body.innerHTML = '<div style="padding:8px 0;font-size:.8rem;color:var(--muted);margin-bottom:8px">Select opponent:</div>';
   opponents.forEach(pid => {
@@ -3696,7 +3708,7 @@ function loadOpponentForEffect(pid, effectType) {
 
 function executeHandEffect(pid, cardUid, cardImage, cardDeckKey, effectType, cardName, victimName) {
   const roomData = getRoomData();
-  if (!roomData || !roomData.players[pid]) { toast('Cannot find player'); return; }
+  if (!roomData || !roomData.players[pid]) { toast(window.t('toast.cannotFindPlayer')); return; }
   const player = roomData.players[pid];
   // Update Firebase-side handCards if synced; the event handles the victim's side regardless
   if (player.handCards) {
@@ -3727,7 +3739,7 @@ function executeHandEffect(pid, cardUid, cardImage, cardDeckKey, effectType, car
   }
   closeSheet('sh-view-opp-hand');
   closeSheet('sh-card-effects');
-  toast('Done!');
+  toast(window.t('toast.done'));
 }
 
 function openInspectTopNSheet() {
@@ -3742,7 +3754,7 @@ function openInspectTopNSheet() {
 }
 
 function loadInspectTopN(n) {
-  if (!G.draw.length) { toast('Draw pile empty'); return; }
+  if (!G.draw.length) { toast(window.t('toast.drawPileEmptyShort')); return; }
   n = Math.min(n, G.draw.length);
   _inspectState = { source: 'own', pid: null, cards: [], assignments: {}, deckSortOrder: [] };
   G.draw.slice(0, n).forEach((c, i) => {
@@ -3816,13 +3828,13 @@ function confirmInspectTopN() {
   closeSheet('sh-inspect-top-n');
   closeSheet('sh-card-effects');
   updateAll();
-  toast('Done!');
+  toast(window.t('toast.done'));
 }
 
 function openTopNRequest() {
   const roomData = getRoomData(); if (!roomData) return;
   const opponents = Object.keys(roomData.players || {}).filter(pid => pid !== G.playerId);
-  if (!opponents.length) { toast('No opponents found'); return; }
+  if (!opponents.length) { toast(window.t('toast.noOpponents')); return; }
   const body = document.getElementById('interact-body');
   const oppButtons = opponents.map(pid => {
     const p = roomData.players[pid];
@@ -3853,7 +3865,7 @@ function confirmTopNRequest(pid, victimName) {
 function openHandViewRequest() {
   const roomData = getRoomData(); if (!roomData) return;
   const opponents = Object.keys(roomData.players || {}).filter(pid => pid !== G.playerId);
-  if (!opponents.length) { toast('No opponents found'); return; }
+  if (!opponents.length) { toast(window.t('toast.noOpponents')); return; }
   const body = document.getElementById('interact-body');
   const oppButtons = opponents.map(pid => {
     const p = roomData.players[pid];
@@ -3872,7 +3884,7 @@ function requestHandShare(pid, victimName) {
   addLogEntry('You requested to see ' + victimName + "'s hand", 'other');
   publishEvent({ action: 'hand-share-request', victimId: pid, victimName: victimName });
   closeSheet('sh-card-effects');
-  toast('Request sent \u2014 waiting for ' + victimName);
+  toast(window.t('toast.requestSent').replace('{name}', victimName));
 }
 
 function acceptHandShare() {
@@ -3891,7 +3903,7 @@ function requestDeckShare(pid, n, victimName) {
   addLogEntry('You requested to peek at ' + victimName + "'s top " + n + ' cards', 'other');
   publishEvent({ action: 'deck-share-request', victimId: pid, victimName: victimName, count: n });
   closeSheet('sh-card-effects');
-  toast('Request sent \u2014 waiting for ' + victimName);
+  toast(window.t('toast.requestSent').replace('{name}', victimName));
 }
 
 function acceptDeckShare() {
@@ -3899,7 +3911,7 @@ function acceptDeckShare() {
   if (notif) notif.style.display = 'none';
   if (!_pendingDeckShare) return;
   const n = Math.min(_pendingDeckShare.count, G.draw.length);
-  if (!n) { toast('Draw pile is empty'); _pendingDeckShare = null; return; }
+  if (!n) { toast(window.t('toast.drawPileEmpty')); _pendingDeckShare = null; return; }
   const topCards = G.draw.slice(0, n).map((c, i) => ({ image: c.image, uid: c.uid, deckKey: c.deckKey || G.deckKey, pos: i + 1 }));
   addLogEntry('You shared your top ' + n + ' cards with ' + _pendingDeckShare.requesterName, 'other');
   publishEvent({ action: 'deck-share-response', requesterId: _pendingDeckShare.requesterId,
@@ -3963,7 +3975,7 @@ function oppTopNTakeToHand(uid, victimName) {
   addLogEntry('You took \u201c' + cardLabel(card) + '\u201d from ' + victimName + "'s deck to your hand", 'other');
   syncMyHand();
   updateAll();
-  if (!_inspectState.cards.length) { closeSheet('sh-inspect-top-n'); toast('Done!'); return; }
+  if (!_inspectState.cards.length) { closeSheet('sh-inspect-top-n'); toast(window.t('toast.done')); return; }
   buildOppTopNBrowseSheet(victimName);
 }
 
@@ -3976,7 +3988,7 @@ function oppTopNDiscard(uid, cardName, victimName) {
   publishEvent({ action: 'force-deck-peek-discard', victimId: pid, victimName: victimName,
     cardUid: uid, cardName: cardName });
   addLogEntry('You discarded \u201c' + cardName + '\u201d from ' + victimName + "'s deck", 'discard');
-  if (!_inspectState.cards.length) { closeSheet('sh-inspect-top-n'); toast('Done!'); return; }
+  if (!_inspectState.cards.length) { closeSheet('sh-inspect-top-n'); toast(window.t('toast.done')); return; }
   buildOppTopNBrowseSheet(victimName);
 }
 
@@ -4003,7 +4015,7 @@ function confirmOppTopNReorder(victimName) {
     orderedUids: remaining.map(c => c.uid) });
   addLogEntry('You put ' + remaining.map((c, i) => '#' + (i + 1)).join(', ') + ' back on top of ' + victimName + "'s deck", 'other');
   closeSheet('sh-inspect-top-n');
-  toast('Done!');
+  toast(window.t('toast.done'));
 }
 
 function buildOppHandViewSheet(victimName, handCards, pid) {
@@ -4041,11 +4053,11 @@ function buildOppHandViewSheet(victimName, handCards, pid) {
 
 function oppHandTakeToHand(pid, cardUid, cardImage, cardDeckKey, cardName, victimName) {
   const roomData = getRoomData();
-  if (!roomData || !roomData.players[pid]) { toast('Cannot find player'); return; }
+  if (!roomData || !roomData.players[pid]) { toast(window.t('toast.cannotFindPlayer')); return; }
   const player = roomData.players[pid];
-  if (!player.handCards) { toast('Hand data not synced'); return; }
+  if (!player.handCards) { toast(window.t('toast.handNotSynced')); return; }
   const idx = player.handCards.findIndex(c => c.uid === cardUid);
-  if (idx === -1) { toast('Card not found'); return; }
+  if (idx === -1) { toast(window.t('toast.cardNotFound')); return; }
   player.handCards.splice(idx, 1);
   G.hand.push({ image: cardImage, uid: cardUid, deckKey: cardDeckKey });
   if (!roomData.reveals) roomData.reveals = [];
@@ -4058,7 +4070,7 @@ function oppHandTakeToHand(pid, cardUid, cardImage, cardDeckKey, cardName, victi
   updateAll();
   addLogEntry('You took \u201c' + cardName + '\u201d from ' + victimName + "'s hand", 'other');
   buildOppHandViewSheet(victimName, player.handCards, pid);
-  toast('Card taken!');
+  toast(window.t('toast.cardTakenFromOpp'));
 }
 
 // \u2550\u2550\u2550 END CARD EFFECTS \u2550\u2550\u2550
@@ -4075,6 +4087,351 @@ function toast(msg) {
   t.classList.add('show');
   clearTimeout(_tt);
   _tt = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// MAP FEATURE
+// ═══════════════════════════════════════════════════════════════════════
+
+var MAPS = [
+  { key: 'map1', name: 'Map 1', image: 'map1.png' }
+];
+
+var DECK_TOKENS = {
+  'kingarthur': 'kingarthur.png',
+  'sinbad':     'sinbad.png',
+  'alice':      'alice.png',
+  'medusa':     'medusa.png'
+};
+
+// Sidekick images: keyed by deckKey → bar index (1-based) → image filename
+// For 'small' multi-instance sidekicks (e.g. medusa harpies), all share the same image
+var DECK_SIDEKICK_TOKENS = {
+  'alice':      { 1: 'alice_sidekick.png' },
+  'kingarthur': { 1: 'kingarthur_sidekick.png' },
+  'sinbad':     { 1: 'sinbad_sidekick.png' },
+  'medusa':     { 1: 'medusa_sidekickX3.png' }
+};
+
+var PLAYER_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63'];
+
+// ── Manually set the border/accent colour for each deck's tokens ────────────
+// Both hero and sidekick tokens use this colour.
+var DECK_TOKEN_COLORS = {
+  'kingarthur': '#890606',  // deep red
+  'alice':      '#DA4A6B',  // pink
+  'sinbad':     '#F8AD7E',  // peach
+  'medusa':     '#4A7837',  // green
+  // add more decks below:
+  // 'robinhood':  '#22803a',
+  // 'bigfoot':    '#7b4f2e',
+};
+
+// Zoom/pan state for the map canvas
+var _mapView = { scale: 1, tx: 0, ty: 0 };
+var _mapGesturesInited = false;
+
+function _applyMapTransform(canvas) {
+  if (!canvas) return;
+  canvas.style.transform = 'translate(' + _mapView.tx.toFixed(1) + 'px,' +
+    _mapView.ty.toFixed(1) + 'px) scale(' + _mapView.scale.toFixed(4) + ')';
+}
+
+function _sizeMapBg(mv) {
+  var bg = mv ? mv.querySelector('.map-bg') : null;
+  if (bg) {
+    bg.style.width  = mv.offsetHeight + 'px';
+    bg.style.height = mv.offsetWidth  + 'px';
+  }
+}
+window.addEventListener('resize', function() {
+  var mv = document.getElementById('map-view');
+  if (mv) _sizeMapBg(mv);
+});
+
+function _initMapGestures(mv) {
+  if (_mapGesturesInited) return;
+  _mapGesturesInited = true;
+  var _ptrs = {};     // pointerId -> {x, y}
+  var _gest = null;   // pinch gesture baseline
+
+  mv.addEventListener('pointerdown', function(e) {
+    // Don't intercept drags on my own tokens
+    if (e.target.closest && e.target.closest('.map-token.is-mine')) return;
+    mv.setPointerCapture(e.pointerId);
+    _ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+    var ids = Object.keys(_ptrs);
+    if (ids.length === 2) {
+      var a = _ptrs[ids[0]], b = _ptrs[ids[1]];
+      var rect = mv.getBoundingClientRect();
+      _gest = {
+        initDist:  Math.hypot(b.x - a.x, b.y - a.y),
+        initScale: _mapView.scale,
+        initMidX:  (a.x + b.x) / 2 - rect.left,
+        initMidY:  (a.y + b.y) / 2 - rect.top,
+        initTx:    _mapView.tx,
+        initTy:    _mapView.ty
+      };
+    }
+  });
+
+  mv.addEventListener('pointermove', function(e) {
+    if (!_ptrs[e.pointerId]) return;
+    _ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+    var ids = Object.keys(_ptrs);
+    if (ids.length < 2 || !_gest) return;
+    var a = _ptrs[ids[0]], b = _ptrs[ids[1]];
+    var rect = mv.getBoundingClientRect();
+    var newDist = Math.hypot(b.x - a.x, b.y - a.y);
+    var newScale = Math.max(0.4, Math.min(6, _gest.initScale * (newDist / _gest.initDist)));
+    var midX = (a.x + b.x) / 2 - rect.left;
+    var midY = (a.y + b.y) / 2 - rect.top;
+    // Keep canvas point under initial midpoint fixed, then pan by mid-delta
+    var focusX = (_gest.initMidX - _gest.initTx) / _gest.initScale;
+    var focusY = (_gest.initMidY - _gest.initTy) / _gest.initScale;
+    _mapView.scale = newScale;
+    _mapView.tx = midX - focusX * newScale;
+    _mapView.ty = midY - focusY * newScale;
+    _applyMapTransform(mv.querySelector('.map-canvas'));
+  });
+
+  function onUp(e) { delete _ptrs[e.pointerId]; if (Object.keys(_ptrs).length < 2) _gest = null; }
+  mv.addEventListener('pointerup',     onUp);
+  mv.addEventListener('pointercancel', onUp);
+}
+
+function switchPlayTab(tab) {
+  const cardsPanel  = document.getElementById('play-tab-cards');
+  const mapPanel    = document.getElementById('play-tab-map');
+  const tabCards    = document.getElementById('tab-cards');
+  const tabMap      = document.getElementById('tab-map');
+  const statusArea  = document.getElementById('player-status-area');
+  if (tab === 'map') {
+    if (cardsPanel)  cardsPanel.style.display  = 'none';
+    if (mapPanel)    mapPanel.style.display    = 'flex';
+    if (tabCards)    tabCards.classList.remove('active');
+    if (tabMap)      tabMap.classList.add('active');
+    if (statusArea)  statusArea.style.display  = 'none';
+    // Auto-select first map in solo play if nothing selected
+    if (!G.selectedMap && typeof MAPS !== 'undefined' && MAPS.length) {
+      G.selectedMap = MAPS[0].key;
+    }
+    // Ensure this player has a starting position
+    const pid = G.playerId || 'solo';
+    if (!G.mapPositions[pid]) {
+      G.mapPositions[pid] = { x: 0.5, y: 0.5 };
+    }
+    renderMapView();
+  } else {
+    if (cardsPanel)  cardsPanel.style.display  = '';
+    if (mapPanel)    mapPanel.style.display    = 'none';
+    if (tabCards)    tabCards.classList.add('active');
+    if (tabMap)      tabMap.classList.remove('active');
+    if (statusArea)  statusArea.style.display  = '';
+  }
+}
+
+function renderLobbyMapOptions() {
+  const container = document.getElementById('lobby-map-options');
+  if (!container || typeof MAPS === 'undefined') return;
+  container.innerHTML = '';
+  MAPS.forEach(function(mapData) {
+    const opt = document.createElement('div');
+    opt.className = 'map-option' + (G.selectedMap === mapData.key ? ' selected' : '');
+    opt.innerHTML = '<img src="' + mapData.image + '" alt="' + mapData.name + '"><div class="map-option-name">' + mapData.name + '</div>';
+    opt.onclick = function() {
+      G.selectedMap = mapData.key;
+      if (G.isMultiplayer) {
+        const rd = getRoomData();
+        if (rd) { rd.mapKey = mapData.key; setRoomData(rd); }
+      }
+      container.querySelectorAll('.map-option').forEach(function(o) { o.classList.remove('selected'); });
+      opt.classList.add('selected');
+    };
+    container.appendChild(opt);
+  });
+}
+
+// Corner default positions: TL, TR, BL, BR
+var _CORNER_POS = [
+  { x: 0.12, y: 0.12 },
+  { x: 0.88, y: 0.12 },
+  { x: 0.12, y: 0.88 },
+  { x: 0.88, y: 0.88 }
+];
+
+// Build the HTML string for a single token
+function _makeTokenHTML(t) {
+  var sizeStyle = t.small ? 'width:34px;height:34px;' : '';
+  var inner = t.imgSrc
+    ? '<img src="' + t.imgSrc + '" alt="">'
+    : '<span class="map-token-initials" style="font-size:' + (t.small ? '0.85rem' : '1.3rem') + '">' +
+        (t.label || '?').substring(0,1).toUpperCase() + '</span>';
+  var circleStyle = 'border-color:' + t.color + ';' + sizeStyle + (t.imgSrc ? '' : 'background:' + t.color + ';');
+  return '<div class="map-token ' + (t.isMine ? 'is-mine' : 'not-mine') + '" data-pid="' + t.tokenPid + '"' +
+    ' style="left:' + (t.posX*100).toFixed(2) + '%;top:' + (t.posY*100).toFixed(2) + '%;">' +
+    '<div class="map-token-circle" style="' + circleStyle + '">' + inner + '</div>' +
+  '</div>';
+}
+
+// Collect all token descriptors for all players
+function _gatherTokens(positions) {
+  var list = [];
+  function addPlayer(pid, playerName, deckKey, cornerIdx, isMine) {
+    var deck = (typeof DECKS !== 'undefined') ? DECKS[deckKey] : null;
+    var bars = (deck && deck.healthBars && deck.healthBars.length) ? deck.healthBars
+             : [{ label: playerName, startValue: 10, color: '#aaaaaa', size: 'large' }];
+    var color = (typeof DECK_TOKEN_COLORS !== 'undefined' && DECK_TOKEN_COLORS[deckKey])
+                ? DECK_TOKEN_COLORS[deckKey] : (bars[0].color || '#aaaaaa');
+    var corner = _CORNER_POS[cornerIdx % _CORNER_POS.length];
+    var heroImg = (typeof DECK_TOKENS !== 'undefined' && DECK_TOKENS[deckKey]) ? DECK_TOKENS[deckKey] : null;
+    var heroPos = positions[pid] || { x: corner.x, y: corner.y };
+    list.push({ tokenPid: pid, label: playerName, imgSrc: heroImg, color: color,
+                posX: heroPos.x, posY: heroPos.y, isMine: isMine, small: false });
+    for (var b = 1; b < bars.length; b++) {
+      var bar = bars[b];
+      var small = bar.size === 'small';
+      var count = small ? (bar.startValue || 1) : 1;
+      var skImg = (typeof DECK_SIDEKICK_TOKENS !== 'undefined' && DECK_SIDEKICK_TOKENS[deckKey] && DECK_SIDEKICK_TOKENS[deckKey][b])
+                  ? DECK_SIDEKICK_TOKENS[deckKey][b] : null;
+      for (var n = 0; n < count; n++) {
+        var skPid = pid + '_sk_' + b + '_' + n;
+        var skPos = positions[skPid] || {
+          x: Math.max(0.02, Math.min(0.96, corner.x + 0.07*(n+1))),
+          y: Math.max(0.02, Math.min(0.96, corner.y + 0.07))
+        };
+        list.push({ tokenPid: skPid, label: bar.label + (count > 1 ? ' '+(n+1) : ''),
+                    imgSrc: skImg, color: color, posX: skPos.x, posY: skPos.y, isMine: isMine, small: small });
+      }
+    }
+  }
+  if (G.isMultiplayer) {
+    var rd = getRoomData();
+    var players = (rd && rd.players) ? rd.players : {};
+    Object.keys(players).forEach(function(pid, idx) {
+      addPlayer(pid, players[pid].name, players[pid].deckKey, idx, pid === G.playerId);
+    });
+  } else {
+    addPlayer(G.playerId || 'solo', G.playerName || 'Me', G.deckKey, 0, true);
+  }
+  return list;
+}
+
+function renderMapView() {
+  if (_mapDragActive) return;
+  var mv = document.getElementById('map-view');
+  if (!mv) return;
+
+  var mapKey  = G.selectedMap;
+  var mapData = (typeof MAPS !== 'undefined') ? MAPS.find(function(m){ return m.key === mapKey; }) : null;
+
+  if (!mapData) {
+    var msg = G.isMultiplayer ? window.t('map.waitMap') : window.t('map.noMap');
+    mv.innerHTML = '<div class="map-no-map"><div style="font-size:2rem">🗺️</div><div>' + msg + '</div></div>';
+    _mapGesturesInited = false;
+    _mapView = { scale: 1, tx: 0, ty: 0 };
+    return;
+  }
+
+  var positions = G.mapPositions || {};
+  var tokenList = _gatherTokens(positions);
+  var canvas    = mv.querySelector('.map-canvas');
+
+  if (!canvas) {
+    // ─ First render: build from scratch ─
+    _mapView = { scale: 1, tx: 0, ty: 0 };
+    _mapGesturesInited = false;
+    var html = '<div class="map-canvas"><img class="map-bg" src="' + mapData.image + '" alt="map" draggable="false">';
+    tokenList.forEach(function(t) { html += _makeTokenHTML(t); });
+    html += '</div>';
+    mv.innerHTML = html;
+    canvas = mv.querySelector('.map-canvas');
+    _applyMapTransform(canvas);
+    _sizeMapBg(mv);
+    _initMapGestures(mv);
+    canvas.querySelectorAll('.map-token.is-mine').forEach(function(t) {
+      t.addEventListener('pointerdown', _startTokenDrag);
+    });
+  } else {
+    // ─ Incremental update: reposition existing, add new, remove gone ─
+    var livePids = {};
+    tokenList.forEach(function(t) {
+      livePids[t.tokenPid] = true;
+      var el = canvas.querySelector('.map-token[data-pid="' + t.tokenPid + '"]');
+      if (el) {
+        el.style.left = (t.posX * 100).toFixed(2) + '%';
+        el.style.top  = (t.posY * 100).toFixed(2) + '%';
+      } else {
+        var tmp = document.createElement('div');
+        tmp.innerHTML = _makeTokenHTML(t);
+        var newEl = tmp.firstElementChild;
+        canvas.appendChild(newEl);
+        if (t.isMine) newEl.addEventListener('pointerdown', _startTokenDrag);
+      }
+    });
+    canvas.querySelectorAll('.map-token').forEach(function(el) {
+      var pid = (el.dataset && el.dataset.pid) || el.getAttribute('data-pid');
+      if (!livePids[pid]) el.remove();
+    });
+  }
+}
+
+var _mapDragActive = false;
+
+function _startTokenDrag(e) {
+  e.preventDefault();
+  var el = e.currentTarget;
+  // Use the token's own data-pid so sidekicks are tracked separately
+  var tokenPid = el.dataset ? el.dataset.pid : el.getAttribute('data-pid');
+
+  _mapDragActive = true;
+  el.setPointerCapture(e.pointerId);
+  el.classList.add('dragging');
+
+  function onMove(me) {
+    if (me.pointerId !== e.pointerId) return;
+    me.preventDefault();
+    var mv = document.getElementById('map-view');
+    if (!mv) return;
+    var rect = mv.getBoundingClientRect();
+    var sx = me.clientX - rect.left;
+    var sy = me.clientY - rect.top;
+    // Account for current zoom/pan transform
+    var x = Math.max(0, Math.min(1, (sx - _mapView.tx) / (_mapView.scale * mv.offsetWidth)));
+    var y = Math.max(0, Math.min(1, (sy - _mapView.ty) / (_mapView.scale * mv.offsetHeight)));
+    var canvas = mv.querySelector('.map-canvas');
+    var token = canvas && canvas.querySelector('.map-token[data-pid="' + tokenPid + '"]');
+    if (token) {
+      token.style.left = (x * 100).toFixed(2) + '%';
+      token.style.top  = (y * 100).toFixed(2) + '%';
+    }
+    G.mapPositions[tokenPid] = { x: x, y: y };
+  }
+
+  function onEnd(me) {
+    if (me.type === 'pointerup' && me.pointerId !== e.pointerId) return;
+    _mapDragActive = false;
+    window.removeEventListener('pointermove',   onMove,  true);
+    window.removeEventListener('pointerup',     onEnd,   true);
+    window.removeEventListener('pointercancel', onEnd,   true);
+    var mv = document.getElementById('map-view');
+    if (mv) {
+      var token = mv.querySelector('.map-token[data-pid="' + tokenPid + '"]');
+      if (token) token.classList.remove('dragging');
+    }
+    if (G.isMultiplayer) {
+      var rd = getRoomData();
+      if (rd) {
+        if (!rd.mapPositions) rd.mapPositions = {};
+        rd.mapPositions[tokenPid] = G.mapPositions[tokenPid];
+        setRoomData(rd);
+      }
+    }
+  }
+
+  window.addEventListener('pointermove',   onMove,  true);
+  window.addEventListener('pointerup',     onEnd,   true);
+  window.addEventListener('pointercancel', onEnd,   true);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
