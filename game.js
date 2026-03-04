@@ -4281,7 +4281,7 @@ function switchPlayTab(tab) {
     if (tabCards)    tabCards.classList.remove('active');
     if (tabMap)      tabMap.classList.remove('active');
     if (tabSplit)    tabSplit.classList.add('active');
-    if (statusArea)  statusArea.style.display  = '';
+    if (statusArea)  statusArea.style.display  = '';  // inside cards panel — safe to show
     if (!G.selectedMap && typeof MAPS !== 'undefined' && MAPS.length) {
       G.selectedMap = MAPS[0].key;
     }
