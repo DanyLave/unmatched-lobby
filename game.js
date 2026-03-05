@@ -4141,19 +4141,50 @@ var MAPS = [
 ];
 
 var DECK_TOKENS = {
-  'kingarthur': 'kingarthur.png',
-  'sinbad':     'sinbad.png',
-  'alice':      'alice.png',
-  'medusa':     'medusa.png'
+  'kingarthur':  'kingarthur.png',
+  'sinbad':      'sinbad.png',
+  'alice':       'alice.png',
+  'medusa':      'medusa.png',
+  'bigfoot':     'bigfoot.png',
+  'robinhood':   'robinhood.png',
+  'hamlet':      'hamlet.png',
+  'titania':     'titania.png',
+  'shakespeare': 'shakespeare.png',
+  'sisters':     'sister_staff.png',
+  'spiderman':   'spiderman.png',
+  'drstrange':   'drstrange.png',
+  'shehulk':     'shehulk.png',
+  'ghostrider':  'ghostrider.png',
+  'moonknight':  'moonknight.png',
+  'lukecage':    'lukecage.png',
+  'loki':        'loki.png',
+  'trex':        'trex.png',
+  'pandora':     'pandora.png',
+  'drsattler':   'drsattler.png',
+  'chupacabra':  'chupacabra.png',
+  'blackbeard':  'blackbeard.png',
+  'geralt':      'geralt.png',
+  'tesla':       'tesla.png'
 };
 
 // Sidekick images: keyed by deckKey → bar index (1-based) → image filename
 // For 'small' multi-instance sidekicks (e.g. medusa harpies), all share the same image
 var DECK_SIDEKICK_TOKENS = {
-  'alice':      { 1: 'alice_sidekick.png' },
-  'kingarthur': { 1: 'kingarthur_sidekick.png' },
-  'sinbad':     { 1: 'sinbad_sidekick.png' },
-  'medusa':     { 1: 'medusa_sidekickX3.png' }
+  'alice':       { 1: 'alice_sidekick.png' },
+  'kingarthur':  { 1: 'kingarthur_sidekick.png' },
+  'sinbad':      { 1: 'sinbad_sidekick.png' },
+  'medusa':      { 1: 'medusa_sidekickX3.png' },
+  'bigfoot':     { 1: 'bigfoot_sidekick.png' },
+  'robinhood':   { 1: 'robinhood_sidekickX4.png' },
+  'hamlet':      { 1: 'hamlet_sidekick.png' },
+  'titania':     { 1: 'titania_sidekick.png' },
+  'shakespeare': { 1: 'shakespeare_sidekickX3.png' },
+  'sisters':     { 1: 'sister_book.png', 2: 'sister_argh.png' },
+  'lukecage':    { 1: 'lukecage_sidekick.png' },
+  'drstrange':   { 1: 'drstrange_sidekick.png' },
+  'drsattler':   { 1: 'drsattler_sidekick.png' },
+  'blackbeard':  { 1: 'blackbeard_sidekickX2.png' },
+  'pandora':     { 1: 'pandora_sidekickX2.png' }
 };
 
 var PLAYER_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e91e63'];
@@ -4161,13 +4192,30 @@ var PLAYER_COLORS = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c'
 // ── Manually set the border/accent colour for each deck's tokens ────────────
 // Both hero and sidekick tokens use this colour.
 var DECK_TOKEN_COLORS = {
-  'kingarthur': '#890606',  // deep red
-  'alice':      '#DA4A6B',  // pink
-  'sinbad':     '#F8AD7E',  // peach
-  'medusa':     '#4A7837',  // green
-  // add more decks below:
-  // 'robinhood':  '#22803a',
-  // 'bigfoot':    '#7b4f2e',
+  'kingarthur':  '#890606',
+  'alice':       '#DA4A6B',
+  'sinbad':      '#F8AD7E',
+  'medusa':      '#4A7837',
+  'bigfoot':     '#754634',
+  'robinhood':   '#5CBE8A',
+  'hamlet':      '#C5242D',
+  'titania':     '#7B449A',
+  'shakespeare': '#947F5D',
+  'sisters':     '#BADA6D',
+  'spiderman':   '#E92824',
+  'drstrange':   '#C82026',
+  'shehulk':     '#78B058',
+  'ghostrider':  '#EE5D2A',
+  'moonknight':  '#A3BCBA',
+  'lukecage':    '#FFD640',
+  'loki':        '#687F5A',
+  'trex':        '#4C3422',
+  'pandora':     '#F8EADA',
+  'drsattler':   '#C27873',
+  'chupacabra':  '#44323A',
+  'blackbeard':  '#6C2F38',
+  'geralt':      '#E6E9F1',
+  'tesla':       '#D59377'
 };
 
 // Zoom/pan state for the map canvas
@@ -4195,6 +4243,9 @@ function _sizeMapBg(mv) {
   var scale = Math.min(vw / nw, vh / nh);
   wrapper.style.width  = (nw * scale).toFixed(1) + 'px';
   wrapper.style.height = (nh * scale).toFixed(1) + 'px';
+  // Token size: ~10% of the shorter viewport dimension, clamped to [32,64]
+  var tokenSz = Math.round(Math.max(32, Math.min(64, Math.min(vw, vh) * 0.10)));
+  wrapper.style.setProperty('--map-token-sz', tokenSz + 'px');
 }
 window.addEventListener('resize', function() {
   var mv = document.getElementById('map-view');
@@ -4345,15 +4396,17 @@ var _CORNER_POS = [
 
 // Build the HTML string for a single token
 function _makeTokenHTML(t) {
-  var sizeStyle = t.small ? 'width:34px;height:34px;' : '';
+  var sizeStyle = t.small ? 'width:calc(var(--map-token-sz,48px)*0.65);height:calc(var(--map-token-sz,48px)*0.65);' : '';
   var inner = t.imgSrc
     ? '<img src="' + t.imgSrc + '" alt="">'
-    : '<span class="map-token-initials" style="font-size:' + (t.small ? '0.85rem' : '1.3rem') + '">' +
+    : '<span class="map-token-initials">' +
         (t.label || '?').substring(0,1).toUpperCase() + '</span>';
   var circleStyle = 'border-color:' + t.color + ';' + sizeStyle + (t.imgSrc ? '' : 'background:' + t.color + ';');
-  return '<div class="map-token ' + (t.isMine ? 'is-mine' : 'not-mine') + '" data-pid="' + t.tokenPid + '"' +
+  var classes = 'map-token ' + (t.isMine ? 'is-mine' : 'not-mine') + (t.xl ? ' xl' : '');
+  return '<div class="' + classes + '" data-pid="' + t.tokenPid + '"' +
     ' style="left:' + (t.posX*100).toFixed(2) + '%;top:' + (t.posY*100).toFixed(2) + '%;">' +
     '<div class="map-token-circle" style="' + circleStyle + '">' + inner + '</div>' +
+    '<div class="map-token-label">' + (t.label || '') + '</div>' +
   '</div>';
 }
 
@@ -4369,8 +4422,9 @@ function _gatherTokens(positions) {
     var corner = _CORNER_POS[cornerIdx % _CORNER_POS.length];
     var heroImg = (typeof DECK_TOKENS !== 'undefined' && DECK_TOKENS[deckKey]) ? DECK_TOKENS[deckKey] : null;
     var heroPos = positions[pid] || { x: corner.x, y: corner.y };
+    var isXL = (deckKey === 'trex');
     list.push({ tokenPid: pid, label: playerName, imgSrc: heroImg, color: color,
-                posX: heroPos.x, posY: heroPos.y, isMine: isMine, small: false });
+                posX: heroPos.x, posY: heroPos.y, isMine: isMine, small: false, xl: isXL });
     for (var b = 1; b < bars.length; b++) {
       var bar = bars[b];
       var small = bar.size === 'small';
@@ -4460,7 +4514,7 @@ function renderMapView() {
           // Get token color from its circle border
           var circle = el.querySelector('.map-token-circle');
           var trailColor = circle ? (circle.style.borderColor || '#ffffff') : '#ffffff';
-          _drawMapTrail(trailWrapper, oldLeft / 100, oldTop / 100, newLeft / 100, newTop / 100, trailColor);
+          _drawMapTrail(trailWrapper, oldLeft / 100, oldTop / 100, newLeft / 100, newTop / 100, trailColor, t.tokenPid);
         }
         el.style.left = newLeft + '%';
         el.style.top  = newTop + '%';
@@ -4483,7 +4537,7 @@ var _mapDragActive = false;
 var _draggedTokenPid = null;  // pid of token currently being dragged by local player
 var _dragLiveThrottle = 0;    // timestamp of last live-drag Firebase write
 
-function _drawMapTrail(wrapper, x0, y0, x1, y1, color) {
+function _drawMapTrail(wrapper, x0, y0, x1, y1, color, pid) {
   if (!wrapper) return;
   if (Math.hypot(x1 - x0, y1 - y0) < 0.01) return; // ignore tiny moves
   var svg = wrapper.querySelector('.map-trails');
@@ -4491,6 +4545,10 @@ function _drawMapTrail(wrapper, x0, y0, x1, y1, color) {
     svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('class', 'map-trails');
     wrapper.appendChild(svg);
+  }
+  // Remove previous trail for this token
+  if (pid) {
+    svg.querySelectorAll('[data-pid="' + pid + '"]').forEach(function(el) { el.remove(); });
   }
   var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
   line.setAttribute('x1', (x0 * 100).toFixed(2) + '%');
@@ -4502,8 +4560,8 @@ function _drawMapTrail(wrapper, x0, y0, x1, y1, color) {
   line.setAttribute('stroke-dasharray', '7 5');
   line.setAttribute('stroke-linecap', 'round');
   line.setAttribute('class', 'map-trail-line');
+  if (pid) line.setAttribute('data-pid', pid);
   svg.appendChild(line);
-  setTimeout(function() { if (line.parentNode) line.parentNode.removeChild(line); }, 3000);
 }
 
 // ── Split-view draggable divider ────────────────────────────────────────
@@ -4554,22 +4612,29 @@ function _startTokenDrag(e) {
   // Record starting position for trail
   var startPos = G.mapPositions[tokenPid] ? { x: G.mapPositions[tokenPid].x, y: G.mapPositions[tokenPid].y } : null;
 
+  // Cache references once — avoids repeated querySelector + getBoundingClientRect per frame
+  var mv = document.getElementById('map-view');
+  var wrapper = mv && mv.querySelector('.map-image-wrapper');
+  var cachedRef = wrapper ? wrapper.getBoundingClientRect() : null;
+  var cachedToken = el;  // currentTarget IS the token element
+  var _rafId = null;
+  var _px = 0, _py = 0;
+
   function onMove(me) {
     if (me.pointerId !== e.pointerId) return;
     me.preventDefault();
-    var mv = document.getElementById('map-view');
-    if (!mv) return;
-    var wrapper = mv.querySelector('.map-image-wrapper');
-    var ref = wrapper ? wrapper.getBoundingClientRect() : mv.getBoundingClientRect();
-    var x = Math.max(0, Math.min(1, (me.clientX - ref.left) / ref.width));
-    var y = Math.max(0, Math.min(1, (me.clientY - ref.top)  / ref.height));
-    var canvas = mv.querySelector('.map-canvas');
-    var token = canvas && canvas.querySelector('.map-token[data-pid="' + tokenPid + '"]');
-    if (token) {
-      token.style.left = (x * 100).toFixed(2) + '%';
-      token.style.top  = (y * 100).toFixed(2) + '%';
+    if (!cachedRef) return;
+    _px = Math.max(0, Math.min(1, (me.clientX - cachedRef.left) / cachedRef.width));
+    _py = Math.max(0, Math.min(1, (me.clientY - cachedRef.top)  / cachedRef.height));
+    G.mapPositions[tokenPid] = { x: _px, y: _py };
+    // Batch DOM write into next animation frame for smooth rendering
+    if (!_rafId) {
+      _rafId = requestAnimationFrame(function() {
+        _rafId = null;
+        cachedToken.style.left = (_px * 100).toFixed(2) + '%';
+        cachedToken.style.top  = (_py * 100).toFixed(2) + '%';
+      });
     }
-    G.mapPositions[tokenPid] = { x: x, y: y };
     // Live-broadcast position to Firebase (throttled ~80ms)
     if (G.isMultiplayer) {
       var now = Date.now();
@@ -4578,7 +4643,7 @@ function _startTokenDrag(e) {
         var rd = getRoomData();
         if (rd) {
           if (!rd.mapPositions) rd.mapPositions = {};
-          rd.mapPositions[tokenPid] = { x: x, y: y };
+          rd.mapPositions[tokenPid] = { x: _px, y: _py };
           setRoomData(rd);
         }
       }
@@ -4587,23 +4652,20 @@ function _startTokenDrag(e) {
 
   function onEnd(me) {
     if (me.type === 'pointerup' && me.pointerId !== e.pointerId) return;
+    if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
     _mapDragActive = false;
     _draggedTokenPid = null;
     window.removeEventListener('pointermove',   onMove,  true);
     window.removeEventListener('pointerup',     onEnd,   true);
     window.removeEventListener('pointercancel', onEnd,   true);
-    var mv = document.getElementById('map-view');
-    if (mv) {
-      var token = mv.querySelector('.map-token[data-pid="' + tokenPid + '"]');
-      if (token) token.classList.remove('dragging');
-      // Draw local trail
-      var finalPos = G.mapPositions[tokenPid];
-      if (startPos && finalPos) {
-        var wrapper = mv.querySelector('.map-image-wrapper');
-        var circle = token && token.querySelector('.map-token-circle');
-        var trailColor = circle ? (circle.style.borderColor || '#ffffff') : '#ffffff';
-        _drawMapTrail(wrapper, startPos.x, startPos.y, finalPos.x, finalPos.y, trailColor);
-      }
+    cachedToken.classList.remove('dragging');
+    // Draw local trail
+    var finalPos = G.mapPositions[tokenPid];
+    if (startPos && finalPos) {
+      var trailWrapper = mv && mv.querySelector('.map-image-wrapper');
+      var circle = cachedToken.querySelector('.map-token-circle');
+      var trailColor = circle ? (circle.style.borderColor || '#ffffff') : '#ffffff';
+      _drawMapTrail(trailWrapper, startPos.x, startPos.y, finalPos.x, finalPos.y, trailColor, tokenPid);
     }
     if (G.isMultiplayer) {
       var rd = getRoomData();
