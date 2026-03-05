@@ -1928,8 +1928,10 @@ function goTo(id) {
     if (id === 's-play') {
       document.getElementById('s-play').scrollTop = 0;
       // Show/hide multiplayer UI elements
-      if (G.isMultiplayer && G.gameStarted) {
+      if (G.isMultiplayer) {
         document.getElementById('player-status-area').style.display = 'block';
+      }
+      if (G.isMultiplayer && G.gameStarted) {
         document.getElementById('combat-area').style.display = 'block';
         document.getElementById('discard-browsing').style.display = 'block';
         document.getElementById('turn-control').style.display = 'block';
@@ -4361,7 +4363,7 @@ function switchPlayTab(tab) {
     if (mapPanel)    mapPanel.style.display    = 'none';
     if (tabCards)    tabCards.classList.add('active');
     if (tabMap)      tabMap.classList.remove('active');
-    if (statusArea)  statusArea.style.display  = '';
+    if (statusArea)  statusArea.style.display  = G.isMultiplayer ? 'block' : 'none';
   }
 }
 
@@ -4502,6 +4504,16 @@ function renderMapView() {
       livePids[t.tokenPid] = true;
       var el = canvas.querySelector('.map-token[data-pid="' + t.tokenPid + '"]');
       if (el) {
+        // Update circle image if it changed (e.g. late joiner just picked their deck)
+        var circle = el.querySelector('.map-token-circle');
+        if (circle && t.imgSrc) {
+          var img = circle.querySelector('img');
+          if (!img) {
+            circle.innerHTML = '<img src="' + t.imgSrc + '" alt="">';
+          } else if (img.getAttribute('src') !== t.imgSrc) {
+            img.src = t.imgSrc;
+          }
+        }
         // Skip repositioning the token the local player is actively dragging
         if (t.tokenPid === _draggedTokenPid) return;
         var oldLeft = parseFloat(el.style.left);
